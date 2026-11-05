@@ -10,7 +10,9 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace AskVest.IntegrationTests.Identity;
 
-public sealed class AuthApiFactory(string connectionString) : WebApplicationFactory<Program>
+public sealed class AuthApiFactory(
+    string connectionString,
+    IReadOnlyDictionary<string, string?>? extraSettings = null) : WebApplicationFactory<Program>
 {
     public CapturingEmailTransport Emails { get; } = new();
 
@@ -22,14 +24,23 @@ public sealed class AuthApiFactory(string connectionString) : WebApplicationFact
         builder.UseSetting("RateLimiting:Strict:PermitLimit", "10000");
         builder.ConfigureAppConfiguration((_, config) =>
         {
-            config.AddInMemoryCollection(new Dictionary<string, string?>
+            var settings = new Dictionary<string, string?>
             {
                 ["ConnectionStrings:Platform"] = connectionString,
                 ["Docs:Enabled"] = "false",
                 ["RateLimiting:Global:PermitLimit"] = "10000",
                 ["RateLimiting:Strict:PermitLimit"] = "10000",
                 ["Identity:PasswordBreachCheckEnabled"] = "true",
-            });
+            };
+            if (extraSettings is not null)
+            {
+                foreach (var (key, value) in extraSettings)
+                {
+                    settings[key] = value;
+                }
+            }
+
+            config.AddInMemoryCollection(settings);
             foreach (var (key, value) in TestIdentitySecrets.Entries)
             {
                 config.AddInMemoryCollection(new Dictionary<string, string?> { [key] = value });

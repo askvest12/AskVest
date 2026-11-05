@@ -6,10 +6,13 @@ namespace AskVest.Modules.Identity;
 
 public static class IdentityEndpointsExtensions
 {
-    public static RouteGroupBuilder MapIdentityEndpoints(this RouteGroupBuilder group)
+    public static RouteGroupBuilder MapIdentityEndpoints(
+        this RouteGroupBuilder group,
+        bool phoneVerificationEnabled = false)
     {
         group.MapAuthEndpoints();
         group.MapPinStepUpEndpoints();
+        group.MapPhoneEndpoints(phoneVerificationEnabled);
         return group;
     }
 }

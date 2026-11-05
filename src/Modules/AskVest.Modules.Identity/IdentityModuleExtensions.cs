@@ -90,6 +90,7 @@ public static class IdentityModuleExtensions
         services.AddScoped<PasswordService>();
         services.AddScoped<PinService>();
         services.AddScoped<StepUpService>();
+        services.AddScoped<PhoneService>();
         services.AddScoped<Contracts.IStepUpAuthorizer>(provider => provider.GetRequiredService<StepUpService>());
         services.AddValidatorsFromAssembly(typeof(IdentityModuleExtensions).Assembly);
 
@@ -122,6 +123,15 @@ public static class IdentityModuleExtensions
         else if (IsDevelopmentMailHost(smtpHost))
         {
             failures.Add("Messaging:Smtp:Host points at a development mail sink (loopback or Mailpit); a real SMTP provider is required in Production.");
+        }
+
+        var phoneEnabled = string.Equals(
+            configuration[$"{IdentityOptions.SectionName}:PhoneVerificationEnabled"],
+            "true",
+            StringComparison.OrdinalIgnoreCase);
+        if (phoneEnabled)
+        {
+            failures.Add("Identity:PhoneVerificationEnabled requires a real SMS provider and must stay off until one is configured.");
         }
 
         if (failures.Count > 0)

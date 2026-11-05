@@ -42,6 +42,7 @@ public sealed class IdentityOptions
     public string AccessTokenAudience { get; set; } = "askvest-api";
     public bool PasswordBreachCheckEnabled { get; set; } = true;
     public string? DefaultPhoneRegion { get; set; }
+    public bool PhoneVerificationEnabled { get; set; }
 
     public static IValidateOptions<IdentityOptions> Validator { get; } = new IdentityOptionsValidator();
 

@@ -132,3 +132,19 @@ public sealed class StepUpRequestValidator : AbstractValidator<StepUpRequest>
         RuleFor(x => x.Binding).MaximumLength(1024);
     }
 }
+
+public sealed class AddPhoneRequestValidator : AbstractValidator<AddPhoneRequest>
+{
+    public AddPhoneRequestValidator()
+    {
+        RuleFor(x => x.Phone).NotEmpty().MaximumLength(32);
+    }
+}
+
+public sealed class VerifyPhoneRequestValidator : AbstractValidator<VerifyPhoneRequest>
+{
+    public VerifyPhoneRequestValidator()
+    {
+        RuleFor(x => x.Code).NotEmpty().Length(6).Matches("^[0-9]{6}$");
+    }
+}

@@ -126,7 +126,8 @@ app.MapDiagnosticsEndpoints(diagnostics.EnableProbes);
 
 var api = app.MapGroup("/api/v1").RequireAuthorization().AddEndpointFilter<ValidationEndpointFilter>();
 api.MapSystemEndpoints();
-api.MapIdentityEndpoints();
+api.MapIdentityEndpoints(
+    builder.Configuration.GetValue<bool>("Identity:PhoneVerificationEnabled"));
 
 if (docs.Enabled)
 {

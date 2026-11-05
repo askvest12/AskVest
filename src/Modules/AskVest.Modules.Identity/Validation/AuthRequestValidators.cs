@@ -94,3 +94,41 @@ public sealed class ChangePasswordRequestValidator : AbstractValidator<ChangePas
         RuleFor(x => x.Password).NotEmpty().MaximumLength(128);
     }
 }
+
+public sealed class SetPinRequestValidator : AbstractValidator<SetPinRequest>
+{
+    public SetPinRequestValidator()
+    {
+        RuleFor(x => x.Password).NotEmpty().MaximumLength(128);
+        RuleFor(x => x.Pin).NotEmpty().Length(6).Matches("^[0-9]{6}$");
+    }
+}
+
+public sealed class ChangePinRequestValidator : AbstractValidator<ChangePinRequest>
+{
+    public ChangePinRequestValidator()
+    {
+        RuleFor(x => x.CurrentPin).NotEmpty().Length(6).Matches("^[0-9]{6}$");
+        RuleFor(x => x.Pin).NotEmpty().Length(6).Matches("^[0-9]{6}$");
+    }
+}
+
+public sealed class ResetPinRequestValidator : AbstractValidator<ResetPinRequest>
+{
+    public ResetPinRequestValidator()
+    {
+        RuleFor(x => x.Code).NotEmpty().Length(6).Matches("^[0-9]{6}$");
+        RuleFor(x => x.Password).NotEmpty().MaximumLength(128);
+        RuleFor(x => x.Pin).NotEmpty().Length(6).Matches("^[0-9]{6}$");
+    }
+}
+
+public sealed class StepUpRequestValidator : AbstractValidator<StepUpRequest>
+{
+    public StepUpRequestValidator()
+    {
+        RuleFor(x => x.Purpose).NotEmpty().MaximumLength(64);
+        RuleFor(x => x.Pin).NotEmpty().Length(6).Matches("^[0-9]{6}$");
+        RuleFor(x => x.Binding).MaximumLength(1024);
+    }
+}

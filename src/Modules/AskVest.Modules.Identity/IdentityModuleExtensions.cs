@@ -88,6 +88,9 @@ public static class IdentityModuleExtensions
         services.AddScoped<LoginService>();
         services.AddScoped<VerifyDeviceService>();
         services.AddScoped<PasswordService>();
+        services.AddScoped<PinService>();
+        services.AddScoped<StepUpService>();
+        services.AddScoped<Contracts.IStepUpAuthorizer>(provider => provider.GetRequiredService<StepUpService>());
         services.AddValidatorsFromAssembly(typeof(IdentityModuleExtensions).Assembly);
 
         services.AddSingleton<MessageChannel>();

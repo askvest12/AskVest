@@ -16,6 +16,7 @@ public sealed class UserAccount
     public DateTimeOffset? PinSetAt { get; set; }
     public int PinFailedCount { get; set; }
     public DateTimeOffset? PinLockedUntil { get; set; }
+    public int PinLockRepeatCount { get; set; }
     public DateTimeOffset? DeletionRequestedAt { get; set; }
     public DateTimeOffset? DeletionScheduledFor { get; set; }
     public DateTimeOffset? LastLoginAt { get; set; }

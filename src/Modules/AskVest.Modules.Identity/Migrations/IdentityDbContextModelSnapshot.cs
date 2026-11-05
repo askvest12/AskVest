@@ -474,6 +474,10 @@ namespace AskVest.Modules.Identity.Migrations
                         .HasColumnType("text")
                         .HasColumnName("pin_hash");
 
+                    b.Property<int>("PinLockRepeatCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("pin_lock_repeat_count");
+
                     b.Property<DateTimeOffset?>("PinLockedUntil")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("pin_locked_until");

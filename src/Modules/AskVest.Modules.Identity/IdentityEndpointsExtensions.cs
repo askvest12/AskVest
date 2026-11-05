@@ -9,6 +9,7 @@ public static class IdentityEndpointsExtensions
     public static RouteGroupBuilder MapIdentityEndpoints(this RouteGroupBuilder group)
     {
         group.MapAuthEndpoints();
+        group.MapPinStepUpEndpoints();
         return group;
     }
 }

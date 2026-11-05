@@ -1,0 +1,21 @@
+name: askvest-smoke
+
+services:
+  postgres:
+    ports: !reset []
+    environment:
+      POSTGRES_PASSWORD: ${ASKVEST_ADMIN_PASSWORD:?required}
+
+  migrator:
+    environment:
+      ConnectionStrings__Platform: Host=postgres;Port=5432;Database=askvest;Username=askvest_owner;Password=${ASKVEST_OWNER_PASSWORD}
+
+  api:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__Platform: Host=postgres;Port=5432;Database=askvest;Username=askvest_app;Password=${ASKVEST_APP_PASSWORD}
+      Docs__Enabled: "true"
+      Diagnostics__EnableProbes: "true"
+      RateLimiting__Global__PermitLimit: "10000"
+    ports: !reset []

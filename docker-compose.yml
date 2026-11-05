@@ -1,0 +1,86 @@
+name: askvest
+
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: askvest
+      POSTGRES_USER: askvest_admin
+      POSTGRES_PASSWORD: ${ASKVEST_ADMIN_PASSWORD:?required}
+      ASKVEST_OWNER_PASSWORD: ${ASKVEST_OWNER_PASSWORD:?required}
+      ASKVEST_APP_PASSWORD: ${ASKVEST_APP_PASSWORD:?required}
+    ports:
+      - "127.0.0.1:${ASKVEST_POSTGRES_PORT:-55433}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U askvest_admin -d askvest"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/run/postgresql
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
+    security_opt:
+      - no-new-privileges:true
+
+  migrator:
+    build:
+      context: .
+      dockerfile: docker/migrator/Dockerfile
+    environment:
+      ConnectionStrings__Platform: Host=postgres;Port=5432;Database=askvest;Username=askvest_owner;Password=${ASKVEST_OWNER_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/api/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__Platform: Host=postgres;Port=5432;Database=askvest;Username=askvest_app;Password=${ASKVEST_APP_PASSWORD}
+      Docs__Enabled: "true"
+    ports:
+      - "127.0.0.1:${ASKVEST_API_PORT:-5080}:8080"
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health/live -o /dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  postgres-data:

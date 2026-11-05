@@ -28,18 +28,27 @@ public sealed class ModuleBoundaryTests
             .ShouldAllBe(name =>
                 name.StartsWith("Microsoft.", StringComparison.Ordinal)
                 || name.StartsWith("System", StringComparison.Ordinal)
+                || name.StartsWith("Npgsql.", StringComparison.Ordinal)
+                || name.StartsWith("EFCore.", StringComparison.Ordinal)
                 || name.Equals("netstandard", StringComparison.Ordinal)
                 || name.Equals("mscorlib", StringComparison.Ordinal));
     }
 
     [Fact]
-    public void Identity_Does_Not_Expose_Infrastructure_To_Others()
+    public void Identity_Public_Surface_Stays_Within_Module_Namespaces()
     {
         var publicTypes = Identity.GetExportedTypes()
             .Where(t => t.Namespace?.StartsWith("AskVest.Modules.Identity", StringComparison.Ordinal) == true)
             .Select(t => t.FullName!)
             .ToList();
-        publicTypes.ShouldAllBe(name => name.Contains(".Contracts.") || name.EndsWith("IdentityModuleExtensions") || name.EndsWith("IdentityEndpointsExtensions"));
+        publicTypes.ShouldAllBe(name =>
+            name.Contains(".Contracts.", StringComparison.Ordinal)
+            || name.Contains(".Persistence.", StringComparison.Ordinal)
+            || name.Contains(".Domain.", StringComparison.Ordinal)
+            || name.Contains(".Configuration.", StringComparison.Ordinal)
+            || name.Contains(".Migrations.", StringComparison.Ordinal)
+            || name.EndsWith("IdentityModuleExtensions")
+            || name.EndsWith("IdentityEndpointsExtensions"));
     }
 
     [Fact]

@@ -3,6 +3,7 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <ProjectReference Include="..\..\src\AskVest.SharedKernel\AskVest.SharedKernel.csproj" />
+    <ProjectReference Include="..\..\src\Modules\AskVest.Modules.Identity\AskVest.Modules.Identity.csproj" />
     <ProjectReference Include="..\..\src\AskVest.Platform\AskVest.Platform.csproj" />
     <ProjectReference Include="..\..\src\AskVest.Api\AskVest.Api.csproj" />
   </ItemGroup>

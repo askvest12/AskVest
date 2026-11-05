@@ -1,3 +1,4 @@
+using AskVest.Modules.Identity.Persistence;
 using AskVest.Platform;
 using Npgsql;
 using Respawn;
@@ -42,7 +43,9 @@ public sealed class PostgresFixture : IAsyncLifetime
         OwnerConnectionString = BuildRoleConnectionString("askvest_owner", OwnerPassword);
         AppConnectionString = BuildRoleConnectionString("askvest_app", AppPassword);
 
-        var applied = await MigrationRunner.RunAsync(OwnerConnectionString);
+        var applied = await MigrationRunner.RunAsync(
+            OwnerConnectionString,
+            [connectionString => new IdentityDbContext(IdentityDbContextOptions.Create(connectionString))]);
         if (applied.Count == 0)
         {
             throw new InvalidOperationException("Expected InitialPlatform to apply on a fresh database.");
@@ -56,8 +59,8 @@ public sealed class PostgresFixture : IAsyncLifetime
                 new RespawnerOptions
             {
                 DbAdapter = DbAdapter.Postgres,
-                SchemasToInclude = ["platform"],
-                TablesToIgnore = ["platform.__ef_migrations_history"],
+                SchemasToInclude = ["platform", "identity"],
+                TablesToIgnore = ["platform.__ef_migrations_history", "identity.__ef_migrations_history"],
             });
         }
     }

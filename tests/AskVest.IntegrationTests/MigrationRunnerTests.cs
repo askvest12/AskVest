@@ -18,7 +18,7 @@ public sealed class MigrationRunnerTests
     [Fact]
     public async Task RunningAgain_AppliesNothing()
     {
-        var applied = await MigrationRunner.RunAsync(_fixture.OwnerConnectionString, TestContext.Current.CancellationToken);
+        var applied = await MigrationRunner.RunAsync(_fixture.OwnerConnectionString, cancellationToken: TestContext.Current.CancellationToken);
         applied.ShouldBeEmpty();
     }
 }

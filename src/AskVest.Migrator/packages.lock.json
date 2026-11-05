@@ -546,6 +546,15 @@
         "resolved": "10.0.14",
         "contentHash": "O/RzNwWoDzehkLlAG9hR8xooY5L41U7VUaYlcKvE3+FhHohBJqF10oLUzuv0v59VeJ62hv3uw9VoeX12zej7Sg=="
       },
+      "askvest.modules.identity": {
+        "type": "Project",
+        "dependencies": {
+          "AskVest.Platform": "[1.0.0, )",
+          "AskVest.SharedKernel": "[1.0.0, )",
+          "EFCore.NamingConventions": "[10.0.1, )",
+          "Npgsql.EntityFrameworkCore.PostgreSQL": "[10.0.3, )"
+        }
+      },
       "askvest.platform": {
         "type": "Project",
         "dependencies": {

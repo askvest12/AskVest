@@ -9,10 +9,16 @@ public static class MigrationRunner
         connectionString => new PlatformDbContext(PlatformDbContextOptions.Create(connectionString)),
     ];
 
-    public static async Task<IReadOnlyList<string>> RunAsync(string connectionString, CancellationToken cancellationToken = default)
+    public static async Task<IReadOnlyList<string>> RunAsync(
+        string connectionString,
+        IReadOnlyList<Func<string, DbContext>>? additionalContextFactories = null,
+        CancellationToken cancellationToken = default)
     {
         var applied = new List<string>();
-        foreach (var factory in ContextFactories)
+        var factories = additionalContextFactories is null
+            ? ContextFactories
+            : ContextFactories.Concat(additionalContextFactories).ToList();
+        foreach (var factory in factories)
         {
             await using var context = factory(connectionString);
             var pending = (await context.Database

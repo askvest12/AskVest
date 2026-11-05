@@ -1,3 +1,4 @@
+using AskVest.Modules.Identity.Persistence;
 using AskVest.Platform;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,7 +26,10 @@ if (string.IsNullOrWhiteSpace(connectionString))
 using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(120));
 try
 {
-    var applied = await MigrationRunner.RunAsync(connectionString, cancellation.Token);
+    var applied = await MigrationRunner.RunAsync(
+        connectionString,
+        [connectionString => new IdentityDbContext(IdentityDbContextOptions.Create(connectionString))],
+        cancellation.Token);
     if (logger.IsEnabled(LogLevel.Information))
     {
         if (applied.Count == 0)

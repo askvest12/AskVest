@@ -25,6 +25,10 @@ public sealed class ApiHostFactory : WebApplicationFactory<Program>
                 ["RateLimiting:Strict:PermitLimit"] = "100",
                 ["Docs:Enabled"] = "true",
             });
+            foreach (var (key, value) in AskVest.IntegrationTests.Infrastructure.TestIdentitySecrets.Entries)
+            {
+                config.AddInMemoryCollection(new Dictionary<string, string?> { [key] = value });
+            }
         });
     }
 }

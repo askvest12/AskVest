@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AskVest.Platform\AskVest.Platform.csproj" />
+    <ProjectReference Include="..\Modules\AskVest.Modules.Identity\AskVest.Modules.Identity.csproj" />
   </ItemGroup>
 
   <ItemGroup>

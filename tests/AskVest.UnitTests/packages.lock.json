@@ -333,7 +333,9 @@
         "type": "Project",
         "dependencies": {
           "AskVest.Platform": "[1.0.0, )",
-          "AskVest.SharedKernel": "[1.0.0, )"
+          "AskVest.SharedKernel": "[1.0.0, )",
+          "EFCore.NamingConventions": "[10.0.1, )",
+          "Npgsql.EntityFrameworkCore.PostgreSQL": "[10.0.3, )"
         }
       },
       "askvest.platform": {

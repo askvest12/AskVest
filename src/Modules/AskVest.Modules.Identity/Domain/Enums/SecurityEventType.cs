@@ -1,0 +1,30 @@
+namespace AskVest.Modules.Identity.Domain.Enums;
+
+public enum SecurityEventType
+{
+    SignUp,
+    EmailVerified,
+    LoginSucceeded,
+    LoginFailed,
+    LoginThrottled,
+    DeviceVerificationRequested,
+    DeviceTrusted,
+    RefreshRotated,
+    RefreshReuseDetected,
+    SessionRevoked,
+    AllSessionsRevoked,
+    PasswordChanged,
+    PasswordReset,
+    PinSet,
+    PinChanged,
+    PinReset,
+    PinFailed,
+    PinLocked,
+    StepUpGranted,
+    StepUpConsumed,
+    PhoneAdded,
+    PhoneVerified,
+    DeletionRequested,
+    DeletionCancelled,
+    AccountAnonymized,
+}

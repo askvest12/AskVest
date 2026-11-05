@@ -27,6 +27,10 @@ public sealed class IdempotencyApiFactory(string connectionString) : WebApplicat
                 ["RateLimiting:Global:PermitLimit"] = "10000",
                 ["Docs:Enabled"] = "false",
             });
+            foreach (var (key, value) in AskVest.IntegrationTests.Infrastructure.TestIdentitySecrets.Entries)
+            {
+                config.AddInMemoryCollection(new Dictionary<string, string?> { [key] = value });
+            }
         });
     }
 }

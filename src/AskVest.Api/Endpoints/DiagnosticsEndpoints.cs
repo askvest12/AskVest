@@ -11,11 +11,18 @@ internal static class DiagnosticsEndpoints
             return;
         }
 
-        app.MapPost("/diagnostics/probe", (HttpContext httpContext, ProbeRequest request, [Microsoft.AspNetCore.Mvc.FromServices] TimeProvider timeProvider) =>
-            ApiResults.Ok(
+        app.MapPost("/diagnostics/probe", async (HttpContext httpContext, ProbeRequest request, [Microsoft.AspNetCore.Mvc.FromServices] TimeProvider timeProvider, CancellationToken cancellationToken) =>
+        {
+            if (string.Equals(request.Value, "slow", StringComparison.Ordinal))
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken);
+            }
+
+            return ApiResults.Ok(
                 new { received = request.Value, serverTimeUtc = timeProvider.GetUtcNow() },
                 "Probe received.",
-                httpContext))
+                httpContext);
+        })
             .WithIdempotency()
             .WithStandardErrors()
             .AllowAnonymous();

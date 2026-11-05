@@ -125,7 +125,7 @@ public sealed class IdempotencyApiTests(PostgresFixture fixture) : IAsyncLifetim
         var responses = await Task.WhenAll(
             Enumerable.Range(0, 20).Select(async _ =>
             {
-                using var request = Probe(key, "race");
+                using var request = Probe(key, "slow");
                 return await client.SendAsync(request, TestContext.Current.CancellationToken);
             }));
         var codes = responses.Select(r => (int)r.StatusCode).OrderBy(c => c).ToList();

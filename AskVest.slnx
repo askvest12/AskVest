@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/AskVest.Api/AskVest.Api.csproj" />
+    <Project Path="src/AskVest.Migrator/AskVest.Migrator.csproj" />
+    <Project Path="src/AskVest.Platform/AskVest.Platform.csproj" />
+    <Project Path="src/AskVest.SharedKernel/AskVest.SharedKernel.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/AskVest.ArchitectureTests/AskVest.ArchitectureTests.csproj" />
+    <Project Path="tests/AskVest.IntegrationTests/AskVest.IntegrationTests.csproj" />
+    <Project Path="tests/AskVest.SmokeTests/AskVest.SmokeTests.csproj" />
+    <Project Path="tests/AskVest.UnitTests/AskVest.UnitTests.csproj" />
+  </Folder>
+</Solution>

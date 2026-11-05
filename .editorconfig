@@ -176,3 +176,11 @@ dotnet_diagnostic.CA1031.severity = none
 # The maintenance job must survive any failure and retry on the next tick.
 [src/Modules/AskVest.Modules.Identity/Services/MaintenanceJob.cs]
 dotnet_diagnostic.CA1031.severity = none
+
+# ECDsaSecurityKey takes ownership of the ECDsa instance; CA2000 cannot see the transfer.
+[src/Modules/AskVest.Modules.Identity/Crypto/AccessTokenService.cs]
+dotnet_diagnostic.CA2000.severity = none
+
+# The HIBP k-anonymity API requires SHA-1 prefixes; it is never used for password storage.
+[src/Modules/AskVest.Modules.Identity/Crypto/BreachPasswordChecker.cs]
+dotnet_diagnostic.CA5350.severity = none

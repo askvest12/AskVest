@@ -109,3 +109,54 @@ public sealed class AnonymousGuardTests
         violations.ShouldHaveSingleItem().ShouldContain("/api/v1/account/me");
     }
 }
+
+public sealed class IdempotencyGuardTests
+{
+    private static RouteEndpoint Endpoint(string route, params object[] metadata)
+        => new(_ => Task.CompletedTask, RoutePatternFactory.Parse(route), 0, new EndpointMetadataCollection(metadata), route);
+
+    private static RouteEndpoint Post(string route, params object[] metadata)
+        => Endpoint(route, [new HttpMethodMetadata([HttpMethods.Post]), .. metadata]);
+
+    [Fact]
+    public void Guard_Flags_Mutating_Endpoint_Without_Idempotency_Declaration()
+    {
+        var violations = AskVest.Api.IdempotencyEndpointGuard.FindViolations(
+        [
+            Post("/api/v1/thing"),
+        ]);
+        violations.ShouldHaveSingleItem().ShouldContain("/api/v1/thing");
+    }
+
+    [Fact]
+    public void Guard_Flags_Secrets_Endpoint_That_Still_Requires_Idempotency()
+    {
+        var violations = AskVest.Api.IdempotencyEndpointGuard.FindViolations(
+        [
+            Post("/api/v1/auth/login", new RequiresIdempotencyAttribute(), new ReturnsSecretsAttribute()),
+        ]);
+        violations.ShouldContain(v => v.Contains("idempotent replay"));
+    }
+
+    [Fact]
+    public void Guard_Flags_Secrets_Endpoint_Without_Exemption()
+    {
+        var violations = AskVest.Api.IdempotencyEndpointGuard.FindViolations(
+        [
+            Post("/api/v1/auth/login", new ReturnsSecretsAttribute()),
+        ]);
+        violations.ShouldContain(v => v.Contains("without an idempotency exemption"));
+    }
+
+    [Fact]
+    public void Guard_Accepts_Declared_And_Safe_Endpoints()
+    {
+        var violations = AskVest.Api.IdempotencyEndpointGuard.FindViolations(
+        [
+            Endpoint("/api/v1/account/me"),
+            Post("/api/v1/account/me", new RequiresIdempotencyAttribute()),
+            Post("/api/v1/auth/login", new IdempotencyExemptAttribute(), new ReturnsSecretsAttribute()),
+        ]);
+        violations.ShouldBeEmpty();
+    }
+}

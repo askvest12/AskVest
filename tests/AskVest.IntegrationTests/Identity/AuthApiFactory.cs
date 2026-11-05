@@ -32,6 +32,7 @@ public sealed class AuthApiFactory(
                 ["RateLimiting:Global:PermitLimit"] = "10000",
                 ["RateLimiting:Strict:PermitLimit"] = "10000",
                 ["Identity:PasswordBreachCheckEnabled"] = "true",
+                ["Identity:LoginFailuresPerClientIp"] = "100000",
             };
             if (extraSettings is not null)
             {

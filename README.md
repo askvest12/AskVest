@@ -23,7 +23,7 @@ secrets must be generated once for development:
 
 ```bash
 # ES256 signing key pair material (PKCS8 private key, base64)
-openssl ecparam -name prime256v1 -genkey -noout | openssl pkcs8 -topk8 -nocrypt | base64 -w0
+openssl ecparam -name prime256v1 -genkey -noout | openssl pkcs8 -topk8 -nocrypt -outform DER | base64 -w0
 
 # Password pepper and one-time-code hash secret (64 hex chars each)
 openssl rand -hex 32

@@ -6,7 +6,7 @@ public static class MessageTemplates
         => new(to, "Verify your AskVest email",
             $"Your AskVest verification code is {code}.\n\n" +
             "Enter this code in the app to verify your email address. It expires in 10 minutes.\n\n" +
-            "If you did not create an AskVest account, ignore this message — no account will be activated without the code.");
+            "If you did not create an AskVest account, ignore this message - no account will be activated without the code.");
 
     public static EmailMessage DeviceVerification(string to, string code)
         => new(to, "Verify your new AskVest device",
@@ -18,7 +18,7 @@ public static class MessageTemplates
         => new(to, "Reset your AskVest password",
             $"Your AskVest password reset code is {code}.\n\n" +
             "Enter this code in the app to choose a new password. It expires in 10 minutes and can be used once.\n\n" +
-            "If you did not request a password reset, ignore this message — your password will not change.");
+            "If you did not request a password reset, ignore this message - your password will not change.");
 
     public static EmailMessage PinReset(string to, string code)
         => new(to, "Reset your AskVest PIN",

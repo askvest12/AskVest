@@ -3,7 +3,12 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using AskVest.IntegrationTests.Infrastructure;
+using AskVest.Modules.Identity.Configuration;
+using AskVest.Modules.Identity.Crypto;
 using AskVest.Modules.Identity.Messaging;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 using Npgsql;
 using Shouldly;
 using Xunit;
@@ -225,6 +230,42 @@ public sealed class LoginApiTests(PostgresFixture fixture) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Login_Throttles_By_Client_Ip_Key_For_Any_Email()
+    {
+        await _factory.DisposeAsync();
+        _factory = new AuthApiFactory(
+            fixture.AppConnectionString,
+            extraSettings: new Dictionary<string, string?>
+            {
+                ["Identity:LoginFailuresPerClientIp"] = "3",
+            });
+        _factory.CreateClient();
+        var client = Client();
+
+        var emailA = NewEmail();
+        var emailB = NewEmail();
+        try
+        {
+            for (var i = 0; i < 3; i++)
+            {
+                await LoginAsync(client, emailA, "WrongPass999", "device-ip");
+            }
+
+            var throttled = await LoginAsync(client, emailB, GoodPassword, "device-ip2");
+            throttled.GetProperty("error").GetProperty("code").GetString().ShouldBe("rate_limit.exceeded");
+        }
+        finally
+        {
+            await using var connection = new NpgsqlConnection(fixture.AppConnectionString);
+            await connection.OpenAsync(TestContext.Current.CancellationToken);
+            await using var command = new NpgsqlCommand(
+                "DELETE FROM identity.throttle_buckets WHERE kind = 'ClientIp'",
+                connection);
+            await command.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
+        }
+    }
+
+    [Fact]
     public async Task Login_Success_Resets_Throttle()
     {
         var client = Client();
@@ -264,5 +305,101 @@ public sealed class LoginApiTests(PostgresFixture fixture) : IAsyncLifetime
             TestContext.Current.CancellationToken);
         var json = await response.Content.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken);
         json.GetProperty("error").GetProperty("code").GetString().ShouldBe("auth.invalid_code");
+    }
+
+    private async Task<(AuthApiFactory Factory, CountingPasswordHasher Counter)> UseCountingHasherAsync()
+    {
+        await _factory.DisposeAsync();
+        CountingPasswordHasher? counter = null;
+        var factory = new AuthApiFactory(
+            fixture.AppConnectionString,
+            configureServices: services => services.Replace(
+                ServiceDescriptor.Singleton<IPasswordHasher>(sp =>
+                {
+                    counter = new CountingPasswordHasher(new PasswordHasher(
+                        sp.GetRequiredService<Argon2idCore>(),
+                        sp.GetRequiredService<CredentialHashingLimiter>(),
+                        sp.GetRequiredService<IOptions<IdentityOptions>>()));
+                    return counter;
+                })));
+        factory.CreateClient();
+        factory.Services.GetRequiredService<IPasswordHasher>();
+        return (factory, counter!);
+    }
+
+    [Fact]
+    public async Task Login_Verify_Call_Count_Is_Identical_For_Existing_And_Unknown_Email()
+    {
+        var (factory, counter) = await UseCountingHasherAsync();
+        _factory = factory;
+        var client = Client();
+
+        var email = NewEmail();
+        await ActivateAsync(client, email);
+
+        var before = counter.SnapshotVerifyCalls();
+        await LoginAsync(client, email, "WrongPass999", "device-c1");
+        var afterExisting = counter.SnapshotVerifyCalls();
+        await LoginAsync(client, NewEmail(), "WrongPass999", "device-c2");
+        var afterUnknown = counter.SnapshotVerifyCalls();
+
+        (afterExisting - before).ShouldBe(1);
+        (afterUnknown - afterExisting).ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task Login_Throttled_Attempt_Does_Not_Evaluate_Password()
+    {
+        var (factory, counter) = await UseCountingHasherAsync();
+        _factory = factory;
+        var client = Client();
+
+        var email = NewEmail();
+        await ActivateAsync(client, email);
+
+        for (var i = 0; i < 5; i++)
+        {
+            await LoginAsync(client, email, "WrongPass999", "device-t2");
+        }
+
+        var before = counter.SnapshotVerifyCalls();
+        var throttled = await LoginAsync(client, email, GoodPassword, "device-t2");
+        throttled.GetProperty("error").GetProperty("code").GetString().ShouldBe("rate_limit.exceeded");
+        counter.SnapshotVerifyCalls().ShouldBe(before, "a throttled login must not evaluate the password");
+    }
+
+    [Fact]
+    public async Task Login_Rehashes_Outdated_Argon2_Parameters()
+    {
+        var client = Client();
+        var email = NewEmail();
+        await ActivateAsync(client, email);
+
+        await using (var connection = new NpgsqlConnection(fixture.AppConnectionString))
+        {
+            await connection.OpenAsync(TestContext.Current.CancellationToken);
+            await using var command = new NpgsqlCommand(
+                "UPDATE identity.users SET password_hash = regexp_replace(password_hash, 'm=[0-9]+', 'm=8') WHERE normalized_email = @email",
+                connection);
+            command.Parameters.AddWithValue("email", email);
+            (await command.ExecuteNonQueryAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
+        }
+
+        var login = await LoginAsync(client, email, GoodPassword, "device-rh");
+        login.GetProperty("data").GetProperty("result").GetString().ShouldBe("authenticated");
+
+        string? hash = null;
+        await using (var connection = new NpgsqlConnection(fixture.AppConnectionString))
+        {
+            await connection.OpenAsync(TestContext.Current.CancellationToken);
+            await using var command = new NpgsqlCommand(
+                "SELECT password_hash FROM identity.users WHERE normalized_email = @email",
+                connection);
+            command.Parameters.AddWithValue("email", email);
+            hash = (string?)await command.ExecuteScalarAsync(TestContext.Current.CancellationToken);
+        }
+
+        hash.ShouldNotBeNull();
+        hash.ShouldNotContain("m=8,");
     }
 }

@@ -5,6 +5,9 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using AskVest.IntegrationTests.Infrastructure;
 using AskVest.Modules.Identity.Messaging;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Time.Testing;
 using Npgsql;
 using Shouldly;
 using Xunit;
@@ -282,5 +285,118 @@ public sealed class SessionApiTests(PostgresFixture fixture) : IAsyncLifetime
         using var second = await LogoutAsync(client, tokenB, sharedKey);
         second.StatusCode.ShouldBe(HttpStatusCode.OK);
         second.Headers.Contains("Idempotent-Replay").ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task Eleventh_Session_Evicts_The_Oldest()
+    {
+        var client = Client();
+        var email = NewEmail();
+        await ActivateAsync(client, email);
+
+        var sessionIds = new List<Guid>();
+        for (var i = 0; i < 11; i++)
+        {
+            var (_, _, sessionId) = await LoginForTokensAsync(client, email, "device-cap");
+            sessionIds.Add(sessionId);
+        }
+
+        using var response = await client.SendAsync(
+            new HttpRequestMessage(HttpMethod.Get, new Uri("/api/v1/account/sessions", UriKind.Relative))
+            {
+                Headers = { Authorization = new AuthenticationHeaderValue("Bearer", (await LoginForTokensAsync(client, email, "device-cap")).AccessToken) },
+            },
+            TestContext.Current.CancellationToken);
+        var json = await response.Content.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken);
+        var active = json.GetProperty("data").EnumerateArray()
+            .Select(s => s.GetProperty("id").GetGuid())
+            .ToList();
+
+        active.Count.ShouldBe(10);
+        active.ShouldNotContain(sessionIds[0], "the oldest session must be evicted");
+        active.ShouldContain(sessionIds[^1]);
+    }
+
+    [Fact]
+    public async Task Tokens_In_Wrong_Places_Are_Rejected()
+    {
+        var client = Client();
+        var email = NewEmail();
+        await ActivateAsync(client, email);
+        var (accessToken, refreshToken, _) = await LoginForTokensAsync(client, email);
+
+        using var refreshAsBearer = await client.SendAsync(
+            new HttpRequestMessage(HttpMethod.Get, new Uri("/api/v1/account/me", UriKind.Relative))
+            {
+                Headers = { Authorization = new AuthenticationHeaderValue("Bearer", refreshToken) },
+            },
+            TestContext.Current.CancellationToken);
+        refreshAsBearer.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+
+        using var queryString = await client.GetAsync(
+            new Uri($"/api/v1/account/me?access_token={Uri.EscapeDataString(accessToken)}", UriKind.Relative),
+            TestContext.Current.CancellationToken);
+        queryString.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+
+        var tampered = accessToken[..^1] + (accessToken[^1] == 'A' ? 'B' : 'A');
+        using var tamperedResponse = await client.SendAsync(
+            new HttpRequestMessage(HttpMethod.Get, new Uri("/api/v1/account/me", UriKind.Relative))
+            {
+                Headers = { Authorization = new AuthenticationHeaderValue("Bearer", tampered) },
+            },
+            TestContext.Current.CancellationToken);
+        tamperedResponse.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+    }
+
+    private async Task UseFakeClockAsync(FakeTimeProvider clock)
+    {
+        await _factory.DisposeAsync();
+        _factory = new AuthApiFactory(
+            fixture.AppConnectionString,
+            configureServices: services => services.Replace(
+                ServiceDescriptor.Singleton<TimeProvider>(_ => clock)));
+        _factory.CreateClient();
+    }
+
+    [Fact]
+    public async Task Refresh_Idle_And_Absolute_Expiries_Are_Enforced()
+    {
+        var clock = new FakeTimeProvider(TimeProvider.System.GetUtcNow());
+        await UseFakeClockAsync(clock);
+        var client = Client();
+
+        var email = NewEmail();
+        await ActivateAsync(client, email);
+        var (_, refreshToken, _) = await LoginForTokensAsync(client, email);
+
+        clock.Advance(TimeSpan.FromDays(31));
+        var idleExpired = await RefreshAsync(client, refreshToken);
+        idleExpired.GetProperty("error").GetProperty("code").GetString().ShouldBe("auth.refresh_invalid");
+
+        var (_, refreshToken2, _) = await LoginForTokensAsync(client, email);
+        clock.Advance(TimeSpan.FromDays(91));
+        var absoluteExpired = await RefreshAsync(client, refreshToken2);
+        absoluteExpired.GetProperty("error").GetProperty("code").GetString().ShouldBe("auth.refresh_invalid");
+    }
+
+    [Fact]
+    public async Task Access_Token_Expiry_Is_Enforced()
+    {
+        var clock = new FakeTimeProvider(TimeProvider.System.GetUtcNow());
+        await UseFakeClockAsync(clock);
+        var client = Client();
+
+        var email = NewEmail();
+        await ActivateAsync(client, email);
+        var (accessToken, _, _) = await LoginForTokensAsync(client, email);
+
+        clock.Advance(TimeSpan.FromMinutes(11));
+        using var response = await client.SendAsync(
+            new HttpRequestMessage(HttpMethod.Get, new Uri("/api/v1/account/me", UriKind.Relative))
+            {
+                Headers = { Authorization = new AuthenticationHeaderValue("Bearer", accessToken) },
+            },
+            TestContext.Current.CancellationToken);
+        response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 }

@@ -62,11 +62,9 @@ public sealed class AccessTokenService : IAccessTokenService
                 new Claim("sid", sessionId.ToString("D")),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.CreateVersion7().ToString("D")),
             ]),
-#pragma warning disable CA2000 // ownership transfers to the security key
             SigningCredentials = new SigningCredentials(
                 new ECDsaSecurityKey(CreateKey(_currentKeyPkcs8)),
                 SecurityAlgorithms.EcdsaSha256),
-#pragma warning restore CA2000
         };
         var signed = _handler.CreateToken(descriptor);
         return new IssuedAccessToken(signed, expiresAt);
@@ -117,13 +115,11 @@ public sealed class AccessTokenService : IAccessTokenService
 
     private List<SecurityKey> SigningKeys()
     {
-#pragma warning disable CA2000 // ownership transfers to the security keys
         var keys = new List<SecurityKey> { new ECDsaSecurityKey(CreateKey(_currentKeyPkcs8)) { KeyId = _currentKeyId } };
         if (_previousKeyPkcs8 is not null)
         {
             keys.Add(new ECDsaSecurityKey(CreateKey(_previousKeyPkcs8)) { KeyId = _previousKeyId });
         }
-#pragma warning restore CA2000
 
         return keys;
     }

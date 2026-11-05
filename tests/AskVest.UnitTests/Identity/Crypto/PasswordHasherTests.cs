@@ -56,6 +56,30 @@ public sealed class PasswordHasherTests
     }
 
     [Fact]
+    public async Task Production_Parameters_Meet_Duration_Bounds()
+    {
+        var options = CryptoTestFactory.FastOptions();
+        options.Argon2MemoryKiB = 19456;
+        options.Argon2Iterations = 2;
+        options.Argon2Parallelism = 1;
+        options.CredentialHashMaxConcurrency = 4;
+        var hasher = CryptoTestFactory.CreatePasswordHasher(options);
+
+        var hashStopwatch = System.Diagnostics.Stopwatch.StartNew();
+        var hash = await hasher.HashAsync("correct horse battery", Pepper, TestContext.Current.CancellationToken);
+        hashStopwatch.Stop();
+
+        var verifyStopwatch = System.Diagnostics.Stopwatch.StartNew();
+        (await hasher.VerifyAsync("correct horse battery", Pepper, hash, TestContext.Current.CancellationToken)).ShouldBeTrue();
+        verifyStopwatch.Stop();
+
+        TestContext.Current.TestOutputHelper?.WriteLine(
+            $"argon2id m=19456,t=2,p=1 hash={hashStopwatch.ElapsedMilliseconds}ms verify={verifyStopwatch.ElapsedMilliseconds}ms");
+        hashStopwatch.ElapsedMilliseconds.ShouldBeLessThan(5000);
+        verifyStopwatch.ElapsedMilliseconds.ShouldBeLessThan(5000);
+    }
+
+    [Fact]
     public void NeedsRehash_Detects_Old_Parameters()
     {
         var hasher = CryptoTestFactory.CreatePasswordHasher();

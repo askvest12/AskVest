@@ -17,10 +17,8 @@ public sealed class HaveIBeenPwnedBreachChecker(HttpClient httpClient)
     public async Task<bool> IsBreachedAsync(string password, CancellationToken cancellationToken = default)
     {
         // HIBP k-anonymity API requires SHA-1; not used for password storage.
-#pragma warning disable CA5350
         var sha1 = Convert.ToHexString(SHA1.HashData(Encoding.UTF8.GetBytes(password))).ToUpperInvariant();
         var prefix = sha1[..5];
-#pragma warning restore CA5350
         var suffix = sha1[5..];
 
         using var request = new HttpRequestMessage(HttpMethod.Get, ApiUrl + prefix);

@@ -21,7 +21,7 @@ public sealed class AccessTokenServiceTests
     [Fact]
     public async Task Issued_Token_Validates()
     {
-        using var service = CreateService();
+        var service = CreateService();
         var userId = Guid.CreateVersion7();
         var sessionId = Guid.CreateVersion7();
         var issued = service.Issue(userId, sessionId);
@@ -36,10 +36,24 @@ public sealed class AccessTokenServiceTests
     }
 
     [Fact]
+    public async Task Multiple_Issues_Succeed()
+    {
+        var service = CreateService();
+        var first = service.Issue(Guid.CreateVersion7(), Guid.CreateVersion7());
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+        var second = service.Issue(Guid.CreateVersion7(), Guid.CreateVersion7());
+
+        (await service.ValidateAsync(first.Token)).IsValid.ShouldBeTrue();
+        (await service.ValidateAsync(second.Token)).IsValid.ShouldBeTrue();
+    }
+
+    [Fact]
     public async Task Expired_Token_Reports_Expired()
     {
         var time = new Microsoft.Extensions.Time.Testing.FakeTimeProvider(TimeProvider.System.GetUtcNow());
-        using var service = CreateService(timeProvider: time);
+        var service = CreateService(timeProvider: time);
         var issued = service.Issue(Guid.CreateVersion7(), Guid.CreateVersion7());
 
         time.Advance(TimeSpan.FromMinutes(11));
@@ -52,7 +66,7 @@ public sealed class AccessTokenServiceTests
     [Fact]
     public async Task Tampered_Token_Is_Invalid()
     {
-        using var service = CreateService();
+        var service = CreateService();
         var issued = service.Issue(Guid.CreateVersion7(), Guid.CreateVersion7());
         var tampered = issued.Token[..^2] + (issued.Token[^2] == 'a' ? "bb" : "aa");
 
@@ -65,7 +79,7 @@ public sealed class AccessTokenServiceTests
     [Fact]
     public async Task Garbage_Token_Is_Invalid()
     {
-        using var service = CreateService();
+        var service = CreateService();
         (await service.ValidateAsync("not.a.jwt")).IsValid.ShouldBeFalse();
         (await service.ValidateAsync("")).IsValid.ShouldBeFalse();
     }
@@ -73,7 +87,7 @@ public sealed class AccessTokenServiceTests
     [Fact]
     public async Task None_Algorithm_Token_Is_Rejected()
     {
-        using var service = CreateService();
+        var service = CreateService();
         var header = Base64UrlEncode(System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(new { alg = "none", typ = "JWT" }));
         var payload = Base64UrlEncode(System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(new
         {
@@ -90,7 +104,7 @@ public sealed class AccessTokenServiceTests
     [Fact]
     public async Task Symmetric_Algorithm_Confusion_Is_Rejected()
     {
-        using var service = CreateService();
+        var service = CreateService();
         // HS256 token signed with a symmetric key must not validate against EC keys.
         var keyBytes = RandomNumberGenerator.GetBytes(32);
         var header = Base64UrlEncode(System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(new { alg = "HS256", typ = "JWT" }));
@@ -110,10 +124,10 @@ public sealed class AccessTokenServiceTests
     [Fact]
     public async Task Wrong_Issuer_Is_Rejected()
     {
-        using var service = CreateService();
+        var service = CreateService();
         var issued = service.Issue(Guid.CreateVersion7(), Guid.CreateVersion7());
         // Re-issue under different issuer options.
-        using var other = CreateService(options: new IdentityOptions
+        var other = CreateService(options: new IdentityOptions
         {
             AccessTokenIssuer = "evil-issuer",
             AccessTokenAudience = "askvest-test-api",
@@ -140,10 +154,10 @@ public sealed class AccessTokenServiceTests
     {
         var previousKey = CryptoTestFactory.GenerateEcKey();
         var secrets = CryptoTestFactory.Secrets(previousKey: previousKey);
-        using var service = CreateService(secrets: secrets);
+        var service = CreateService(secrets: secrets);
 
         // Token signed with the previous key validates; one with an unknown key does not.
-        using var previousOnly = CreateService(secrets: new IdentitySecretsOptions
+        var previousOnly = CreateService(secrets: new IdentitySecretsOptions
         {
             AccessTokenSigningKey = previousKey,
             PasswordPepper = secrets.PasswordPepper,
@@ -157,8 +171,8 @@ public sealed class AccessTokenServiceTests
     [Fact]
     public async Task Unknown_Key_Id_Is_Rejected()
     {
-        using var service = CreateService();
-        using var stranger = CreateService();
+        var service = CreateService();
+        var stranger = CreateService();
         var foreignToken = stranger.Issue(Guid.CreateVersion7(), Guid.CreateVersion7());
 
         (await service.ValidateAsync(foreignToken.Token)).IsValid.ShouldBeFalse();

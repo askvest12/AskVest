@@ -23,14 +23,13 @@ public sealed record AccessTokenValidation(bool IsValid, bool IsExpired, ClaimsP
     public static readonly AccessTokenValidation Expired = new(false, true, null);
 }
 
-public sealed class AccessTokenService : IAccessTokenService, IDisposable
+public sealed class AccessTokenService : IAccessTokenService
 {
     private readonly IdentityOptions _options;
     private readonly TimeProvider _timeProvider;
     private readonly JsonWebTokenHandler _handler = new();
-    private readonly TokenValidationParameters _validationParameters;
-    private readonly ECDsa _currentKey;
-    private readonly ECDsa? _previousKey;
+    private readonly byte[] _currentKeyPkcs8;
+    private readonly byte[]? _previousKeyPkcs8;
     private readonly string _currentKeyId;
     private readonly string? _previousKeyId;
 
@@ -38,32 +37,12 @@ public sealed class AccessTokenService : IAccessTokenService, IDisposable
     {
         _options = options.Value;
         _timeProvider = timeProvider;
-        _currentKey = LoadKey(secrets.Value.AccessTokenSigningKey!);
-        _currentKeyId = KeyId(_currentKey);
-        _previousKey = string.IsNullOrWhiteSpace(secrets.Value.AccessTokenSigningKeyPrevious)
+        _currentKeyPkcs8 = Convert.FromBase64String(RequireKey(secrets.Value.AccessTokenSigningKey));
+        _previousKeyPkcs8 = string.IsNullOrWhiteSpace(secrets.Value.AccessTokenSigningKeyPrevious)
             ? null
-            : LoadKey(secrets.Value.AccessTokenSigningKeyPrevious);
-        _previousKeyId = _previousKey is null ? null : KeyId(_previousKey);
-
-        var signingKeys = new List<SecurityKey> { new ECDsaSecurityKey(_currentKey) { KeyId = _currentKeyId } };
-        if (_previousKey is not null)
-        {
-            signingKeys.Add(new ECDsaSecurityKey(_previousKey) { KeyId = _previousKeyId });
-        }
-
-        _validationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidIssuer = _options.AccessTokenIssuer,
-            ValidateAudience = true,
-            ValidAudience = _options.AccessTokenAudience,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            RequireSignedTokens = true,
-            RequireExpirationTime = true,
-            ClockSkew = TimeSpan.Zero,
-            IssuerSigningKeys = signingKeys,
-        };
+            : Convert.FromBase64String(secrets.Value.AccessTokenSigningKeyPrevious);
+        _currentKeyId = KeyId(_currentKeyPkcs8);
+        _previousKeyId = _previousKeyPkcs8 is null ? null : KeyId(_previousKeyPkcs8);
     }
 
     public IssuedAccessToken Issue(Guid userId, Guid sessionId)
@@ -83,9 +62,11 @@ public sealed class AccessTokenService : IAccessTokenService, IDisposable
                 new Claim("sid", sessionId.ToString("D")),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.CreateVersion7().ToString("D")),
             ]),
+#pragma warning disable CA2000 // ownership transfers to the security key
             SigningCredentials = new SigningCredentials(
-                new ECDsaSecurityKey(_currentKey) { KeyId = _currentKeyId },
+                new ECDsaSecurityKey(CreateKey(_currentKeyPkcs8)),
                 SecurityAlgorithms.EcdsaSha256),
+#pragma warning restore CA2000
         };
         var signed = _handler.CreateToken(descriptor);
         return new IssuedAccessToken(signed, expiresAt);
@@ -95,7 +76,20 @@ public sealed class AccessTokenService : IAccessTokenService, IDisposable
     {
         try
         {
-            var result = await _handler.ValidateTokenAsync(token, _validationParameters);
+            var parameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidIssuer = _options.AccessTokenIssuer,
+                ValidateAudience = true,
+                ValidAudience = _options.AccessTokenAudience,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                RequireSignedTokens = true,
+                RequireExpirationTime = true,
+                ClockSkew = TimeSpan.Zero,
+                IssuerSigningKeys = SigningKeys(),
+            };
+            var result = await _handler.ValidateTokenAsync(token, parameters);
             if (!result.IsValid || result.ClaimsIdentity is null)
             {
                 return AccessTokenValidation.Invalid;
@@ -121,12 +115,25 @@ public sealed class AccessTokenService : IAccessTokenService, IDisposable
         }
     }
 
-    private static ECDsa LoadKey(string base64Pkcs8)
+    private List<SecurityKey> SigningKeys()
+    {
+#pragma warning disable CA2000 // ownership transfers to the security keys
+        var keys = new List<SecurityKey> { new ECDsaSecurityKey(CreateKey(_currentKeyPkcs8)) { KeyId = _currentKeyId } };
+        if (_previousKeyPkcs8 is not null)
+        {
+            keys.Add(new ECDsaSecurityKey(CreateKey(_previousKeyPkcs8)) { KeyId = _previousKeyId });
+        }
+#pragma warning restore CA2000
+
+        return keys;
+    }
+
+    private static ECDsa CreateKey(byte[] pkcs8)
     {
         var key = ECDsa.Create();
         try
         {
-            key.ImportPkcs8PrivateKey(Convert.FromBase64String(base64Pkcs8), out _);
+            key.ImportPkcs8PrivateKey(pkcs8, out _);
         }
         catch
         {
@@ -137,15 +144,15 @@ public sealed class AccessTokenService : IAccessTokenService, IDisposable
         return key;
     }
 
-    private static string KeyId(ECDsa key)
+    private static string KeyId(byte[] pkcs8)
     {
+        using var key = CreateKey(pkcs8);
         var publicKey = key.ExportSubjectPublicKeyInfo();
         return Convert.ToHexStringLower(SHA256.HashData(publicKey))[..16];
     }
 
-    public void Dispose()
-    {
-        _currentKey.Dispose();
-        _previousKey?.Dispose();
-    }
+    private static string RequireKey(string? key)
+        => string.IsNullOrWhiteSpace(key)
+            ? throw new InvalidOperationException("Access token signing key is not configured.")
+            : key;
 }

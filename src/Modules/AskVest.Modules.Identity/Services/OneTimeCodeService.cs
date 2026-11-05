@@ -8,6 +8,8 @@ using Microsoft.Extensions.Options;
 
 namespace AskVest.Modules.Identity.Services;
 
+public sealed record IssuedOneTimeCode(string Code, Guid Id, DateTimeOffset ExpiresAt);
+
 public sealed class OneTimeCodeService(
     IdentityDbContext db,
     IOptions<IdentityOptions> options,
@@ -17,7 +19,7 @@ public sealed class OneTimeCodeService(
 {
     private readonly IdentityOptions _options = options.Value;
 
-    public async Task<string> IssueAsync(
+    public async Task<IssuedOneTimeCode> IssueAsync(
         Guid userId,
         OneTimeCodePurpose purpose,
         CodeDestinationType destinationType,
@@ -46,7 +48,7 @@ public sealed class OneTimeCodeService(
             CreatedAt = timeProvider.GetUtcNow(),
         };
         db.OneTimeCodes.Add(entity);
-        return code;
+        return new IssuedOneTimeCode(code, entity.Id, entity.ExpiresAt);
     }
 
     public async Task<bool> CanSendAsync(
@@ -70,11 +72,27 @@ public sealed class OneTimeCodeService(
         return codes.Count(created => created > hourAgo) < _options.CodesPerDestinationPerHour;
     }
 
-    public async Task<bool> TryVerifyAsync(
+    public Task<bool> TryVerifyAsync(
         Guid userId,
         OneTimeCodePurpose purpose,
         string code,
         CancellationToken cancellationToken = default)
+        => TryVerifyCoreAsync(userId, purpose, code, codeId: null, cancellationToken);
+
+    public Task<bool> TryVerifyCodeAsync(
+        Guid codeId,
+        Guid userId,
+        OneTimeCodePurpose purpose,
+        string code,
+        CancellationToken cancellationToken = default)
+        => TryVerifyCoreAsync(userId, purpose, code, codeId, cancellationToken);
+
+    private async Task<bool> TryVerifyCoreAsync(
+        Guid userId,
+        OneTimeCodePurpose purpose,
+        string code,
+        Guid? codeId,
+        CancellationToken cancellationToken)
     {
         var now = timeProvider.GetUtcNow();
         var candidate = await db.Database.SqlQuery<Guid>($@"
@@ -86,6 +104,7 @@ public sealed class OneTimeCodeService(
                   AND purpose = {purpose.ToString()}
                   AND consumed_at IS NULL
                   AND expires_at > {now}
+                  AND ({codeId}::uuid IS NULL OR id = {codeId})
                 ORDER BY created_at DESC
                 LIMIT 1
             )
@@ -100,9 +119,9 @@ public sealed class OneTimeCodeService(
             return false;
         }
 
-        var codeId = candidate[0];
+        var matchedId = candidate[0];
         var storedHash = await db.Database
-            .SqlQuery<string>($"SELECT code_hash AS \"Value\" FROM identity.one_time_codes WHERE id = {codeId}")
+            .SqlQuery<string>($"SELECT code_hash AS \"Value\" FROM identity.one_time_codes WHERE id = {matchedId}")
             .SingleAsync(cancellationToken);
 
         if (!codeHasher.Verify(userId, purpose, code, storedHash))
@@ -113,7 +132,7 @@ public sealed class OneTimeCodeService(
         var consumed = await db.Database.ExecuteSqlAsync($@"
             UPDATE identity.one_time_codes
             SET consumed_at = {now}
-            WHERE id = {codeId}
+            WHERE id = {matchedId}
               AND consumed_at IS NULL", cancellationToken);
         return consumed == 1;
     }

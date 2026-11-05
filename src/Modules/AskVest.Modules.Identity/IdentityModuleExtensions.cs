@@ -48,6 +48,7 @@ public static class IdentityModuleExtensions
         services.AddSingleton<AskVest.Modules.Identity.Crypto.IPinHasher, AskVest.Modules.Identity.Crypto.PinHasher>();
         services.AddSingleton<AskVest.Modules.Identity.Crypto.ISecureRandom, AskVest.Modules.Identity.Crypto.SecureRandom>();
         services.AddSingleton<AskVest.Modules.Identity.Crypto.IOneTimeCodeHasher, AskVest.Modules.Identity.Crypto.OneTimeCodeHasher>();
+        services.AddSingleton<AskVest.Modules.Identity.Crypto.IKeyedHasher, AskVest.Modules.Identity.Crypto.KeyedHasher>();
         services.AddSingleton<AskVest.Modules.Identity.Crypto.IAccessTokenService, AskVest.Modules.Identity.Crypto.AccessTokenService>();
         services.AddSingleton<AskVest.Modules.Identity.Crypto.IBreachPasswordChecker, AskVest.Modules.Identity.Crypto.NullBreachPasswordChecker>();
         services.AddSingleton<AskVest.Modules.Identity.Crypto.IPasswordPolicy, AskVest.Modules.Identity.Crypto.PasswordPolicy>();
@@ -81,6 +82,10 @@ public static class IdentityModuleExtensions
         services.AddScoped<OneTimeCodeService>();
         services.AddScoped<SignUpService>();
         services.AddScoped<EmailVerificationService>();
+        services.AddScoped<ThrottleService>();
+        services.AddScoped<SessionService>();
+        services.AddScoped<LoginService>();
+        services.AddScoped<VerifyDeviceService>();
         services.AddValidatorsFromAssembly(typeof(IdentityModuleExtensions).Assembly);
 
         services.AddSingleton<MessageChannel>();

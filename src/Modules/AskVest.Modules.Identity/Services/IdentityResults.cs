@@ -23,14 +23,14 @@ internal static class IdentityResults
         return Results.Json(payload);
     }
 
-    public static IResult FromResult(Result result, HttpContext httpContext, string successMessage)
+    public static IResult FromResult(Result result, HttpContext httpContext, string successMessage, TimeSpan? retryAfter = null)
     {
         if (result.IsSuccess)
         {
             return Ok<object?>(null, successMessage, httpContext);
         }
 
-        return Error(result.Error!, httpContext);
+        return Error(result.Error!, httpContext, retryAfter);
     }
 
     public static IResult FromResult<TData>(Result<TData> result, HttpContext httpContext, string successMessage)
@@ -43,7 +43,7 @@ internal static class IdentityResults
         return Error(result.Error!, httpContext);
     }
 
-    public static IResult Error(Error error, HttpContext httpContext)
+    public static IResult Error(Error error, HttpContext httpContext, TimeSpan? retryAfter = null)
     {
         var status = StatusFor(error.Type);
         var payload = new
@@ -58,7 +58,13 @@ internal static class IdentityResults
             },
             correlationId = CorrelationId(httpContext),
         };
-        return Results.Json(payload, statusCode: status);
+        var result = Results.Json(payload, statusCode: status);
+        if (retryAfter is { } delay)
+        {
+            httpContext.Response.Headers.RetryAfter = ((int)Math.Ceiling(delay.TotalSeconds)).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        return result;
     }
 
     private static string CorrelationId(HttpContext context)

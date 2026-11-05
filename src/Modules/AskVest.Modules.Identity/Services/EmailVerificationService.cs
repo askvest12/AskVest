@@ -79,9 +79,9 @@ public sealed class EmailVerificationService(
 
         if (await oneTimeCodes.CanSendAsync(user.Id, OneTimeCodePurpose.EmailVerification, email.Value, cancellationToken))
         {
-            var code = await oneTimeCodes.IssueAsync(
+            var issued = await oneTimeCodes.IssueAsync(
                 user.Id, OneTimeCodePurpose.EmailVerification, CodeDestinationType.Email, email.Value, cancellationToken: cancellationToken);
-            messageChannel.TryEnqueue(new QueuedEmail(MessageTemplates.EmailVerification(email.Value, code)));
+            messageChannel.TryEnqueue(new QueuedEmail(MessageTemplates.EmailVerification(email.Value, issued.Code)));
             await db.SaveChangesAsync(cancellationToken);
         }
 

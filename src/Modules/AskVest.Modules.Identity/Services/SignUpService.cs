@@ -162,10 +162,10 @@ public sealed class SignUpService(
     {
         if (await oneTimeCodes.CanSendAsync(user.Id, OneTimeCodePurpose.EmailVerification, normalizedEmail, cancellationToken))
         {
-            var code = await oneTimeCodes.IssueAsync(
+            var issued = await oneTimeCodes.IssueAsync(
                 user.Id, OneTimeCodePurpose.EmailVerification, CodeDestinationType.Email, normalizedEmail,
                 cancellationToken: cancellationToken);
-            messageChannel.TryEnqueue(new QueuedEmail(MessageTemplates.EmailVerification(normalizedEmail, code)));
+            messageChannel.TryEnqueue(new QueuedEmail(MessageTemplates.EmailVerification(normalizedEmail, issued.Code)));
         }
 
         await db.SaveChangesAsync(cancellationToken);

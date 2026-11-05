@@ -34,6 +34,22 @@ public static class AuthEndpoints
             .WithMetadata(new RequiresIdempotencyAttribute())
             .AllowAnonymous()
             .RequireRateLimiting("strict");
+
+        group.MapPost("/auth/login", LoginAsync)
+            .WithName("Login")
+            .WithSummary("Sign in with email and password, or receive a device verification challenge.")
+            .WithTags("Auth")
+            .WithMetadata(new IdempotencyExemptAttribute(), new ReturnsSecretsAttribute())
+            .AllowAnonymous()
+            .RequireRateLimiting("strict");
+
+        group.MapPost("/auth/verify-device", VerifyDeviceAsync)
+            .WithName("VerifyDevice")
+            .WithSummary("Complete device verification and receive a session.")
+            .WithTags("Auth")
+            .WithMetadata(new IdempotencyExemptAttribute(), new ReturnsSecretsAttribute())
+            .AllowAnonymous()
+            .RequireRateLimiting("strict");
     }
 
     private static async Task<IResult> SignUpAsync(
@@ -80,4 +96,72 @@ public static class AuthEndpoints
             cancellationToken);
         return IdentityResults.FromResult(result, httpContext, "If this email can be verified, a verification code has been sent.");
     }
+
+    private static async Task<IResult> LoginAsync(
+        LoginRequest request,
+        HttpContext httpContext,
+        LoginService loginService,
+        CancellationToken cancellationToken)
+    {
+        var attempt = await loginService.LoginAsync(
+            request,
+            httpContext.Connection.RemoteIpAddress?.ToString(),
+            httpContext.Request.Headers.UserAgent.ToString(),
+            httpContext.TraceIdentifier,
+            cancellationToken);
+        return ToLoginResult(attempt, httpContext);
+    }
+
+    private static async Task<IResult> VerifyDeviceAsync(
+        VerifyDeviceRequest request,
+        HttpContext httpContext,
+        VerifyDeviceService verifyDeviceService,
+        CancellationToken cancellationToken)
+    {
+        var attempt = await verifyDeviceService.VerifyAsync(
+            request,
+            httpContext.Connection.RemoteIpAddress?.ToString(),
+            httpContext.Request.Headers.UserAgent.ToString(),
+            httpContext.TraceIdentifier,
+            cancellationToken);
+        return ToLoginResult(attempt, httpContext);
+    }
+
+    private static IResult ToLoginResult(LoginAttempt attempt, HttpContext httpContext)
+    {
+        if (attempt.RetryAfter is { } retryAfter)
+        {
+            return IdentityResults.Error(attempt.Failure!, httpContext, retryAfter);
+        }
+
+        if (attempt.Outcome is { IsSuccess: true } result && result.Value is { } outcome)
+        {
+            return outcome switch
+            {
+                LoginAuthenticated authenticated => IdentityResults.Ok(LoginPayload(authenticated.Session), "Signed in.", httpContext),
+                LoginDeviceVerificationRequired challenge => IdentityResults.Ok(
+                    new
+                    {
+                        result = "device_verification_required",
+                        challengeId = challenge.ChallengeId,
+                        expiresAt = challenge.ExpiresAt,
+                    },
+                    "Device verification required.",
+                    httpContext),
+                _ => IdentityResults.Error(attempt.Failure!, httpContext),
+            };
+        }
+
+        return IdentityResults.Error(attempt.Failure!, httpContext);
+    }
+
+    private static object LoginPayload(IssuedSession session) => new
+    {
+        result = "authenticated",
+        accessToken = session.AccessToken,
+        refreshToken = session.RefreshToken,
+        accessTokenExpiresAt = session.AccessTokenExpiresAt,
+        refreshIdleExpiresAt = session.RefreshIdleExpiresAt,
+        sessionId = session.SessionId,
+    };
 }

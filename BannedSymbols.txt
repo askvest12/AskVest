@@ -1,0 +1,16 @@
+P:System.DateTime.Now;Use TimeProvider instead of DateTime.Now.
+P:System.DateTime.UtcNow;Use TimeProvider instead of DateTime.UtcNow.
+P:System.DateTime.Today;Use TimeProvider instead of DateTime.Today.
+P:System.DateTimeOffset.Now;Use TimeProvider instead of DateTimeOffset.Now.
+P:System.DateTimeOffset.UtcNow;Use TimeProvider instead of DateTimeOffset.UtcNow.
+M:System.Guid.NewGuid();Use Guid.CreateVersion7() instead of Guid.NewGuid().
+T:System.Random;Use RandomNumberGenerator or an injected seam instead of System.Random.
+T:System.Console;Use ILogger instead of System.Console.
+M:System.Threading.Thread.Sleep(System.Int32);Do not block; use async waits.
+M:System.Threading.Tasks.Task.Wait();Do not block; await instead.
+M:System.Threading.Tasks.Task.Wait(System.Int32);Do not block; await instead.
+M:System.Threading.Tasks.Task.Wait(System.TimeSpan);Do not block; await instead.
+M:System.Threading.Tasks.Task.Wait(System.Int32,System.Threading.CancellationToken);Do not block; await instead.
+M:Microsoft.EntityFrameworkCore.RelationalQueryableExtensions.FromSqlRaw``1(System.Linq.IQueryable{``0},System.String,System.Object[]);Use FromSqlInterpolated or another parameterized API; raw SQL strings are banned.
+M:Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.ExecuteSqlRaw(Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade,System.String,System.Object[]);Use ExecuteSqlInterpolated or another parameterized API; raw SQL strings are banned.
+M:Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.ExecuteSqlRawAsync(Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade,System.String,System.Object,System.Threading.CancellationToken);Use ExecuteSqlInterpolatedAsync or another parameterized API; raw SQL strings are banned.

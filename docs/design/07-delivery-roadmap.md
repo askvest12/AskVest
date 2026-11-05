@@ -5,7 +5,7 @@ Phases 0 to 17. Each phase ends with the Definition of Done in `CLAUDE.md`.
 | Phase | Scope | Depends on |
 |---|---|---|
 | 0 | Design, hardened foundation, containers, CI (this phase) | none |
-| 1 | Identity and access: users, credentials, sessions, devices, PIN | 0 |
+| 1 | Identity and access: users, credentials, sessions, devices, PIN (done) | 0 |
 | 2 | Compliance: country eligibility, KYC, consents, Practice/Real mode switch | 1 |
 | 3 | Ledger: accounts, journals, balances, outbox, Practice and Real books | 2 |
 | 4 | Catalog: companies, tokens, issuers, rights and risk disclosures | 3 |

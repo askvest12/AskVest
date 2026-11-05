@@ -20,6 +20,10 @@ AI-assisted investing in tokenized stocks and ETFs for Africans. Modular monolit
 14. **Every step ends with** a clean build, passing tests and a Conventional Commit.
 15. **Be honest in reports.** If something could not be verified, say so.
 16. **No em dashes** in code, comments, docs or commit messages.
+17. **Default-deny authorization.** Every endpoint requires an authenticated active account unless it is on the anonymous allow-list in `docs/design/08-identity-module.md` with a written reason. Guarded by an architecture test.
+18. **Ownership filtering.** Every query for a user-owned resource filters by owner. Another user's resource answers `resource.not_found`, never `auth.forbidden`.
+19. **Secrets never enter idempotency storage.** Endpoints returning tokens, codes or grants carry the returns-secrets tag and are exempt from replay storage; the tag and the idempotency requirement never combine.
+20. **Modules follow `docs/design/09-module-blueprint.md`.** One project per module under `src/Modules`, contracts namespace only, own schema and history table.
 
 ## Solution layout
 

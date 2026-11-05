@@ -87,3 +87,11 @@ stateDiagram-v2
 ```
 
 `real_money_enabled` is terminal in this model; demotion is handled as a restriction flow in Phase 2, not a silent flip.
+
+## Identity state machines
+
+- User: `pending_verification` to `active` on email code verification; `active` to `deletion_requested` on deletion request; `deletion_requested` to `anonymized` by the scheduled job; `active` to `disabled` by later admin tooling. `anonymized` is terminal.
+- Session: created to `revoked` with a reason. Revocation is final.
+- Device: created untrusted to `trusted` on first verified login or device code; `trusted` to `revoked`. Revoking a device revokes its sessions.
+- One-time code: issued to `consumed` or `expired`; attempts increment atomically up to the cap. Single use.
+- Step-up grant: issued to `consumed` or `expired`; 120 second life, single use.

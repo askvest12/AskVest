@@ -47,6 +47,20 @@ Pattern `^[a-z]+(_[a-z]+)*(\.[a-z]+(_[a-z]+)*)+$`.
 | `business.rule_violated` | 422 | Domain rule rejected the command |
 | `auth.unauthenticated` | 401 | No valid credentials (Phase 1) |
 | `auth.forbidden` | 403 | Authenticated but not allowed (Phase 1) |
+| `auth.invalid_credentials` | 401 | Wrong email or password, or unknown email (identical) |
+| `auth.email_not_verified` | 403 | Password correct, email not yet verified |
+| `auth.account_disabled` | 403 | Account disabled |
+| `auth.account_pending_deletion` | 403 | Deletion cooling-off in progress |
+| `auth.invalid_code` | 400 | One-time code wrong, expired, consumed or exhausted |
+| `auth.token_expired` | 401 | Access token past its lifetime |
+| `auth.session_revoked` | 401 | Session revoked or expired |
+| `auth.refresh_invalid` | 401 | Refresh token unknown, expired, rotated (theft) or session dead |
+| `auth.refresh_conflict` | 409 | Rotated refresh token replayed inside grace window |
+| `auth.pin_not_set` | 422 | No PIN configured for this account |
+| `auth.pin_invalid` | 422 | PIN wrong |
+| `auth.pin_locked` | 429 | PIN locked, `Retry-After` set |
+| `auth.step_up_invalid` | 403 | Step-up grant missing, expired, consumed, wrong purpose, session or binding |
+| `account.deletion_blocked` | 422 | A registered blocker prevents deletion, reasons in details |
 | `idempotency.key_missing` | 400 | State-changing call without `Idempotency-Key` |
 | `idempotency.key_invalid` | 400 | Key fails the format rule |
 | `idempotency.key_reused` | 422 | Same key, different request fingerprint |
@@ -69,6 +83,10 @@ Version in the path (`/api/v1`). No version library. Breaking changes require `/
 - Unknown request properties are rejected (`UnmappedMemberHandling.Disallow`).
 - Duplicate JSON properties are rejected.
 - Request body limit: 1 MB.
+
+## Authentication
+
+Bearer JWT (ES256) in the `Authorization` header. Missing or invalid credentials return the standard 401 envelope with `WWW-Authenticate: Bearer`. Tokens in query strings are never accepted. Authenticated endpoints resolve the session by primary key on every request; revocation is immediate.
 
 ## Pagination
 

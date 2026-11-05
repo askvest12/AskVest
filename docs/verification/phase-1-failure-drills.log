@@ -1,0 +1,31 @@
+===================================================================
+AskVest Phase 1 - failure drills
+Captured: 2026-11-05T13:33:39Z  Target: http://localhost:5082
+===================================================================
+
+### Drill 1 - database stopped: login must fail cleanly
+{"success":false,"message":"An unexpected error occurred.","data":null,"error":{"code":"server.unexpected","details":null},"correlationId":"01a1abea5299746d9271e2a48f936ded"}
+HTTP 500
+docker ps postgres state: exited
+after restart, health: 200
+
+### Drill 2 - Mailpit stopped: sign-up stays uniform, failure logged
+{"success":true,"message":"If this email can be verified, a verification code has been sent.","data":null,"error":null,"correlationId":"01a1abea766676159924b5d2f67a0fd5"}
+HTTP 200
+mailpit state after restart: running
+
+--- api log lines mentioning mail/transport/smtp (secrets check below) ---
+{"@t":"2026-11-05T13:33:52.2181917Z","@mt":"Message delivery attempt {Attempt}/{MaxAttempts} failed; retrying in {DelayMs}ms.","@l":"Warning","@x":"System.Net.Sockets.SocketException (00000001, 11): Resource temporarily unavailable\n   at System.Net.Dns.GetHostEntryOrAddressesCore(String hostName, Boolean justAddresses, AddressFamily addressFamily, Nullable`1 activityOrDefault)\n   at System.Net.Dns.<>c.<GetHostEntryOrAddressesCoreAsync>b__34_0(Object s, NameResolutionActivity activity)\n   at System.Net.Dns.<>c__DisplayClass40_0`1.<RunAsync>b__0(Task <p0>, Object <p1>)\n   at System.Threading.Tasks.ContinuationResultTaskFromTask`1.InnerInvoke()\n   at System.Threading.ExecutionContext.RunFromThreadPoolDispatchLoop(Thread threadPoolThread, ExecutionContext executionContext, ContextCallback callback, Object state)\n--- End of stack trace from previous location ---\n   at System.Threading.ExecutionContext.RunFromThreadPoolDispatchLoop(Thread threadPoolThread, ExecutionContext executionContext, ContextCallback callback, Object state)\n   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)\n--- End of stack trace from previous location ---\n   at MailKit.Net.SocketUtils.ConnectAsync(String host, Int32 port, IPEndPoint localEndPoint, CancellationToken cancellationToken)\n   at MailKit.Net.SocketUtils.ConnectAsync(String host, Int32 port, IPEndPoint localEndPoint, Int32 timeout, CancellationToken cancellationToken)\n   at MailKit.MailService.ConnectNetworkAsync(String host, Int32 port, CancellationToken cancellationToken)\n   at MailKit.Net.Smtp.SmtpClient.ConnectAsync(String host, Int32 port, SecureSocketOptions options, CancellationToken cancellationToken)\n   at AskVest.Modules.Identity.Messaging.SmtpEmailTransport.SendAsync(EmailMessage message, CancellationToken cancellationToken) in /src/src/Modules/AskVest.Modules.Identity/Messaging/SmtpEmailTransport.cs:line 28\n   at AskVest.Modules.Identity.Messaging.MessageDispatchWorker.DispatchWithRetriesAsync(OutboundMessage message, CancellationToken cancellationToken) in /src/src/Modules/AskVest.Modules.Identity/Messaging/MessageDispatchWorker.cs:line 42","Attempt":1,"MaxAttempts":3,"DelayMs":1000,"SourceContext":"AskVest.Modules.Identity.Messaging.MessageDispatchWorker"}
+
+### Drill 1 (re-run after fix) - database stopped: login must return service.unavailable
+{"success":false,"message":"The service is temporarily unavailable.","data":null,"error":{"code":"service.unavailable","details":null},"correlationId":"01a1abee3abc75d8a3359114df892e2b"}
+HTTP 503
+after restart, health: 200
+
+### Drill 3 - API restart: existing refresh tokens must still work
+refresh token acquired: <redacted>
+--- restarting api container ---
+api health after restart: {"success":true,"message":"Service is live.","data":{"status":"Healthy"},"error"
+--- refresh with pre-restart token ---
+{"success":true,"message":"Token refreshed.","data":{"result":"authenticated","accessToken":"<redacted>","refreshToken":"<redacted>","accessTokenExpiresAt":"2026-11-05T13:48:14.3564753Z","refreshIdleExpiresAt":"2026-12-05T13:38:13.9938000Z","sessionId":"01a1abee-69b5-7324-b36a-209c0102ecfb"},"error":null,"correlationId":"01a1abee75397e949ed207627101adf4"}
+HTTP 200

@@ -1,0 +1,138 @@
+===================================================================
+AskVest Phase 1 - raw HTTP evidence
+Captured: 2026-11-05T13:18:16Z
+Target:   http://localhost:5082   Mailpit: http://localhost:18026
+User:     <redacted> (unique per run)
+Note:     access/refresh/grant tokens, one-time codes, passwords,
+          PINs, emails and phone numbers are redacted as <redacted>.
+===================================================================
+
+### 0. Liveness
+HTTP 200
+{"success":true,"message":"Service is live.","data":{"status":"Healthy"},"error":null,"correlationId":"01a1abdc2eaa76a0b0d79a046b35c89e"}
+
+### 1. Sign-up (uniform success envelope)
+HTTP 200
+{"success":true,"message":"If this email can be verified, a verification code has been sent.","data":null,"error":null,"correlationId":"01a1abdc2ebb79ba86e609f86ba3e7f9"}
+
+### 2. Verification code retrieved from Mailpit (value redacted)
+verify code retrieved: <redacted> (6 digits)
+
+### 3. Verify email
+HTTP 200
+{"success":true,"message":"Email verified.","data":null,"error":null,"correlationId":"01a1abdc2f4b7fbea4aee925e49d409f"}
+
+### 4. Login on first device
+HTTP 200
+{"success":true,"message":"Signed in.","data":{"result":"authenticated","accessToken":"<redacted>","refreshToken":"<redacted>","accessTokenExpiresAt":"2026-11-05T13:28:16.5095133Z","refreshIdleExpiresAt":"2026-12-05T13:18:16.5086820Z","sessionId":"01a1abdc-2fbd-73ab-b210-21da0cddf5ad"},"error":null,"correlationId":"01a1abdc2f7072848ef0c089317cd728"}
+
+### 5. GET /api/v1/account/me (first device)
+HTTP 200
+{"success":true,"message":"Profile loaded.","data":{"id":"01a1abdc-2ec0-7e20-864b-5081257f50de","email":"<redacted>","emailVerified":true,"maskedPhone":null,"phoneVerified":false,"hasPin":false,"status":"Active","roles":[],"deletionScheduledFor":null},"error":null,"correlationId":"01a1abdc2fd57a79b7d861fc50456649"}
+
+### 6. Login on second device -> device_verification_required
+HTTP 200
+{"success":true,"message":"Device verification required.","data":{"result":"device_verification_required","challengeId":"01a1abdc-3039-71dc-a8d9-32a55629d4eb","expiresAt":"2026-11-05T13:28:16.6334318Z"},"error":null,"correlationId":"01a1abdc2fe7746292b49b2db8c77e8f"}
+
+### 7. Device code retrieved from Mailpit (value redacted)
+device code retrieved: <redacted> (6 digits)
+
+### 8. Verify device -> tokens for device B
+HTTP 200
+{"success":true,"message":"Signed in.","data":{"result":"authenticated","accessToken":"<redacted>","refreshToken":"<redacted>","accessTokenExpiresAt":"2026-11-05T13:28:16.7059652Z","refreshIdleExpiresAt":"2026-12-05T13:18:16.7051100Z","sessionId":"01a1abdc-3081-7a18-8ce8-b0660823f92c"},"error":null,"correlationId":"01a1abdc307876baa6ad7876b25ebc47"}
+
+### 9. Refresh rotation: refresh #1 (device A)
+HTTP 200
+{"success":true,"message":"Token refreshed.","data":{"result":"authenticated","accessToken":"<redacted>","refreshToken":"<redacted>","accessTokenExpiresAt":"2026-11-05T13:28:16.7415535Z","refreshIdleExpiresAt":"2026-12-05T13:18:16.7368244Z","sessionId":"01a1abdc-2fbd-73ab-b210-21da0cddf5ad"},"error":null,"correlationId":"01a1abdc30a07d049b5dc9615c5fa676"}
+
+### 10. Refresh rotation: refresh #2
+HTTP 200
+{"success":true,"message":"Token refreshed.","data":{"result":"authenticated","accessToken":"<redacted>","refreshToken":"<redacted>","accessTokenExpiresAt":"2026-11-05T13:28:16.7695722Z","refreshIdleExpiresAt":"2026-12-05T13:18:16.7657756Z","sessionId":"01a1abdc-2fbd-73ab-b210-21da0cddf5ad"},"error":null,"correlationId":"01a1abdc30bd7439bc3bf0324ddd4cba"}
+
+### 11. Reuse of already-rotated refresh token -> auth.refresh_conflict
+HTTP 409
+{"success":false,"message":"The request conflicts with current state.","data":null,"error":{"code":"auth.refresh_conflict","details":null},"correlationId":"01a1abdc30d6754f9abc1e0320142370"}
+
+### 12. List sessions and devices (device A)
+HTTP 200
+{"success":true,"message":"Sessions loaded.","data":[{"id":"01a1abdc-2fbd-73ab-b210-21da0cddf5ad","deviceId":"01a1abdc-2fbb-7a39-909e-9178de50ae34","installationId":"evidence-dev-a","deviceName":"Evidence Phone A","platform":"android","createdAt":"2026-11-05T13:18:16.5086820Z","lastUsedAt":"2026-11-05T13:18:16.7657750Z","absoluteExpiresAt":"2027-02-03T13:18:16.5086820Z","isCurrent":true,"coarseIp":"::","userAgent":"curl/8.18.0"},{"id":"01a1abdc-3081-7a18-8ce8-b0660823f92c","deviceId":"01a1abdc-3038-7acb-be2f-825f7697795f","installationId":"evidence-dev-b","deviceName":"Evidence Phone B","platform":"ios","createdAt":"2026-11-05T13:18:16.7051100Z","lastUsedAt":"2026-11-05T13:18:16.7051100Z","absoluteExpiresAt":"2027-02-03T13:18:16.7051100Z","isCurrent":false,"coarseIp":"::","userAgent":"curl/8.18.0"}],"error":null,"correlationId":"01a1abdc30e371759dd92f7c5cd40df6"}
+HTTP 200
+{"success":true,"message":"Devices loaded.","data":[{"id":"01a1abdc-3038-7acb-be2f-825f7697795f","installationId":"evidence-dev-b","platform":"ios","deviceName":"Evidence Phone B","appVersion":null,"firstSeenAt":"2026-11-05T13:18:16.6318950Z","lastSeenAt":"2026-11-05T13:18:16.6318950Z","trusted":true,"current":false},{"id":"01a1abdc-2fbb-7a39-909e-9178de50ae34","installationId":"evidence-dev-a","platform":"android","deviceName":"Evidence Phone A","appVersion":null,"firstSeenAt":"2026-11-05T13:18:16.5073280Z","lastSeenAt":"2026-11-05T13:18:16.5073280Z","trusted":true,"current":true}],"error":null,"correlationId":"01a1abdc30f171dcaec08c025e013cdd"}
+
+### 13. Revoke device B
+HTTP 200
+{"success":true,"message":"Device revoked.","data":null,"error":null,"correlationId":"01a1abdc310976b08061fd02a73a8dc6"}
+
+### 14. Device B token is dead immediately
+HTTP 401
+{"success":false,"message":"Authentication is required.","data":null,"error":{"code":"auth.session_revoked","details":null},"correlationId":"0HNPR7RV8BVG0:00000001"}
+
+### 15. Change password (kills other sessions)
+HTTP 200
+{"success":true,"message":"Password changed.","data":null,"error":null,"correlationId":"01a1abdc3137772a949d2e2f0c6837e6"}
+
+### 16. Forgot password -> uniform success
+HTTP 200
+{"success":true,"message":"If this email can be reset, a reset code has been sent.","data":null,"error":null,"correlationId":"01a1abdc31f37d348e30ece80f20e81f"}
+
+### 17. Reset code retrieved from Mailpit (value redacted)
+reset code retrieved: <redacted> (6 digits)
+
+### 18. Reset password
+HTTP 200
+{"success":true,"message":"Password updated.","data":null,"error":null,"correlationId":"01a1abdc322b75d69d015b19da8d1d85"}
+
+### 19. Old session is dead after reset
+HTTP 401
+{"success":false,"message":"Authentication is required.","data":null,"error":{"code":"auth.session_revoked","details":null},"correlationId":"0HNPR7RV8BVG4:00000001"}
+
+### 20. Re-login on device A for remaining steps
+HTTP 200
+{"success":true,"message":"Signed in.","data":{"result":"authenticated","accessToken":"<redacted>","refreshToken":"<redacted>","accessTokenExpiresAt":"2026-11-05T13:28:17.3345515Z","refreshIdleExpiresAt":"2026-12-05T13:18:17.3339732Z","sessionId":"01a1abdc-32f6-78ec-8a6b-13af4a7e216c"},"error":null,"correlationId":"01a1abdc32a37160871720f088934343"}
+
+### 21. Set PIN
+HTTP 200
+{"success":true,"message":"PIN set.","data":null,"error":null,"correlationId":"01a1abdc331e7e0881fec5609ee16af0"}
+
+### 22. Issue step-up grant for delete_account
+HTTP 200
+{"success":true,"message":"Step-up grant issued.","data":{"grantToken":"<redacted>","expiresAt":"2026-11-05T13:20:17.6084656Z"},"error":null,"correlationId":"01a1abdc33c37d82a621758727b46c1d"}
+
+### 23. Request account deletion with grant
+HTTP 200
+{"success":true,"message":"Account deletion scheduled.","data":null,"error":null,"correlationId":"01a1abdc341c7bd08430713ce6f651f2"}
+
+### 24. Reuse the same grant -> rejected (single use)
+HTTP 403
+{"success":false,"message":"The account is pending deletion.","data":null,"error":{"code":"auth.account_pending_deletion","details":null},"correlationId":"0HNPR7RV8BVG9:00000001"}
+
+### 25. Pending deletion restricts sessions list
+HTTP 403
+{"success":false,"message":"The account is pending deletion.","data":null,"error":{"code":"auth.account_pending_deletion","details":null},"correlationId":"0HNPR7RV8BVGA:00000001"}
+
+### 26. /account/me still reachable, status=DeletionRequested
+HTTP 200
+{"success":true,"message":"Profile loaded.","data":{"id":"01a1abdc-2ec0-7e20-864b-5081257f50de","email":"<redacted>","emailVerified":true,"maskedPhone":null,"phoneVerified":false,"hasPin":true,"status":"DeletionRequested","roles":[],"deletionScheduledFor":"2026-12-05T13:18:17.7095700Z"},"error":null,"correlationId":"01a1abdc349977058509ed538f8756d2"}
+
+### 27. Cancel deletion
+HTTP 200
+{"success":true,"message":"Account deletion cancelled.","data":null,"error":null,"correlationId":"01a1abdc34ab72e1832b7425ebf55555"}
+
+### 28. Access restored after cancel
+HTTP 200
+{"success":true,"message":"Sessions loaded.","data":[{"id":"01a1abdc-32f6-78ec-8a6b-13af4a7e216c","deviceId":"01a1abdc-2fbb-7a39-909e-9178de50ae34","installationId":"evidence-dev-a","deviceName":"Evidence Phone A","platform":"android","createdAt":"2026-11-05T13:18:17.3339730Z","lastUsedAt":"2026-11-05T13:18:17.3339730Z","absoluteExpiresAt":"2027-02-03T13:18:17.3339730Z","isCurrent":true,"coarseIp":"::","userAgent":"curl/8.18.0"}],"error":null,"correlationId":"01a1abdc34c271449d0a70c2da86ee1c"}
+
+### 29. Protected route without token -> 401 envelope
+{"success":false,"message":"Authentication is required.","data":null,"error":{"code":"auth.unauthenticated","details":null},"correlationId":"0HNPR7RV8BVGE:00000001"}
+HTTP 401
+
+### 30. Sign-up for an already-registered email -> uniform envelope
+HTTP 200
+{"success":true,"message":"If this email can be verified, a verification code has been sent.","data":null,"error":null,"correlationId":"01a1abdc34db76798e3af6a66e25f18b"}
+
+### 31. Brute-force probe: 35 wrong-password logins (rate_limit.exceeded expected)
+requests returning HTTP 429: 30 / 35
+{"success":false,"message":"Too many requests.","data":null,"error":{"code":"rate_limit.exceeded","details":null},"correlationId":null}
+===================================================================
+Capture complete.
+===================================================================

@@ -1,0 +1,28 @@
+===================================================================
+AskVest Phase 1 - log hygiene evidence (audit row 7)
+Captured: 2026-11-05T14:10:53Z
+Target:   http://127.0.0.1:5082   Container: askvest-smoke-api-1
+Secrets used: unique email, password, 6-digit codes, JWT pair,
+refresh token. Values are NOT reproduced in this file.
+===================================================================
+
+### Flow executed
+sign-up: {"success":true,"message":"If this email can be verified, a verification code has been sent.","data":null,"error":null,"correlationId":"01a1ac0c5cbe7a7cac38c53d811a101b"}
+verify code retrieved from Mailpit: <redacted> (6 digits)
+verify-email: {"success":true,"message":"Email verified.","data":null,"error":null,"correlationId":"01a1ac0c5e80740f8cbd59dc73497a14"}
+login result field: authenticated
+refresh result field: authenticated
+wrong-password login: {"success":false,"message":"Authentication is required.","data":null,"error":{"code":"auth.invalid_credentials","details":null},"correlationId":"01a1ac0c60a37c15b907b6ac715b36e1"}
+
+### Grepping container logs since 2026-11-05T14:10:52Z for each secret
+log lines captured: 77
+email address       occurrences in logs: 0
+account password    occurrences in logs: 0
+verify code         occurrences in logs: 0
+access token (1)    occurrences in logs: 0
+refresh token (1)   occurrences in logs: 0
+access token (2)    occurrences in logs: 0
+refresh token (2)   occurrences in logs: 0
+
+RESULT: PASS - no secret material appears in application logs.
+===================================================================

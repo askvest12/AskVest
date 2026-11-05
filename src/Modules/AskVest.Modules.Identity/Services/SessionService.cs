@@ -21,6 +21,7 @@ public sealed class SessionService(
     IAccessTokenService accessTokenService,
     ISecureRandom secureRandom,
     IKeyedHasher keyedHasher,
+    SecurityEventRecorder securityEvents,
     IOptions<IdentityOptions> options,
     TimeProvider timeProvider)
 {
@@ -83,5 +84,40 @@ public sealed class SessionService(
             access.ExpiresAt,
             refreshToken,
             refresh.IdleExpiresAt);
+    }
+
+    public async Task RevokeAsync(
+        Guid sessionId,
+        Guid userId,
+        string reason,
+        string? ip,
+        string? userAgent,
+        string? correlationId,
+        CancellationToken cancellationToken)
+    {
+        var now = timeProvider.GetUtcNow();
+        var session = await db.Sessions
+            .FirstOrDefaultAsync(s => s.Id == sessionId && s.UserId == userId, cancellationToken);
+        if (session is null)
+        {
+            return;
+        }
+
+        if (session.RevokedAt is null)
+        {
+            session.RevokedAt = now;
+            session.RevokedReason = reason;
+        }
+
+        var activeTokens = await db.RefreshTokens
+            .Where(t => t.SessionId == session.Id && t.RotatedAt == null)
+            .ToListAsync(cancellationToken);
+        foreach (var token in activeTokens)
+        {
+            token.RotatedAt = now;
+        }
+
+        securityEvents.Record(SecurityEventType.SessionRevoked, userId, ip, userAgent, correlationId, session.DeviceId);
+        await db.SaveChangesAsync(cancellationToken);
     }
 }

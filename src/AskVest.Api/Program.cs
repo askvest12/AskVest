@@ -24,7 +24,7 @@ builder.Services.AddSerilog((_, loggerConfiguration) => loggerConfiguration
 builder.Services.AddPlatformPersistence(builder.Configuration);
 builder.Services.AddIdentityModule(builder.Configuration, builder.Environment);
 builder.Services.AddScoped<IIdempotencyStore, EfIdempotencyStore>();
-builder.Services.AddSingleton<IIdempotencyScopeResolver, DefaultIdempotencyScopeResolver>();
+builder.Services.AddSingleton<IIdempotencyScopeResolver, AuthenticatedIdempotencyScopeResolver>();
 builder.Services.AddHostedService<IdempotencyCleanupService>();
 
 builder.Services.ConfigureHttpJsonOptions(JsonOptionsConfiguration.Configure);
@@ -33,8 +33,10 @@ ValidatorOptions.Global.PropertyNameResolver = static (_, member, _) =>
     member is null ? null : System.Text.Json.JsonNamingPolicy.CamelCase.ConvertName(member.Name);
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 builder.Services.AddProblemDetails();
-builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer();
+builder.Services.AddAuthentication(AskVest.Modules.Identity.Services.IdentityBearerAuthenticationHandler.SchemeName)
+    .AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions, AskVest.Modules.Identity.Services.IdentityBearerAuthenticationHandler>(
+        AskVest.Modules.Identity.Services.IdentityBearerAuthenticationHandler.SchemeName,
+        _ => { });
 builder.Services.AddAuthorization();
 builder.Services.AddRequestTimeouts();
 builder.Services.AddApiRateLimiting(builder.Configuration);
@@ -115,8 +117,8 @@ if (cors.AllowedOrigins.Length > 0)
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<RequestLoggingMiddleware>();
 app.UseMiddleware<DuplicatePropertyCheckMiddleware>();
-app.UseMiddleware<IdempotencyMiddleware>();
 app.UseAuthentication();
+app.UseMiddleware<IdempotencyMiddleware>();
 app.UseAuthorization();
 
 app.MapHealthEndpoints();

@@ -84,6 +84,7 @@ public static class IdentityModuleExtensions
         services.AddScoped<EmailVerificationService>();
         services.AddScoped<ThrottleService>();
         services.AddScoped<SessionService>();
+        services.AddScoped<RefreshService>();
         services.AddScoped<LoginService>();
         services.AddScoped<VerifyDeviceService>();
         services.AddValidatorsFromAssembly(typeof(IdentityModuleExtensions).Assembly);

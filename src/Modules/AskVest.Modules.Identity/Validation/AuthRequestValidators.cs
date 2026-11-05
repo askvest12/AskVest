@@ -58,3 +58,12 @@ public sealed class VerifyDeviceRequestValidator : AbstractValidator<VerifyDevic
         RuleFor(x => x.Code).NotEmpty().Length(6).Matches("^[0-9]{6}$");
     }
 }
+
+public sealed class RefreshRequestValidator : AbstractValidator<RefreshRequest>
+{
+    public RefreshRequestValidator()
+    {
+        RuleFor(x => x.RefreshToken).NotEmpty().MaximumLength(256);
+        RuleFor(x => x.InstallationId).NotEmpty().MaximumLength(128);
+    }
+}

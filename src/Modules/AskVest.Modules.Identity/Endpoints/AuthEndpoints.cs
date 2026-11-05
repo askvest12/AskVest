@@ -50,6 +50,20 @@ public static class AuthEndpoints
             .WithMetadata(new IdempotencyExemptAttribute(), new ReturnsSecretsAttribute())
             .AllowAnonymous()
             .RequireRateLimiting("strict");
+
+        group.MapPost("/auth/refresh", RefreshAsync)
+            .WithName("Refresh")
+            .WithSummary("Rotate a refresh token and receive a new token pair.")
+            .WithTags("Auth")
+            .WithMetadata(new IdempotencyExemptAttribute(), new ReturnsSecretsAttribute())
+            .AllowAnonymous()
+            .RequireRateLimiting("strict");
+
+        group.MapPost("/auth/logout", LogoutAsync)
+            .WithName("Logout")
+            .WithSummary("Revoke the current session and its refresh tokens.")
+            .WithTags("Auth")
+            .WithMetadata(new RequiresIdempotencyAttribute());
     }
 
     private static async Task<IResult> SignUpAsync(
@@ -125,6 +139,63 @@ public static class AuthEndpoints
             httpContext.TraceIdentifier,
             cancellationToken);
         return ToLoginResult(attempt, httpContext);
+    }
+
+    private static async Task<IResult> RefreshAsync(
+        RefreshRequest request,
+        HttpContext httpContext,
+        RefreshService refreshService,
+        CancellationToken cancellationToken)
+    {
+        var result = await refreshService.RefreshAsync(
+            request,
+            httpContext.Connection.RemoteIpAddress?.ToString(),
+            httpContext.Request.Headers.UserAgent.ToString(),
+            httpContext.TraceIdentifier,
+            cancellationToken);
+        if (result.IsSuccess)
+        {
+            var session = result.Value!;
+            return IdentityResults.Ok(
+                new
+                {
+                    result = "authenticated",
+                    accessToken = session.AccessToken,
+                    refreshToken = session.RefreshToken,
+                    accessTokenExpiresAt = session.AccessTokenExpiresAt,
+                    refreshIdleExpiresAt = session.RefreshIdleExpiresAt,
+                    sessionId = session.SessionId,
+                },
+                "Token refreshed.",
+                httpContext);
+        }
+
+        return IdentityResults.Error(result.Error!, httpContext);
+    }
+
+    private static async Task<IResult> LogoutAsync(
+        HttpContext httpContext,
+        SessionService sessionService,
+        CancellationToken cancellationToken)
+    {
+        var userIdText = httpContext.User.FindFirst("sub")?.Value;
+        var sessionIdText = httpContext.User.FindFirst("sid")?.Value;
+        if (!Guid.TryParse(userIdText, out var userId) || !Guid.TryParse(sessionIdText, out var sessionId))
+        {
+            return IdentityResults.Error(
+                new Error(ErrorCodes.AuthUnauthenticated, "Authentication is required.", ErrorType.Unauthenticated),
+                httpContext);
+        }
+
+        await sessionService.RevokeAsync(
+            sessionId,
+            userId,
+            "logout",
+            httpContext.Connection.RemoteIpAddress?.ToString(),
+            httpContext.Request.Headers.UserAgent.ToString(),
+            httpContext.TraceIdentifier,
+            cancellationToken);
+        return IdentityResults.FromResult(Result.Success(), httpContext, "Signed out.");
     }
 
     private static IResult ToLoginResult(LoginAttempt attempt, HttpContext httpContext)

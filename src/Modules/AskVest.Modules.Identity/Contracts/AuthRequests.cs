@@ -20,3 +20,7 @@ public sealed record LoginRequest(
 public sealed record VerifyDeviceRequest(
     Guid? ChallengeId,
     string? Code);
+
+public sealed record RefreshRequest(
+    string? RefreshToken,
+    string? InstallationId);

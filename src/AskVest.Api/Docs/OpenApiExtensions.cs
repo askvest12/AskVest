@@ -15,6 +15,15 @@ internal static class OpenApiExtensions
                 Version = "v1",
                 Description = "AskVest backend API. All responses use the standard envelope.",
             };
+            document.Components ??= new Microsoft.OpenApi.OpenApiComponents();
+            document.Components.SecuritySchemes ??= new Dictionary<string, Microsoft.OpenApi.IOpenApiSecurityScheme>();
+            document.Components.SecuritySchemes["bearer"] = new Microsoft.OpenApi.OpenApiSecurityScheme
+            {
+                Type = Microsoft.OpenApi.SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "JWT",
+                Description = "AskVest access token obtained from POST /api/v1/auth/login or /api/v1/auth/refresh.",
+            };
             return Task.CompletedTask;
         });
         options.AddOperationTransformer<StandardErrorsOperationTransformer>();

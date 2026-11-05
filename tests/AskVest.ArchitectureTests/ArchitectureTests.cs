@@ -51,6 +51,7 @@ public sealed class ModuleBoundaryTests
             || name.Contains(".Configuration.", StringComparison.Ordinal)
             || name.Contains(".Migrations.", StringComparison.Ordinal)
             || name.Contains(".Crypto.", StringComparison.Ordinal)
+            || name.Contains(".Messaging.", StringComparison.Ordinal)
             || name.EndsWith("IdentityModuleExtensions")
             || name.EndsWith("IdentityEndpointsExtensions"));
     }

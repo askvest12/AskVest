@@ -12,11 +12,31 @@ services:
 
   api:
     environment:
-      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__Platform: Host=postgres;Port=5432;Database=askvest;Username=askvest_app;Password=${ASKVEST_APP_PASSWORD}
       Docs__Enabled: "true"
       Diagnostics__EnableProbes: "true"
       RateLimiting__Global__PermitLimit: "10000"
+      Messaging__Smtp__Host: mailpit
+      Messaging__Smtp__Port: "1025"
+      Messaging__Smtp__FromAddress: noreply@askvest.local
+      Messaging__Smtp__FromName: AskVest
+      Messaging__Smtp__EnableStartTls: "false"
+      Messaging__Sms__Mode: Development
+      Messaging__Sms__ForwardTo: sms@askvest.local
     ports: !override
       - "127.0.0.1:${ASKVEST_SMOKE_API_PORT:-5081}:8080"
+
+  mailpit:
+    image: axllent/mailpit:v1.32.0
+    ports:
+      - "127.0.0.1:${ASKVEST_MAILPIT_SMTP_PORT:-11025}:1025"
+      - "127.0.0.1:${ASKVEST_MAILPIT_UI_PORT:-18025}:8025"
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true

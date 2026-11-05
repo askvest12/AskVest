@@ -163,3 +163,8 @@ dotnet_naming_rule.private_fields_underscore.severity = suggestion
 [src/**/Migrations/*.cs]
 csharp_style_namespace_declarations = file_scoped:silent
 dotnet_diagnostic.CA1861.severity = none
+
+# The message dispatch worker retries any transport failure; providers throw
+# implementation-specific exception types that cannot be enumerated.
+[src/Modules/AskVest.Modules.Identity/Messaging/MessageDispatchWorker.cs]
+dotnet_diagnostic.CA1031.severity = none

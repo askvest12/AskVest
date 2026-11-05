@@ -123,7 +123,7 @@ public sealed class IdempotencyApiTests(PostgresFixture fixture) : IAsyncLifetim
         var client = _factory.CreateClient();
         var key = Guid.CreateVersion7().ToString("N");
         var responses = await Task.WhenAll(
-            Enumerable.Range(0, 5).Select(async _ =>
+            Enumerable.Range(0, 20).Select(async _ =>
             {
                 using var request = Probe(key, "race");
                 return await client.SendAsync(request, TestContext.Current.CancellationToken);

@@ -61,6 +61,18 @@ services:
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__Platform: Host=postgres;Port=5432;Database=askvest;Username=askvest_app;Password=${ASKVEST_APP_PASSWORD}
       Docs__Enabled: "true"
+      Messaging__Smtp__Host: ${ASKVEST_SMTP_HOST:-}
+      Messaging__Smtp__Port: ${ASKVEST_SMTP_PORT:-587}
+      Messaging__Smtp__FromAddress: ${ASKVEST_SMTP_FROM:-}
+      Messaging__Smtp__FromName: AskVest
+      Messaging__Smtp__UserName: ${ASKVEST_SMTP_USER:-}
+      Messaging__Smtp__Password: ${ASKVEST_SMTP_PASSWORD:-}
+      Messaging__Smtp__EnableStartTls: "true"
+      Identity__Secrets__AccessTokenSigningKey: ${ASKVEST_IDENTITY_SIGNING_KEY:?required}
+      Identity__Secrets__AccessTokenSigningKeyPrevious: ${ASKVEST_IDENTITY_SIGNING_KEY_PREVIOUS:-}
+      Identity__Secrets__PasswordPepper: ${ASKVEST_IDENTITY_PASSWORD_PEPPER:?required}
+      Identity__Secrets__PasswordPepperVersion: "1"
+      Identity__Secrets__OneTimeCodeHashSecret: ${ASKVEST_IDENTITY_CODE_SECRET:?required}
     ports:
       - "127.0.0.1:${ASKVEST_API_PORT:-5080}:8080"
     depends_on:

@@ -22,7 +22,7 @@ builder.Services.AddSerilog((_, loggerConfiguration) => loggerConfiguration
     .WriteTo.Console(new Serilog.Formatting.Compact.CompactJsonFormatter()));
 
 builder.Services.AddPlatformPersistence(builder.Configuration);
-builder.Services.AddIdentityModule(builder.Configuration);
+builder.Services.AddIdentityModule(builder.Configuration, builder.Environment);
 builder.Services.AddScoped<IIdempotencyStore, EfIdempotencyStore>();
 builder.Services.AddSingleton<IIdempotencyScopeResolver, DefaultIdempotencyScopeResolver>();
 builder.Services.AddHostedService<IdempotencyCleanupService>();

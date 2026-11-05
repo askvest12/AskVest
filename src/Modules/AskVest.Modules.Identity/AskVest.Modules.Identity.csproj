@@ -10,6 +10,7 @@
     <PackageReference Include="EFCore.NamingConventions" />
     <PackageReference Include="Konscious.Security.Cryptography.Argon2" />
     <PackageReference Include="libphonenumber-csharp" />
+    <PackageReference Include="MailKit" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>

@@ -64,10 +64,6 @@ builder.Services.AddOpenApi(options => options.ConfigureOpenApi());
 var app = builder.Build();
 
 var diagnostics = app.Services.GetRequiredService<IOptions<DiagnosticsOptions>>().Value;
-if (diagnostics.EnableProbes && app.Environment.IsProduction())
-{
-    throw new InvalidOperationException("Diagnostics:EnableProbes cannot be enabled in Production.");
-}
 
 var docs = app.Services.GetRequiredService<IOptions<DocsOptions>>().Value;
 var cors = app.Services.GetRequiredService<IOptions<CorsOptions>>().Value;

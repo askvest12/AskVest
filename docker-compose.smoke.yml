@@ -18,4 +18,5 @@ services:
       Docs__Enabled: "true"
       Diagnostics__EnableProbes: "true"
       RateLimiting__Global__PermitLimit: "10000"
-    ports: !reset []
+    ports: !override
+      - "127.0.0.1:${ASKVEST_SMOKE_API_PORT:-5081}:8080"

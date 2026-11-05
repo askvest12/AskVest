@@ -13,6 +13,7 @@ public static class IdentityEndpointsExtensions
         group.MapAuthEndpoints();
         group.MapPinStepUpEndpoints();
         group.MapPhoneEndpoints(phoneVerificationEnabled);
+        group.MapAccountEndpoints();
         return group;
     }
 }

@@ -29,6 +29,8 @@ builder.Services.AddHostedService<IdempotencyCleanupService>();
 
 builder.Services.ConfigureHttpJsonOptions(JsonOptionsConfiguration.Configure);
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+ValidatorOptions.Global.PropertyNameResolver = static (_, member, _) =>
+    member is null ? null : System.Text.Json.JsonNamingPolicy.CamelCase.ConvertName(member.Name);
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 builder.Services.AddProblemDetails();
 builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)
@@ -120,7 +122,7 @@ app.UseAuthorization();
 app.MapHealthEndpoints();
 app.MapDiagnosticsEndpoints(diagnostics.EnableProbes);
 
-var api = app.MapGroup("/api/v1").RequireAuthorization();
+var api = app.MapGroup("/api/v1").RequireAuthorization().AddEndpointFilter<ValidationEndpointFilter>();
 api.MapSystemEndpoints();
 api.MapIdentityEndpoints();
 

@@ -1,7 +1,10 @@
+using FluentValidation;
 using AskVest.Modules.Identity.Configuration;
 using AskVest.Modules.Identity.Persistence;
 using Microsoft.EntityFrameworkCore;
+using AskVest.Modules.Identity.Endpoints;
 using AskVest.Modules.Identity.Messaging;
+using AskVest.Modules.Identity.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -73,6 +76,12 @@ public static class IdentityModuleExtensions
         {
             services.AddSingleton<ISmsTransport, NullSmsTransport>();
         }
+
+        services.AddScoped<SecurityEventRecorder>();
+        services.AddScoped<OneTimeCodeService>();
+        services.AddScoped<SignUpService>();
+        services.AddScoped<EmailVerificationService>();
+        services.AddValidatorsFromAssembly(typeof(IdentityModuleExtensions).Assembly);
 
         services.AddSingleton<MessageChannel>();
         services.AddSingleton<IMessageChannel>(provider => provider.GetRequiredService<MessageChannel>());

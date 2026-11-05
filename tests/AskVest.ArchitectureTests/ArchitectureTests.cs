@@ -33,6 +33,9 @@ public sealed class ModuleBoundaryTests
                 || name.StartsWith("Konscious.", StringComparison.Ordinal)
                 || name.Equals("PhoneNumbers", StringComparison.Ordinal)
                 || name.StartsWith("Microsoft.IdentityModel.", StringComparison.Ordinal)
+                || name.StartsWith("FluentValidation", StringComparison.Ordinal)
+                || name.StartsWith("MailKit", StringComparison.Ordinal)
+                || name.StartsWith("MimeKit", StringComparison.Ordinal)
                 || name.Equals("netstandard", StringComparison.Ordinal)
                 || name.Equals("mscorlib", StringComparison.Ordinal));
     }
@@ -52,6 +55,9 @@ public sealed class ModuleBoundaryTests
             || name.Contains(".Migrations.", StringComparison.Ordinal)
             || name.Contains(".Crypto.", StringComparison.Ordinal)
             || name.Contains(".Messaging.", StringComparison.Ordinal)
+            || name.Contains(".Services.", StringComparison.Ordinal)
+            || name.Contains(".Endpoints.", StringComparison.Ordinal)
+            || name.Contains(".Validation.", StringComparison.Ordinal)
             || name.EndsWith("IdentityModuleExtensions")
             || name.EndsWith("IdentityEndpointsExtensions"));
     }

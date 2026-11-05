@@ -31,6 +31,17 @@ public sealed class IdentityOptions
     public int PasswordMinLength { get; set; } = 10;
     public int PasswordMaxLength { get; set; } = 128;
     public int EmailMaxLength { get; set; } = 254;
+    public int Argon2MemoryKiB { get; set; } = 19456;
+    public int Argon2Iterations { get; set; } = 2;
+    public int Argon2Parallelism { get; set; } = 1;
+    public int CredentialHashLengthBytes { get; set; } = 32;
+    public int CredentialSaltLengthBytes { get; set; } = 16;
+    public int CredentialHashMaxConcurrency { get; set; } = 4;
+    public int CredentialHashQueueTimeoutSeconds { get; set; } = 10;
+    public string AccessTokenIssuer { get; set; } = "askvest";
+    public string AccessTokenAudience { get; set; } = "askvest-api";
+    public bool PasswordBreachCheckEnabled { get; set; } = true;
+    public string? DefaultPhoneRegion { get; set; }
 
     public static IValidateOptions<IdentityOptions> Validator { get; } = new IdentityOptionsValidator();
 
@@ -71,6 +82,15 @@ public sealed class IdentityOptions
             Check(options.PasswordMinLength >= 8 && options.PasswordMinLength <= options.PasswordMaxLength, "PasswordMinLength must be at least 8 and not exceed PasswordMaxLength.");
             Check(options.PasswordMaxLength <= 256, "PasswordMaxLength must not exceed 256.");
             Check(options.EmailMaxLength is >= 3 and <= 254, "EmailMaxLength must be between 3 and 254.");
+            Check(options.Argon2MemoryKiB >= 1024, "Argon2MemoryKiB must be at least 1024.");
+            Check(options.Argon2Iterations > 0, "Argon2Iterations must be positive.");
+            Check(options.Argon2Parallelism > 0, "Argon2Parallelism must be positive.");
+            Check(options.CredentialHashLengthBytes >= 16, "CredentialHashLengthBytes must be at least 16.");
+            Check(options.CredentialSaltLengthBytes >= 8, "CredentialSaltLengthBytes must be at least 8.");
+            Check(options.CredentialHashMaxConcurrency > 0, "CredentialHashMaxConcurrency must be positive.");
+            Check(options.CredentialHashQueueTimeoutSeconds > 0, "CredentialHashQueueTimeoutSeconds must be positive.");
+            Check(!string.IsNullOrWhiteSpace(options.AccessTokenIssuer), "AccessTokenIssuer is required.");
+            Check(!string.IsNullOrWhiteSpace(options.AccessTokenAudience), "AccessTokenAudience is required.");
 
             return failures.Count == 0 ? ValidateOptionsResult.Success : ValidateOptionsResult.Fail(failures);
         }

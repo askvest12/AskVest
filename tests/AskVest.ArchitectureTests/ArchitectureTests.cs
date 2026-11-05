@@ -30,6 +30,9 @@ public sealed class ModuleBoundaryTests
                 || name.StartsWith("System", StringComparison.Ordinal)
                 || name.StartsWith("Npgsql.", StringComparison.Ordinal)
                 || name.StartsWith("EFCore.", StringComparison.Ordinal)
+                || name.StartsWith("Konscious.", StringComparison.Ordinal)
+                || name.Equals("PhoneNumbers", StringComparison.Ordinal)
+                || name.StartsWith("Microsoft.IdentityModel.", StringComparison.Ordinal)
                 || name.Equals("netstandard", StringComparison.Ordinal)
                 || name.Equals("mscorlib", StringComparison.Ordinal));
     }
@@ -47,6 +50,7 @@ public sealed class ModuleBoundaryTests
             || name.Contains(".Domain.", StringComparison.Ordinal)
             || name.Contains(".Configuration.", StringComparison.Ordinal)
             || name.Contains(".Migrations.", StringComparison.Ordinal)
+            || name.Contains(".Crypto.", StringComparison.Ordinal)
             || name.EndsWith("IdentityModuleExtensions")
             || name.EndsWith("IdentityEndpointsExtensions"));
     }

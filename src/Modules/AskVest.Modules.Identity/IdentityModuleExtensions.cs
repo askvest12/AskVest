@@ -32,6 +32,17 @@ public static class IdentityModuleExtensions
             IdentityDbContextOptions.Configure(options, connectionString, platformOptions.CommandTimeoutSeconds);
         });
 
+        services.AddSingleton<TimeProvider>(_ => TimeProvider.System);
+        services.AddSingleton<AskVest.Modules.Identity.Crypto.Argon2idCore>();
+        services.AddSingleton<AskVest.Modules.Identity.Crypto.CredentialHashingLimiter>();
+        services.AddSingleton<AskVest.Modules.Identity.Crypto.IPasswordHasher, AskVest.Modules.Identity.Crypto.PasswordHasher>();
+        services.AddSingleton<AskVest.Modules.Identity.Crypto.IPinHasher, AskVest.Modules.Identity.Crypto.PinHasher>();
+        services.AddSingleton<AskVest.Modules.Identity.Crypto.ISecureRandom, AskVest.Modules.Identity.Crypto.SecureRandom>();
+        services.AddSingleton<AskVest.Modules.Identity.Crypto.IOneTimeCodeHasher, AskVest.Modules.Identity.Crypto.OneTimeCodeHasher>();
+        services.AddSingleton<AskVest.Modules.Identity.Crypto.IAccessTokenService, AskVest.Modules.Identity.Crypto.AccessTokenService>();
+        services.AddSingleton<AskVest.Modules.Identity.Crypto.IBreachPasswordChecker, AskVest.Modules.Identity.Crypto.NullBreachPasswordChecker>();
+        services.AddSingleton<AskVest.Modules.Identity.Crypto.IPasswordPolicy, AskVest.Modules.Identity.Crypto.PasswordPolicy>();
+
         return services;
     }
 }

@@ -153,6 +153,8 @@ dotnet_diagnostic.CA1515.severity = none
 # xUnit requires public test, fixture and collection classes.
 dotnet_diagnostic.CA2100.severity = none
 # Test helpers execute literal SQL strings only; production code never builds SQL from input.
+# Test factories intentionally create process-lifetime singletons (hashers, limiters).
+dotnet_diagnostic.CA2000.severity = none
 dotnet_naming_rule.members_pascal.severity = suggestion
 dotnet_naming_rule.private_fields_underscore.severity = suggestion
 

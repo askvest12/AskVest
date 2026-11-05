@@ -29,6 +29,7 @@ public sealed class IdentityOptions
     public TimeSpan SessionLastUsedInterval { get; set; } = TimeSpan.FromSeconds(60);
     public TimeSpan DeletionCoolingOff { get; set; } = TimeSpan.FromDays(30);
     public TimeSpan AnonymizationInterval { get; set; } = TimeSpan.FromHours(1);
+    public TimeSpan MaintenanceInterval { get; set; } = TimeSpan.FromMinutes(10);
     public int PasswordMinLength { get; set; } = 10;
     public int PasswordMaxLength { get; set; } = 128;
     public int EmailMaxLength { get; set; } = 254;
@@ -82,6 +83,7 @@ public sealed class IdentityOptions
             Check(options.SessionLastUsedInterval > TimeSpan.Zero, "SessionLastUsedInterval must be positive.");
             Check(options.DeletionCoolingOff > TimeSpan.Zero, "DeletionCoolingOff must be positive.");
             Check(options.AnonymizationInterval > TimeSpan.Zero, "AnonymizationInterval must be positive.");
+            Check(options.MaintenanceInterval > TimeSpan.Zero, "MaintenanceInterval must be positive.");
             Check(options.PasswordMinLength >= 8 && options.PasswordMinLength <= options.PasswordMaxLength, "PasswordMinLength must be at least 8 and not exceed PasswordMaxLength.");
             Check(options.PasswordMaxLength <= 256, "PasswordMaxLength must not exceed 256.");
             Check(options.EmailMaxLength is >= 3 and <= 254, "EmailMaxLength must be between 3 and 254.");

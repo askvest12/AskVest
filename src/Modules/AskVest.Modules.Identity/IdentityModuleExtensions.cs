@@ -94,6 +94,7 @@ public static class IdentityModuleExtensions
         services.AddScoped<AccountService>();
         services.AddScoped<DeletionService>();
         services.AddScoped<AccountAnonymizationService>();
+        services.AddScoped<MaintenanceService>();
         services.AddScoped<Contracts.IStepUpAuthorizer>(provider => provider.GetRequiredService<StepUpService>());
         services.AddValidatorsFromAssembly(typeof(IdentityModuleExtensions).Assembly);
 
@@ -101,6 +102,7 @@ public static class IdentityModuleExtensions
         services.AddSingleton<IMessageChannel>(provider => provider.GetRequiredService<MessageChannel>());
         services.AddHostedService<MessageDispatchWorker>();
         services.AddHostedService<AnonymizationJob>();
+        services.AddHostedService<MaintenanceJob>();
 
         return services;
     }

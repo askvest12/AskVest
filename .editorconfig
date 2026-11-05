@@ -172,3 +172,7 @@ dotnet_diagnostic.CA1031.severity = none
 # The anonymization job must survive any failure and retry on the next tick.
 [src/Modules/AskVest.Modules.Identity/Services/AnonymizationJob.cs]
 dotnet_diagnostic.CA1031.severity = none
+
+# The maintenance job must survive any failure and retry on the next tick.
+[src/Modules/AskVest.Modules.Identity/Services/MaintenanceJob.cs]
+dotnet_diagnostic.CA1031.severity = none

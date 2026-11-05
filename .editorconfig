@@ -168,3 +168,7 @@ dotnet_diagnostic.CA1861.severity = none
 # implementation-specific exception types that cannot be enumerated.
 [src/Modules/AskVest.Modules.Identity/Messaging/MessageDispatchWorker.cs]
 dotnet_diagnostic.CA1031.severity = none
+
+# The anonymization job must survive any failure and retry on the next tick.
+[src/Modules/AskVest.Modules.Identity/Services/AnonymizationJob.cs]
+dotnet_diagnostic.CA1031.severity = none

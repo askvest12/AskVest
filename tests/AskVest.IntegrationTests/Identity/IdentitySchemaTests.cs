@@ -169,12 +169,20 @@ public sealed class IdentitySchemaTests(PostgresFixture fixture)
         var update = await Assert.ThrowsAsync<PostgresException>(async () =>
         {
             await using var command = new NpgsqlCommand(
-                "UPDATE identity.security_events SET user_agent = 'tampered' WHERE id = @id;",
+                "UPDATE identity.security_events SET event_type = 'LoginFailed' WHERE id = @id;",
                 connection);
             command.Parameters.AddWithValue("id", eventId);
             await command.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
         });
         update.SqlState.ShouldBe("42501");
+
+        await using (var anonymizeColumns = new NpgsqlCommand(
+            "UPDATE identity.security_events SET ip = NULL, user_agent = NULL WHERE id = @id;",
+            connection))
+        {
+            anonymizeColumns.Parameters.AddWithValue("id", eventId);
+            await anonymizeColumns.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
+        }
 
         var delete = await Assert.ThrowsAsync<PostgresException>(async () =>
         {

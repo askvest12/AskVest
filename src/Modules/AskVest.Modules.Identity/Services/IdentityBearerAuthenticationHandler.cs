@@ -3,6 +3,7 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using AskVest.Modules.Identity.Configuration;
 using AskVest.Modules.Identity.Crypto;
+using AskVest.Modules.Identity.Domain.Enums;
 using AskVest.Modules.Identity.Persistence;
 using AskVest.SharedKernel;
 using Microsoft.AspNetCore.Authentication;
@@ -62,12 +63,21 @@ public sealed class IdentityBearerAuthenticationHandler(
         var optionsValue = Context.RequestServices.GetRequiredService<IOptions<IdentityOptions>>().Value;
         var now = timeProvider.GetUtcNow();
 
-        var session = await db.Sessions
-            .FirstOrDefaultAsync(s => s.Id == sessionId && s.UserId == userId, Context.RequestAborted);
+        var sessionRow = await db.Sessions
+            .Where(s => s.Id == sessionId && s.UserId == userId)
+            .Join(db.Users, s => s.UserId, u => u.Id, (s, u) => new { s, u.Status })
+            .FirstOrDefaultAsync(Context.RequestAborted);
+        var session = sessionRow?.s;
         if (session is null || session.RevokedAt is not null || session.AbsoluteExpiresAt <= now)
         {
             Context.Items[ErrorCodeItemKey] = ErrorCodes.AuthSessionRevoked;
             return AuthenticateResult.Fail("The session is no longer valid.");
+        }
+
+        if (sessionRow!.Status is UserStatus.Disabled or UserStatus.Anonymized)
+        {
+            Context.Items[ErrorCodeItemKey] = ErrorCodes.AuthAccountDisabled;
+            return AuthenticateResult.Fail("The account is disabled.");
         }
 
         if (now - session.LastUsedAt >= optionsValue.SessionLastUsedInterval)
@@ -80,6 +90,7 @@ public sealed class IdentityBearerAuthenticationHandler(
             [
                 new Claim("sub", userId.ToString("D")),
                 new Claim("sid", sessionId.ToString("D")),
+                new Claim("account_status", sessionRow.Status.ToString()),
             ],
             SchemeName);
         return AuthenticateResult.Success(new AuthenticationTicket(new ClaimsPrincipal(identity), SchemeName));

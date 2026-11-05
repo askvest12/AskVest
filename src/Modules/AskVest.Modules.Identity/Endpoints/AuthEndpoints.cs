@@ -63,7 +63,7 @@ public static class AuthEndpoints
             .WithName("Logout")
             .WithSummary("Revoke the current session and its refresh tokens.")
             .WithTags("Auth")
-            .WithMetadata(new RequiresIdempotencyAttribute());
+            .WithMetadata(new RequiresIdempotencyAttribute(), new AllowPendingDeletionAttribute());
 
         group.MapPost("/auth/forgot-password", ForgotPasswordAsync)
             .WithName("ForgotPassword")

@@ -1,3 +1,4 @@
+using AskVest.Modules.Identity.Contracts;
 using AskVest.Modules.Identity.Services;
 using AskVest.SharedKernel;
 using Microsoft.AspNetCore.Builder;
@@ -13,7 +14,8 @@ public static class AccountEndpoints
         group.MapGet("/account/me", MeAsync)
             .WithName("GetMe")
             .WithSummary("Get the authenticated account profile.")
-            .WithTags("Account");
+            .WithTags("Account")
+            .WithMetadata(new AllowPendingDeletionAttribute());
 
         group.MapGet("/account/sessions", ListSessionsAsync)
             .WithName("ListSessions")
@@ -47,6 +49,57 @@ public static class AccountEndpoints
             .WithName("ListSecurityEvents")
             .WithSummary("List the caller's security history, newest first.")
             .WithTags("Account");
+
+        group.MapPost("/account/deletion-request", DeletionRequestAsync)
+            .WithName("RequestAccountDeletion")
+            .WithSummary("Request account deletion after password and step-up confirmation.")
+            .WithTags("Account")
+            .WithMetadata(new RequiresIdempotencyAttribute());
+
+        group.MapPost("/account/deletion-cancel", DeletionCancelAsync)
+            .WithName("CancelAccountDeletion")
+            .WithSummary("Cancel a pending account deletion.")
+            .WithTags("Account")
+            .WithMetadata(new RequiresIdempotencyAttribute(), new AllowPendingDeletionAttribute());
+    }
+
+    private static async Task<IResult> DeletionRequestAsync(
+        DeletionRequest request,
+        HttpContext httpContext,
+        DeletionService deletionService,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetIdentity(httpContext, out var userId, out var sessionId))
+        {
+            return Unauthorized(httpContext);
+        }
+
+        var result = await deletionService.RequestAsync(
+            userId, sessionId, request.Password, request.StepUpToken,
+            httpContext.Connection.RemoteIpAddress?.ToString(),
+            httpContext.Request.Headers.UserAgent.ToString(),
+            httpContext.TraceIdentifier,
+            cancellationToken);
+        return IdentityResults.FromResult(result, httpContext, "Account deletion scheduled.");
+    }
+
+    private static async Task<IResult> DeletionCancelAsync(
+        HttpContext httpContext,
+        DeletionService deletionService,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetIdentity(httpContext, out var userId, out _))
+        {
+            return Unauthorized(httpContext);
+        }
+
+        var result = await deletionService.CancelAsync(
+            userId,
+            httpContext.Connection.RemoteIpAddress?.ToString(),
+            httpContext.Request.Headers.UserAgent.ToString(),
+            httpContext.TraceIdentifier,
+            cancellationToken);
+        return IdentityResults.FromResult(result, httpContext, "Account deletion cancelled.");
     }
 
     private static async Task<IResult> MeAsync(

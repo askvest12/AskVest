@@ -92,12 +92,15 @@ public static class IdentityModuleExtensions
         services.AddScoped<StepUpService>();
         services.AddScoped<PhoneService>();
         services.AddScoped<AccountService>();
+        services.AddScoped<DeletionService>();
+        services.AddScoped<AccountAnonymizationService>();
         services.AddScoped<Contracts.IStepUpAuthorizer>(provider => provider.GetRequiredService<StepUpService>());
         services.AddValidatorsFromAssembly(typeof(IdentityModuleExtensions).Assembly);
 
         services.AddSingleton<MessageChannel>();
         services.AddSingleton<IMessageChannel>(provider => provider.GetRequiredService<MessageChannel>());
         services.AddHostedService<MessageDispatchWorker>();
+        services.AddHostedService<AnonymizationJob>();
 
         return services;
     }

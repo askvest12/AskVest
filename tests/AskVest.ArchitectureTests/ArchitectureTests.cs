@@ -55,6 +55,7 @@ public sealed class ModuleBoundaryTests
             || name.Contains(".Migrations.", StringComparison.Ordinal)
             || name.Contains(".Crypto.", StringComparison.Ordinal)
             || name.Contains(".Messaging.", StringComparison.Ordinal)
+            || name.Contains(".Middleware.", StringComparison.Ordinal)
             || name.Contains(".Services.", StringComparison.Ordinal)
             || name.Contains(".Endpoints.", StringComparison.Ordinal)
             || name.Contains(".Validation.", StringComparison.Ordinal)

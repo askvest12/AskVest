@@ -12,7 +12,8 @@ namespace AskVest.IntegrationTests.Identity;
 
 public sealed class AuthApiFactory(
     string connectionString,
-    IReadOnlyDictionary<string, string?>? extraSettings = null) : WebApplicationFactory<Program>
+    IReadOnlyDictionary<string, string?>? extraSettings = null,
+    Action<IServiceCollection>? configureServices = null) : WebApplicationFactory<Program>
 {
     public CapturingEmailTransport Emails { get; } = new();
 
@@ -53,6 +54,7 @@ public sealed class AuthApiFactory(
                 _ => Emails));
             services.Replace(ServiceDescriptor.Singleton<IBreachPasswordChecker>(
                 _ => new MarkerBreachChecker()));
+            configureServices?.Invoke(services);
         });
     }
 

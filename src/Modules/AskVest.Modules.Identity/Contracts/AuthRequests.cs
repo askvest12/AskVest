@@ -30,3 +30,5 @@ public sealed record ForgotPasswordRequest(string? Email);
 public sealed record ResetPasswordRequest(string? Email, string? Code, string? Password);
 
 public sealed record ChangePasswordRequest(string? CurrentPassword, string? Password);
+
+public sealed record DeletionRequest(string? Password, string? StepUpToken);

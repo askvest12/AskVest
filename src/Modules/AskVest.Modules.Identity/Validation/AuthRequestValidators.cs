@@ -148,3 +148,12 @@ public sealed class VerifyPhoneRequestValidator : AbstractValidator<VerifyPhoneR
         RuleFor(x => x.Code).NotEmpty().Length(6).Matches("^[0-9]{6}$");
     }
 }
+
+public sealed class DeletionRequestValidator : AbstractValidator<DeletionRequest>
+{
+    public DeletionRequestValidator()
+    {
+        RuleFor(x => x.Password).NotEmpty().MaximumLength(128);
+        RuleFor(x => x.StepUpToken).NotEmpty().MaximumLength(256);
+    }
+}

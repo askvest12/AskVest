@@ -134,6 +134,22 @@ public sealed class RefreshService(
 
         session.LastUsedAt = now;
         var user = await db.Users.FirstAsync(u => u.Id == session.UserId, cancellationToken);
+        if (user.Status is UserStatus.Disabled or UserStatus.Anonymized)
+        {
+            return Result.Failure<RefreshedSession>(new Error(
+                ErrorCodes.AuthAccountDisabled,
+                "The account is disabled.",
+                ErrorType.Forbidden));
+        }
+
+        if (user.Status == UserStatus.DeletionRequested)
+        {
+            return Result.Failure<RefreshedSession>(new Error(
+                ErrorCodes.AuthAccountPendingDeletion,
+                "The account is pending deletion.",
+                ErrorType.Forbidden));
+        }
+
         var access = accessTokenService.Issue(user.Id, session.Id);
         securityEvents.Record(SecurityEventType.RefreshRotated, user.Id, ip, userAgent, correlationId, session.DeviceId);
         await db.SaveChangesAsync(cancellationToken);

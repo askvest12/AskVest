@@ -118,6 +118,7 @@ app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<RequestLoggingMiddleware>();
 app.UseMiddleware<DuplicatePropertyCheckMiddleware>();
 app.UseAuthentication();
+app.UseMiddleware<AskVest.Modules.Identity.Middleware.PendingDeletionGateMiddleware>();
 app.UseMiddleware<IdempotencyMiddleware>();
 app.UseAuthorization();
 

@@ -27,6 +27,20 @@ internal sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) :
             return true;
         }
 
+        for (var current = exception; current is not null; current = current.InnerException)
+        {
+            if (current is Npgsql.NpgsqlException)
+            {
+                await ApiResults.WriteAsync(
+                    httpContext,
+                    StatusCodes.Status503ServiceUnavailable,
+                    "The service is temporarily unavailable.",
+                    null,
+                    new ApiError(ErrorCodes.ServiceUnavailable));
+                return true;
+            }
+        }
+
         await ApiResults.WriteAsync(
             httpContext,
             StatusCodes.Status500InternalServerError,

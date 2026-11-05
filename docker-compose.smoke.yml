@@ -18,6 +18,9 @@ services:
       Docs__Enabled: "true"
       Diagnostics__EnableProbes: "true"
       RateLimiting__Global__PermitLimit: "10000"
+      RateLimiting__Strict__PermitLimit: "30"
+      RateLimiting__Strict__WindowSeconds: "10"
+      Identity__LoginFailuresPerClientIp: "100000"
       Messaging__Smtp__Host: mailpit
       Messaging__Smtp__Port: "1025"
       Messaging__Smtp__FromAddress: noreply@askvest.local

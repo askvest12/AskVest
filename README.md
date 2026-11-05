@@ -1,12 +1,13 @@
 # AskVest Backend
 
-Phase 0 foundation: hardened .NET 10 backend with PostgreSQL, EF Core migrations, response envelope, idempotency, OpenAPI/Scalar, Serilog, strict JSON rules, and containerized deployment.
+Phase 1: hardened .NET 10 backend with PostgreSQL, EF Core migrations, response envelope, idempotency, OpenAPI/Scalar, Serilog, strict JSON rules, containerized deployment, and the Identity module (sign-up, verification, login, sessions, refresh rotation, devices, password and PIN management, step-up authorization, security history, phone verification, and account deletion with anonymization).
 
 ## Prerequisites
 
 - .NET SDK 10.0.x (see `global.json`)
 - Docker with Compose v2
 - Git
+- OpenSSL (for generating development secrets)
 
 ## Setup
 
@@ -14,18 +15,58 @@ Phase 0 foundation: hardened .NET 10 backend with PostgreSQL, EF Core migrations
 git clone git@github.com:askvest12/AskVest.git
 cd AskVest
 dotnet restore AskVest.slnx --locked-mode
+cp .env.example .env
 ```
 
-## Run locally (containers)
+Fill in `.env`. The database passwords can be any strong value; the Identity
+secrets must be generated once for development:
 
 ```bash
-cp .env.example .env   # fill in passwords
-docker compose up -d --build --wait
-curl http://localhost:5080/health/live
-curl http://localhost:5080/api/v1/system/info
+# ES256 signing key pair material (PKCS8 private key, base64)
+openssl ecparam -name prime256v1 -genkey -noout | openssl pkcs8 -topk8 -nocrypt | base64 -w0
+
+# Password pepper and one-time-code hash secret (64 hex chars each)
+openssl rand -hex 32
+openssl rand -hex 32
 ```
 
-The migrator runs automatically before the API starts. Scalar docs are served at `/scalar/v1` when `Docs__Enabled=true`.
+Set the results in `.env`:
+
+- `ASKVEST_IDENTITY_SIGNING_KEY` — the base64 PKCS8 key from the first command
+- `ASKVEST_IDENTITY_PASSWORD_PEPPER` — first `openssl rand -hex 32` output
+- `ASKVEST_IDENTITY_CODE_SECRET` — second `openssl rand -hex 32` output
+- `ASKVEST_IDENTITY_SIGNING_KEY_PREVIOUS` — leave empty unless rotating keys
+
+Never commit real secret values; `.env` is git-ignored and `.env.example`
+contains names only.
+
+## Run locally
+
+Production-like stack (real SMTP required via `ASKVEST_SMTP_*`):
+
+```bash
+docker compose up -d --build --wait
+```
+
+Development stack with Mailpit (captures all outgoing email locally):
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build --wait
+```
+
+- API: `http://localhost:5080` (`/health/live`, `/scalar/v1` for docs)
+- Mailpit UI: `http://localhost:18025` — read verification codes here
+- Mailpit SMTP: `localhost:11025`
+
+The migrator runs automatically before the API starts.
+
+## Identity smoke flows
+
+1. `POST /api/v1/auth/sign-up` with `{ "email": "you@example.com", "password": "..." }` and an `Idempotency-Key` header.
+2. Open Mailpit at `http://localhost:18025`, copy the 6-digit code from the verification email.
+3. `POST /api/v1/auth/verify-email` with `{ "email": ..., "code": ... }`.
+4. `POST /api/v1/auth/login` with `{ "email": ..., "password": ..., "device": { "installationId": "...", "platform": "android", "deviceName": "...", "appVersion": "1.0.0" } }` — the first device is trusted automatically; later devices get an email challenge via `POST /api/v1/auth/verify-device`.
+5. Authenticated calls use `Authorization: Bearer <accessToken>`; rotate with `POST /api/v1/auth/refresh`.
 
 ## Test
 
@@ -38,13 +79,33 @@ dotnet test --project tests/AskVest.IntegrationTests   # requires Docker (Testco
 Smoke tests against the running stack:
 
 ```bash
-ASKVEST_SMOKE_BASE_URL=http://localhost:5080 dotnet test --project tests/AskVest.SmokeTests
+ASKVEST_SMOKE_BASE_URL=http://localhost:5081 dotnet test --project tests/AskVest.SmokeTests
 ```
+
+The smoke stack (`docker-compose.smoke.yml`) runs the API in Development mode
+with Mailpit and probe endpoints enabled.
+
+## Rotating signing keys
+
+Access tokens are signed with ES256. To rotate:
+
+1. Generate a new key pair as above.
+2. Move the current `ASKVEST_IDENTITY_SIGNING_KEY` value into
+   `ASKVEST_IDENTITY_SIGNING_KEY_PREVIOUS` and put the new key in
+   `ASKVEST_IDENTITY_SIGNING_KEY`.
+3. Restart the API. Tokens signed by the previous key keep validating until
+   they expire (10 minutes); issue a fresh pair after the swap.
+
+To change the password pepper or code secret, bump
+`Identity__Secrets__PasswordPepperVersion` / regenerate the secret and expect
+existing password hashes and one-time codes to be invalidated — users must
+reset their password. Plan this as a maintenance event.
 
 ## Layout
 
-- `src/AskVest.SharedKernel` - Result/Error primitives
+- `src/AskVest.SharedKernel` - Result/Error primitives, paging, endpoint markers
 - `src/AskVest.Platform` - EF Core context, migrations, readiness, idempotency storage
+- `src/AskVest.Modules.Identity` - identity module: auth flows, sessions, devices, PIN, step-up, phone, deletion, messaging
 - `src/AskVest.Api` - HTTP host: envelope, middleware, health, OpenAPI
 - `src/AskVest.Migrator` - forward-only migration runner
 - `tests/` - unit, architecture, integration (Testcontainers), smoke
@@ -56,3 +117,4 @@ ASKVEST_SMOKE_BASE_URL=http://localhost:5080 dotnet test --project tests/AskVest
 - Port conflicts: set `ASKVEST_API_PORT` / `ASKVEST_POSTGRES_PORT` in `.env`.
 - `ConnectionStrings:Platform is required`: set the connection string env var or appsettings.
 - Containers unhealthy: `docker compose logs api postgres migrator`.
+- Emails not arriving in dev: check `http://localhost:18025` and `docker compose logs api | grep -i smtp`.

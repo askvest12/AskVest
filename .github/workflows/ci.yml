@@ -22,3 +22,33 @@ jobs:
           dotnet test tests/AskVest.IntegrationTests -c Release --no-build
       - name: Audit packages
         run: dotnet list AskVest.slnx package --vulnerable --include-transitive
+
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate development secrets
+        run: |
+          {
+            echo "ASKVEST_ADMIN_PASSWORD=$(openssl rand -hex 24)"
+            echo "ASKVEST_OWNER_PASSWORD=$(openssl rand -hex 24)"
+            echo "ASKVEST_APP_PASSWORD=$(openssl rand -hex 24)"
+            echo "ASKVEST_IDENTITY_SIGNING_KEY=$(openssl ecparam -name prime256v1 -genkey -noout | openssl pkcs8 -topk8 -nocrypt | base64 -w0)"
+            echo "ASKVEST_IDENTITY_PASSWORD_PEPPER=$(openssl rand -hex 32)"
+            echo "ASKVEST_IDENTITY_CODE_SECRET=$(openssl rand -hex 32)"
+          } > .env
+      - name: Start smoke stack
+        run: docker compose -f docker-compose.yml -f docker-compose.smoke.yml up -d --build --wait
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Restore locked
+        run: dotnet restore AskVest.slnx --locked-mode
+      - name: Smoke tests
+        env:
+          ASKVEST_SMOKE_BASE_URL: http://localhost:5081
+          ASKVEST_SMOKE_MAILPIT_URL: http://localhost:18025
+        run: dotnet test tests/AskVest.SmokeTests -c Release
+      - name: Stop stack
+        if: always()
+        run: docker compose -f docker-compose.yml -f docker-compose.smoke.yml down -v

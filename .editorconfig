@@ -137,6 +137,8 @@ dotnet_diagnostic.CA1812.severity = none
 # Types instantiated only by DI or EF still deserve to compile.
 dotnet_diagnostic.CA1848.severity = none
 # Serilog message templates are used consistently; revisit if logging becomes a hotspot.
+dotnet_diagnostic.CA1716.severity = none
+# Error is the contract type name required by the API standards; non-C# consumers can alias it.
 
 [*.{yml,yaml,json,xml,props,targets,config}]
 indent_size = 2

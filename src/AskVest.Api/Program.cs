@@ -21,6 +21,9 @@ builder.Services.AddSerilog((_, loggerConfiguration) => loggerConfiguration
     .WriteTo.Console(new Serilog.Formatting.Compact.CompactJsonFormatter()));
 
 builder.Services.AddPlatformPersistence(builder.Configuration);
+builder.Services.AddScoped<IIdempotencyStore, EfIdempotencyStore>();
+builder.Services.AddSingleton<IIdempotencyScopeResolver, DefaultIdempotencyScopeResolver>();
+builder.Services.AddHostedService<IdempotencyCleanupService>();
 
 builder.Services.ConfigureHttpJsonOptions(JsonOptionsConfiguration.Configure);
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
@@ -109,8 +112,10 @@ if (cors.AllowedOrigins.Length > 0)
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<RequestLoggingMiddleware>();
 app.UseMiddleware<DuplicatePropertyCheckMiddleware>();
+app.UseMiddleware<IdempotencyMiddleware>();
 
 app.MapHealthEndpoints();
+app.MapDiagnosticsEndpoints(diagnostics.EnableProbes);
 
 var api = app.MapGroup("/api/v1");
 api.MapSystemEndpoints();

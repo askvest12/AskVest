@@ -1,5 +1,6 @@
 using AskVest.Api;
 using AskVest.Api.Endpoints;
+using AskVest.Modules.Identity;
 using AskVest.Platform;
 using FluentValidation;
 using Microsoft.AspNetCore.Http.Json;
@@ -21,6 +22,7 @@ builder.Services.AddSerilog((_, loggerConfiguration) => loggerConfiguration
     .WriteTo.Console(new Serilog.Formatting.Compact.CompactJsonFormatter()));
 
 builder.Services.AddPlatformPersistence(builder.Configuration);
+builder.Services.AddIdentityModule(builder.Configuration);
 builder.Services.AddScoped<IIdempotencyStore, EfIdempotencyStore>();
 builder.Services.AddSingleton<IIdempotencyScopeResolver, DefaultIdempotencyScopeResolver>();
 builder.Services.AddHostedService<IdempotencyCleanupService>();
@@ -29,6 +31,9 @@ builder.Services.ConfigureHttpJsonOptions(JsonOptionsConfiguration.Configure);
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 builder.Services.AddProblemDetails();
+builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer();
+builder.Services.AddAuthorization();
 builder.Services.AddRequestTimeouts();
 builder.Services.AddApiRateLimiting(builder.Configuration);
 builder.Services.Configure<Microsoft.AspNetCore.Http.Timeouts.RequestTimeoutOptions>(options =>
@@ -109,17 +114,20 @@ app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<RequestLoggingMiddleware>();
 app.UseMiddleware<DuplicatePropertyCheckMiddleware>();
 app.UseMiddleware<IdempotencyMiddleware>();
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapHealthEndpoints();
 app.MapDiagnosticsEndpoints(diagnostics.EnableProbes);
 
-var api = app.MapGroup("/api/v1");
+var api = app.MapGroup("/api/v1").RequireAuthorization();
 api.MapSystemEndpoints();
+api.MapIdentityEndpoints();
 
 if (docs.Enabled)
 {
     app.MapOpenApi().AllowAnonymous();
-    app.MapScalarApiReference();
+    app.MapScalarApiReference().AllowAnonymous();
 }
 
 app.Run();

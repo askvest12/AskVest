@@ -1,4 +1,5 @@
 using AskVest.Api;
+using AskVest.SharedKernel;
 using AskVest.IntegrationTests.Infrastructure;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;

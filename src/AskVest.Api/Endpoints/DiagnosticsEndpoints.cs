@@ -17,7 +17,8 @@ internal static class DiagnosticsEndpoints
                 "Probe received.",
                 httpContext))
             .WithIdempotency()
-            .WithStandardErrors();
+            .WithStandardErrors()
+            .AllowAnonymous();
     }
 
     internal sealed record ProbeRequest(string? Value);

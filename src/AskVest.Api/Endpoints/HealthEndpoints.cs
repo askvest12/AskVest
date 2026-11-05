@@ -9,7 +9,7 @@ internal static class HealthEndpoints
     public static void MapHealthEndpoints(this WebApplication app)
     {
         app.MapGet("/health/live", (HttpContext httpContext) =>
-            ApiResults.Ok(new { status = "Healthy" }, "Service is live.", httpContext));
+            ApiResults.Ok(new { status = "Healthy" }, "Service is live.", httpContext)).AllowAnonymous();
 
         app.MapGet("/health/ready", async (HealthCheckService healthCheckService, HttpContext httpContext, CancellationToken cancellationToken) =>
         {
@@ -27,6 +27,6 @@ internal static class HealthEndpoints
             return Results.Json(
                 new ApiResponse<object?>(false, "The service is not ready.", data, new ApiError(ErrorCodes.ServiceUnavailable), CorrelationIdMiddleware.Get(httpContext)),
                 statusCode: StatusCodes.Status503ServiceUnavailable);
-        });
+        }).AllowAnonymous();
     }
 }

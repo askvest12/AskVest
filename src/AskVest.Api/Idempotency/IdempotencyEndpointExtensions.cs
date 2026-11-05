@@ -1,3 +1,4 @@
+using AskVest.SharedKernel;
 using Microsoft.AspNetCore.Builder;
 
 namespace AskVest.Api;

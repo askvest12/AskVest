@@ -20,7 +20,7 @@ internal static class SystemEndpoints
                 },
                 "Service information retrieved.",
                 httpContext);
-        }).WithStandardErrors();
+        }).WithStandardErrors().AllowAnonymous();
         return group;
     }
 }

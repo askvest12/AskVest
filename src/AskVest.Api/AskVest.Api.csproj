@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\AskVest.SharedKernel\AskVest.SharedKernel.csproj" />
     <ProjectReference Include="..\AskVest.Platform\AskVest.Platform.csproj" />
+    <ProjectReference Include="..\Modules\AskVest.Modules.Identity\AskVest.Modules.Identity.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -20,6 +21,7 @@
   <ItemGroup>
     <PackageReference Include="FluentValidation" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
     <PackageReference Include="Scalar.AspNetCore" />
     <PackageReference Include="Serilog.AspNetCore" />

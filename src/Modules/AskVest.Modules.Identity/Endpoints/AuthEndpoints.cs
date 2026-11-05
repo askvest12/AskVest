@@ -64,6 +64,28 @@ public static class AuthEndpoints
             .WithSummary("Revoke the current session and its refresh tokens.")
             .WithTags("Auth")
             .WithMetadata(new RequiresIdempotencyAttribute());
+
+        group.MapPost("/auth/forgot-password", ForgotPasswordAsync)
+            .WithName("ForgotPassword")
+            .WithSummary("Send a password reset code if the account can receive one.")
+            .WithTags("Auth")
+            .WithMetadata(new RequiresIdempotencyAttribute())
+            .AllowAnonymous()
+            .RequireRateLimiting("strict");
+
+        group.MapPost("/auth/reset-password", ResetPasswordAsync)
+            .WithName("ResetPassword")
+            .WithSummary("Consume a reset code and set a new password.")
+            .WithTags("Auth")
+            .WithMetadata(new RequiresIdempotencyAttribute())
+            .AllowAnonymous()
+            .RequireRateLimiting("strict");
+
+        group.MapPost("/account/change-password", ChangePasswordAsync)
+            .WithName("ChangePassword")
+            .WithSummary("Change the account password and revoke other sessions.")
+            .WithTags("Account")
+            .WithMetadata(new RequiresIdempotencyAttribute());
     }
 
     private static async Task<IResult> SignUpAsync(
@@ -196,6 +218,62 @@ public static class AuthEndpoints
             httpContext.TraceIdentifier,
             cancellationToken);
         return IdentityResults.FromResult(Result.Success(), httpContext, "Signed out.");
+    }
+
+    private static async Task<IResult> ForgotPasswordAsync(
+        ForgotPasswordRequest request,
+        HttpContext httpContext,
+        PasswordService passwordService,
+        CancellationToken cancellationToken)
+    {
+        var result = await passwordService.ForgotAsync(
+            request.Email,
+            httpContext.Connection.RemoteIpAddress?.ToString(),
+            httpContext.Request.Headers.UserAgent.ToString(),
+            httpContext.TraceIdentifier,
+            cancellationToken);
+        return IdentityResults.FromResult(result, httpContext, "If this email can be reset, a reset code has been sent.");
+    }
+
+    private static async Task<IResult> ResetPasswordAsync(
+        ResetPasswordRequest request,
+        HttpContext httpContext,
+        PasswordService passwordService,
+        CancellationToken cancellationToken)
+    {
+        var result = await passwordService.ResetAsync(
+            request,
+            httpContext.Connection.RemoteIpAddress?.ToString(),
+            httpContext.Request.Headers.UserAgent.ToString(),
+            httpContext.TraceIdentifier,
+            cancellationToken);
+        return IdentityResults.FromResult(result, httpContext, "Password updated.");
+    }
+
+    private static async Task<IResult> ChangePasswordAsync(
+        ChangePasswordRequest request,
+        HttpContext httpContext,
+        PasswordService passwordService,
+        CancellationToken cancellationToken)
+    {
+        var userIdText = httpContext.User.FindFirst("sub")?.Value;
+        var sessionIdText = httpContext.User.FindFirst("sid")?.Value;
+        if (!Guid.TryParse(userIdText, out var userId) || !Guid.TryParse(sessionIdText, out var sessionId))
+        {
+            return IdentityResults.Error(
+                new Error(ErrorCodes.AuthUnauthenticated, "Authentication is required.", ErrorType.Unauthenticated),
+                httpContext);
+        }
+
+        var result = await passwordService.ChangeAsync(
+            userId,
+            sessionId,
+            request,
+            httpContext.Connection.RemoteIpAddress?.ToString(),
+            httpContext.Request.Headers.UserAgent.ToString(),
+            httpContext.TraceIdentifier,
+            cancellationToken);
+        return IdentityResults.FromResult(result, httpContext, "Password changed.");
     }
 
     private static IResult ToLoginResult(LoginAttempt attempt, HttpContext httpContext)

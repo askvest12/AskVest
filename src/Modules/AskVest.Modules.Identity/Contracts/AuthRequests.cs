@@ -24,3 +24,9 @@ public sealed record VerifyDeviceRequest(
 public sealed record RefreshRequest(
     string? RefreshToken,
     string? InstallationId);
+
+public sealed record ForgotPasswordRequest(string? Email);
+
+public sealed record ResetPasswordRequest(string? Email, string? Code, string? Password);
+
+public sealed record ChangePasswordRequest(string? CurrentPassword, string? Password);

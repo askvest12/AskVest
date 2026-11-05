@@ -87,6 +87,7 @@ public static class IdentityModuleExtensions
         services.AddScoped<RefreshService>();
         services.AddScoped<LoginService>();
         services.AddScoped<VerifyDeviceService>();
+        services.AddScoped<PasswordService>();
         services.AddValidatorsFromAssembly(typeof(IdentityModuleExtensions).Assembly);
 
         services.AddSingleton<MessageChannel>();

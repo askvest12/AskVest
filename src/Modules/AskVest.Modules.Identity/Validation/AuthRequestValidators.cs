@@ -67,3 +67,30 @@ public sealed class RefreshRequestValidator : AbstractValidator<RefreshRequest>
         RuleFor(x => x.InstallationId).NotEmpty().MaximumLength(128);
     }
 }
+
+public sealed class ForgotPasswordRequestValidator : AbstractValidator<ForgotPasswordRequest>
+{
+    public ForgotPasswordRequestValidator()
+    {
+        RuleFor(x => x.Email).NotEmpty().MaximumLength(254);
+    }
+}
+
+public sealed class ResetPasswordRequestValidator : AbstractValidator<ResetPasswordRequest>
+{
+    public ResetPasswordRequestValidator()
+    {
+        RuleFor(x => x.Email).NotEmpty().MaximumLength(254);
+        RuleFor(x => x.Code).NotEmpty().Length(6).Matches("^[0-9]{6}$");
+        RuleFor(x => x.Password).NotEmpty().MaximumLength(128);
+    }
+}
+
+public sealed class ChangePasswordRequestValidator : AbstractValidator<ChangePasswordRequest>
+{
+    public ChangePasswordRequestValidator()
+    {
+        RuleFor(x => x.CurrentPassword).NotEmpty().MaximumLength(128);
+        RuleFor(x => x.Password).NotEmpty().MaximumLength(128);
+    }
+}

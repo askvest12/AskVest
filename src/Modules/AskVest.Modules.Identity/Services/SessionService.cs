@@ -120,4 +120,42 @@ public sealed class SessionService(
         securityEvents.Record(SecurityEventType.SessionRevoked, userId, ip, userAgent, correlationId, session.DeviceId);
         await db.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task RevokeAllForUserAsync(
+        Guid userId,
+        Guid? exceptSessionId,
+        string reason,
+        string? ip,
+        string? userAgent,
+        string? correlationId,
+        CancellationToken cancellationToken)
+    {
+        var now = timeProvider.GetUtcNow();
+        var sessions = await db.Sessions
+            .Where(s => s.UserId == userId && s.RevokedAt == null
+                && (exceptSessionId == null || s.Id != exceptSessionId))
+            .ToListAsync(cancellationToken);
+        if (sessions.Count == 0)
+        {
+            return;
+        }
+
+        var sessionIds = sessions.Select(s => s.Id).ToList();
+        var tokens = await db.RefreshTokens
+            .Where(t => sessionIds.Contains(t.SessionId) && t.RotatedAt == null)
+            .ToListAsync(cancellationToken);
+        foreach (var token in tokens)
+        {
+            token.RotatedAt = now;
+        }
+
+        foreach (var session in sessions)
+        {
+            session.RevokedAt = now;
+            session.RevokedReason = reason;
+        }
+
+        securityEvents.Record(SecurityEventType.AllSessionsRevoked, userId, ip, userAgent, correlationId);
+        await db.SaveChangesAsync(cancellationToken);
+    }
 }

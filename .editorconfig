@@ -147,7 +147,17 @@ indent_size = 2
 trim_trailing_whitespace = false
 
 [tests/**.cs]
-# Test projects relax naming rules that fight xUnit conventions.
+# Test projects relax rules that fight xUnit conventions.
 dotnet_diagnostic.CA1707.severity = none
+dotnet_diagnostic.CA1515.severity = none
+# xUnit requires public test, fixture and collection classes.
+dotnet_diagnostic.CA2100.severity = none
+# Test helpers execute literal SQL strings only; production code never builds SQL from input.
 dotnet_naming_rule.members_pascal.severity = suggestion
 dotnet_naming_rule.private_fields_underscore.severity = suggestion
+
+# EF Core generated migrations and snapshots use block-scoped namespaces and
+# repeated array literals; they are tool output, not hand-written code.
+[src/**/Migrations/*.cs]
+csharp_style_namespace_declarations = file_scoped:silent
+dotnet_diagnostic.CA1861.severity = none

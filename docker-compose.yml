@@ -77,6 +77,14 @@ services:
       Compliance__Kyc__Provider: "fake"
       Compliance__Kyc__WebhookSecret: ${ASKVEST_COMPLIANCE_KYC_WEBHOOK_SECRET:?required}
       Compliance__Screening__Provider: "fake"
+      Ledger__ReconciliationIntervalMinutes: "60"
+      Ledger__ReconciliationPageSize: "1000"
+      Ledger__Outbox__DispatchIntervalSeconds: "2"
+      Ledger__Outbox__BatchSize: "50"
+      Ledger__Outbox__LeaseSeconds: "60"
+      Ledger__Outbox__MaxAttempts: "8"
+      Ledger__Outbox__BackoffCapMinutes: "15"
+      Ledger__Outbox__ProcessedRetentionDays: "7"
     ports:
       - "127.0.0.1:${ASKVEST_API_PORT:-5080}:8080"
     depends_on:

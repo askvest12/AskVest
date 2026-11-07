@@ -35,11 +35,11 @@ openssl rand -hex 32
 
 Set the results in `.env`:
 
-- `ASKVEST_IDENTITY_SIGNING_KEY` — the base64 PKCS8 key from the first command
-- `ASKVEST_IDENTITY_PASSWORD_PEPPER` — first `openssl rand -hex 32` output
-- `ASKVEST_IDENTITY_CODE_SECRET` — second `openssl rand -hex 32` output
-- `ASKVEST_IDENTITY_SIGNING_KEY_PREVIOUS` — leave empty unless rotating keys
-- `ASKVEST_COMPLIANCE_KYC_WEBHOOK_SECRET` — the third `openssl rand -hex 32` output
+- `ASKVEST_IDENTITY_SIGNING_KEY` - the base64 PKCS8 key from the first command
+- `ASKVEST_IDENTITY_PASSWORD_PEPPER` - first `openssl rand -hex 32` output
+- `ASKVEST_IDENTITY_CODE_SECRET` - second `openssl rand -hex 32` output
+- `ASKVEST_IDENTITY_SIGNING_KEY_PREVIOUS` - leave empty unless rotating keys
+- `ASKVEST_COMPLIANCE_KYC_WEBHOOK_SECRET` - the third `openssl rand -hex 32` output
 
 Never commit real secret values; `.env` is git-ignored and `.env.example`
 contains names only.
@@ -59,7 +59,7 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build --w
 ```
 
 - API: `http://localhost:5080` (`/health/live`, `/scalar/v1` for docs)
-- Mailpit UI: `http://localhost:18025` — read verification codes here
+- Mailpit UI: `http://localhost:18025` - read verification codes here
 - Mailpit SMTP: `localhost:11025`
 
 The migrator runs automatically before the API starts.
@@ -69,7 +69,7 @@ The migrator runs automatically before the API starts.
 1. `POST /api/v1/auth/sign-up` with `{ "email": "you@example.com", "password": "..." }` and an `Idempotency-Key` header.
 2. Open Mailpit at `http://localhost:18025`, copy the 6-digit code from the verification email.
 3. `POST /api/v1/auth/verify-email` with `{ "email": ..., "code": ... }`.
-4. `POST /api/v1/auth/login` with `{ "email": ..., "password": ..., "device": { "installationId": "...", "platform": "android", "deviceName": "...", "appVersion": "1.0.0" } }` — the first device is trusted automatically; later devices get an email challenge via `POST /api/v1/auth/verify-device`.
+4. `POST /api/v1/auth/login` with `{ "email": ..., "password": ..., "device": { "installationId": "...", "platform": "android", "deviceName": "...", "appVersion": "1.0.0" } }` - the first device is trusted automatically; later devices get an email challenge via `POST /api/v1/auth/verify-device`.
 5. Authenticated calls use `Authorization: Bearer <accessToken>`; rotate with `POST /api/v1/auth/refresh`.
 
 ## Test
@@ -112,6 +112,37 @@ curl -X POST http://localhost:5081/api/v1/webhooks/kyc/fake \
 The `providerReference` comes from `POST /api/v1/compliance/kyc/start`. A name
 containing `SMOKE-SANCTIONED` triggers the fake screening hit path.
 
+## Ledger smoke flows
+
+With the smoke stack running (`docker compose -f docker-compose.yml -f
+docker-compose.smoke.yml up -d --build --wait`), the ledger journey runs over
+real HTTP:
+
+```bash
+ASKVEST_SMOKE_BASE_URL=http://localhost:5081 dotnet test --project tests/AskVest.SmokeTests
+```
+
+It signs up a practice-eligible user, posts diagnostic credits and debits via
+`POST /api/v1/practice/diagnostics/ledger-post` (header `Idempotency-Key`,
+body `{"kind":"credit","asset":"USD","amount":"100"}`), reads
+`GET /api/v1/practice/balances` and `GET /api/v1/practice/ledger/entries`,
+proves replay and the `ledger.insufficient_funds` envelope, then walks a
+second user through KYC approval to prove real-book posting stays separate.
+
+The API logs one reconciliation line per cycle:
+
+- `Ledger reconciliation completed with zero mismatches.` - healthy.
+- `Ledger reconciliation mismatch for {Target} with delta {Delta}` at error
+  level - one account's stored balance differs from the sum of its entries.
+  The job never auto-corrects; investigate the journal history for that
+  account.
+- `Ledger reconciliation non-zero net for book {Book} asset {Asset}` at error
+  level - a book and asset no longer nets to zero, meaning a journal was
+  written outside the ledger service or rows were tampered with.
+- `Ledger reconciliation cycle failed.` at error level - the job could not
+  reach the database; it retries on the next interval
+  (`Ledger__ReconciliationIntervalMinutes`, default 60).
+
 ## Rotating signing keys
 
 Access tokens are signed with ES256. To rotate:
@@ -125,7 +156,7 @@ Access tokens are signed with ES256. To rotate:
 
 To change the password pepper or code secret, bump
 `Identity__Secrets__PasswordPepperVersion` / regenerate the secret and expect
-existing password hashes and one-time codes to be invalidated — users must
+existing password hashes and one-time codes to be invalidated - users must
 reset their password. Plan this as a maintenance event.
 
 ## Layout
@@ -133,6 +164,8 @@ reset their password. Plan this as a maintenance event.
 - `src/AskVest.SharedKernel` - Result/Error primitives, paging, endpoint markers
 - `src/AskVest.Platform` - EF Core context, migrations, readiness, idempotency storage
 - `src/AskVest.Modules.Identity` - identity module: auth flows, sessions, devices, PIN, step-up, phone, deletion, messaging
+- `src/AskVest.Modules.Compliance` - compliance module: documents, consents, country, eligibility, KYC webhook, screening
+- `src/AskVest.Modules.Ledger` - ledger module: double-entry posting, balances, history, probes, reconciliation
 - `src/AskVest.Api` - HTTP host: envelope, middleware, health, OpenAPI
 - `src/AskVest.Migrator` - forward-only migration runner
 - `tests/` - unit, architecture, integration (Testcontainers), smoke

@@ -38,6 +38,7 @@ Central package management (`Directory.Packages.props`), transitive pinning, loc
 | FluentValidation | request validation |
 | FluentValidation.DependencyInjectionExtensions | DI registration |
 | Konscious.Security.Cryptography.Argon2 | Argon2id password and PIN hashing (pulls BouncyCastle.Cryptography transitively) |
+| BouncyCastle.Cryptography | Keccak-256 for EIP-55 checksum canonicalization inside the EVM chain handler only |
 | libphonenumber-csharp | E.164 phone number parsing and validation |
 | MailKit | SMTP email transport |
 | xunit.v3 | test framework (Microsoft.Testing.Platform) |

@@ -5,6 +5,7 @@
     <ProjectReference Include="..\Modules\AskVest.Modules.Identity\AskVest.Modules.Identity.csproj" />
     <ProjectReference Include="..\Modules\AskVest.Modules.Compliance\AskVest.Modules.Compliance.csproj" />
     <ProjectReference Include="..\Modules\AskVest.Modules.Ledger\AskVest.Modules.Ledger.csproj" />
+    <ProjectReference Include="..\Modules\AskVest.Modules.Catalog\AskVest.Modules.Catalog.csproj" />
   </ItemGroup>
 
   <ItemGroup>

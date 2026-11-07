@@ -1,3 +1,4 @@
+using AskVest.Modules.Catalog.Persistence;
 using AskVest.Modules.Compliance.Persistence;
 using AskVest.Modules.Identity.Persistence;
 using AskVest.Modules.Ledger.Persistence;
@@ -19,6 +20,7 @@ public sealed class PostgresFixture : IAsyncLifetime
 
     private readonly PostgreSqlContainer _container;
     private Respawner _respawner = null!;
+    private Respawner _catalogRespawner = null!;
 
     public PostgresFixture()
     {
@@ -52,6 +54,7 @@ public sealed class PostgresFixture : IAsyncLifetime
                 connectionString => new IdentityDbContext(IdentityDbContextOptions.Create(connectionString)),
                 connectionString => new ComplianceDbContext(ComplianceDbContextOptions.Create(connectionString)),
                 connectionString => new LedgerDbContext(LedgerDbContextOptions.Create(connectionString)),
+                connectionString => new CatalogDbContext(CatalogDbContextOptions.Create(connectionString)),
             ]);
         if (applied.Count == 0)
         {
@@ -75,13 +78,34 @@ public sealed class PostgresFixture : IAsyncLifetime
                     ],
                 });
         }
+
+        // The catalog schema is select-only for the app role, so its reset runs
+        // as the owner while every other schema resets as the app role.
+        await using (var ownerConnection = new NpgsqlConnection(OwnerConnectionString))
+        {
+            await ownerConnection.OpenAsync();
+            _catalogRespawner = await Respawner.CreateAsync(
+                ownerConnection,
+                new RespawnerOptions
+                {
+                    DbAdapter = DbAdapter.Postgres,
+                    SchemasToInclude = ["catalog"],
+                    TablesToIgnore = ["catalog.__ef_migrations_history"],
+                });
+        }
     }
 
     public async Task ResetAsync()
     {
-        await using var connection = new NpgsqlConnection(AppConnectionString);
-        await connection.OpenAsync();
-        await _respawner.ResetAsync(connection);
+        await using (var appConnection = new NpgsqlConnection(AppConnectionString))
+        {
+            await appConnection.OpenAsync();
+            await _respawner.ResetAsync(appConnection);
+        }
+
+        await using var ownerConnection = new NpgsqlConnection(OwnerConnectionString);
+        await ownerConnection.OpenAsync();
+        await _catalogRespawner.ResetAsync(ownerConnection);
     }
 
     public async ValueTask DisposeAsync()

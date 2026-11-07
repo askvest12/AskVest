@@ -9,6 +9,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="BouncyCastle.Cryptography" />
     <PackageReference Include="EFCore.NamingConventions" />
     <PackageReference Include="FluentValidation" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
@@ -29,6 +30,7 @@
     <InternalsVisibleTo Include="AskVest.UnitTests" />
     <InternalsVisibleTo Include="AskVest.IntegrationTests" />
     <InternalsVisibleTo Include="AskVest.ArchitectureTests" />
+    <InternalsVisibleTo Include="AskVest.Migrator" />
   </ItemGroup>
 
 </Project>

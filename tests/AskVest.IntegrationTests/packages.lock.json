@@ -69,11 +69,6 @@
           "xunit.v3.mtp-v2": "[4.0.2]"
         }
       },
-      "BouncyCastle.Cryptography": {
-        "type": "Transitive",
-        "resolved": "2.7.0",
-        "contentHash": "U+12df8UEWHgBi04YVf/Lgi2dy3SItlIYvHjjEVa/BngCQIzDCDRBk50DDByCfDvSbe5pRNFr3b7UrVK2kMcLw=="
-      },
       "DiffEngine": {
         "type": "Transitive",
         "resolved": "11.3.0",
@@ -739,6 +734,20 @@
           "Serilog.AspNetCore": "[10.0.0, )"
         }
       },
+      "askvest.modules.catalog": {
+        "type": "Project",
+        "dependencies": {
+          "AskVest.Modules.Compliance": "[1.0.0, )",
+          "AskVest.Modules.Ledger": "[1.0.0, )",
+          "AskVest.Platform": "[1.0.0, )",
+          "AskVest.SharedKernel": "[1.0.0, )",
+          "BouncyCastle.Cryptography": "[2.7.0, )",
+          "EFCore.NamingConventions": "[10.0.1, )",
+          "FluentValidation": "[12.2.0, )",
+          "FluentValidation.DependencyInjectionExtensions": "[12.2.0, )",
+          "Npgsql.EntityFrameworkCore.PostgreSQL": "[10.0.3, )"
+        }
+      },
       "askvest.modules.compliance": {
         "type": "Project",
         "dependencies": {
@@ -792,6 +801,12 @@
       },
       "askvest.sharedkernel": {
         "type": "Project"
+      },
+      "BouncyCastle.Cryptography": {
+        "type": "CentralTransitive",
+        "requested": "[2.7.0, )",
+        "resolved": "2.7.0",
+        "contentHash": "U+12df8UEWHgBi04YVf/Lgi2dy3SItlIYvHjjEVa/BngCQIzDCDRBk50DDByCfDvSbe5pRNFr3b7UrVK2kMcLw=="
       },
       "EFCore.NamingConventions": {
         "type": "CentralTransitive",

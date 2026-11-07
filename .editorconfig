@@ -209,3 +209,9 @@ dotnet_diagnostic.CA2000.severity = none
 # The HIBP k-anonymity API requires SHA-1 prefixes; it is never used for password storage.
 [src/Modules/AskVest.Modules.Identity/Crypto/BreachPasswordChecker.cs]
 dotnet_diagnostic.CA5350.severity = none
+
+# EF Core maps List<string> properties to Postgres arrays; the collection
+# interface rules do not apply to persistence entities.
+[src/Modules/AskVest.Modules.Catalog/Persistence/Entities/*.cs]
+dotnet_diagnostic.CA1002.severity = none
+dotnet_diagnostic.CA2227.severity = none

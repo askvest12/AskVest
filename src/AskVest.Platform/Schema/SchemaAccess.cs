@@ -24,6 +24,22 @@ public static partial class SchemaAccess
             """);
     }
 
+    public static void ProvisionReadOnlySchema(MigrationBuilder migrationBuilder, string schema, string historyTable)
+    {
+        ArgumentNullException.ThrowIfNull(migrationBuilder);
+        ValidateName(schema, nameof(schema));
+        ValidateName(historyTable, nameof(historyTable));
+
+        migrationBuilder.Sql($$"""
+            GRANT USAGE ON SCHEMA {{schema}} TO {{AppRole}};
+            ALTER DEFAULT PRIVILEGES FOR ROLE {{OwnerRole}} IN SCHEMA {{schema}}
+              GRANT SELECT ON TABLES TO {{AppRole}};
+            ALTER DEFAULT PRIVILEGES FOR ROLE {{OwnerRole}} IN SCHEMA {{schema}}
+              GRANT USAGE, SELECT ON SEQUENCES TO {{AppRole}};
+            GRANT SELECT ON TABLE {{schema}}.{{historyTable}} TO {{AppRole}};
+            """);
+    }
+
     public static void RestrictToAppendOnly(MigrationBuilder migrationBuilder, string schema, string table)
     {
         ArgumentNullException.ThrowIfNull(migrationBuilder);

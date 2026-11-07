@@ -32,7 +32,7 @@ public sealed class CatalogModuleBoundaryTests
                 || name.StartsWith("Npgsql", StringComparison.Ordinal)
                 || name.StartsWith("EFCore.", StringComparison.Ordinal)
                 || name.StartsWith("FluentValidation", StringComparison.Ordinal)
-                || name.StartsWith("Org.BouncyCastle", StringComparison.Ordinal)
+                || name.StartsWith("BouncyCastle", StringComparison.Ordinal)
                 || name.Equals("netstandard", StringComparison.Ordinal)
                 || name.Equals("mscorlib", StringComparison.Ordinal));
     }

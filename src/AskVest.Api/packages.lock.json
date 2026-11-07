@@ -62,11 +62,6 @@
           "Serilog.Sinks.File": "7.0.0"
         }
       },
-      "BouncyCastle.Cryptography": {
-        "type": "Transitive",
-        "resolved": "2.7.0",
-        "contentHash": "U+12df8UEWHgBi04YVf/Lgi2dy3SItlIYvHjjEVa/BngCQIzDCDRBk50DDByCfDvSbe5pRNFr3b7UrVK2kMcLw=="
-      },
       "Konscious.Security.Cryptography.Blake2": {
         "type": "Transitive",
         "resolved": "1.1.1",
@@ -243,6 +238,12 @@
       },
       "askvest.sharedkernel": {
         "type": "Project"
+      },
+      "BouncyCastle.Cryptography": {
+        "type": "CentralTransitive",
+        "requested": "[2.7.0, )",
+        "resolved": "2.7.0",
+        "contentHash": "U+12df8UEWHgBi04YVf/Lgi2dy3SItlIYvHjjEVa/BngCQIzDCDRBk50DDByCfDvSbe5pRNFr3b7UrVK2kMcLw=="
       },
       "EFCore.NamingConventions": {
         "type": "CentralTransitive",

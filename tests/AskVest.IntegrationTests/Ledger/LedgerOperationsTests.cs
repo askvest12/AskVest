@@ -87,6 +87,13 @@ public sealed class LedgerOperationsTests(PostgresFixture fixture) : IAsyncLifet
         var balance = await ScalarAsync<decimal>(
             $"SELECT balance FROM ledger.account_balances WHERE account_id = '{accountId}'");
         balance.ShouldBe(35m);
+
+        // The shared test database keeps this corruption otherwise and every later
+        // zero-mismatch reconciliation cycle would report it.
+        await Database.ExecuteAsync(
+            fixture.OwnerConnectionString,
+            $"UPDATE ledger.account_balances SET balance = balance - 5 WHERE account_id = '{accountId}'",
+            TestContext.Current.CancellationToken);
     }
 
     [Fact]

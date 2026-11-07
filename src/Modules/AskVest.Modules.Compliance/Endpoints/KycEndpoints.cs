@@ -1,8 +1,8 @@
 using AskVest.Modules.Compliance.Services;
+using AskVest.SharedKernel;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using AskVest.SharedKernel;
 
 namespace AskVest.Modules.Compliance.Endpoints;
 

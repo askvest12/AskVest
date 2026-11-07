@@ -32,15 +32,18 @@ public static class DocumentEndpoints
         var userId = CurrentUserId(httpContext);
         var documents = await consentService.GetDocumentsAsync(userId, cancellationToken);
         return ComplianceResults.Ok(
-            new { documents = documents.Select(d => new
+            new
             {
-                type = d.Type,
-                version = d.Version,
-                url = d.Url,
-                sha256 = d.Sha256,
-                requiredFor = d.RequiredFor,
-                accepted = d.Accepted,
-            }) },
+                documents = documents.Select(d => new
+                {
+                    type = d.Type,
+                    version = d.Version,
+                    url = d.Url,
+                    sha256 = d.Sha256,
+                    requiredFor = d.RequiredFor,
+                    accepted = d.Accepted,
+                })
+            },
             "Documents retrieved.",
             httpContext);
     }

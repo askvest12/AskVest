@@ -3,10 +3,10 @@ using System.Text.Json;
 using AskVest.Modules.Identity.Configuration;
 using AskVest.Modules.Identity.Messaging;
 using DotNet.Testcontainers.Builders;
+using DotNet.Testcontainers.Containers;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Shouldly;
-using DotNet.Testcontainers.Containers;
 using Xunit;
 
 namespace AskVest.IntegrationTests.Messaging;

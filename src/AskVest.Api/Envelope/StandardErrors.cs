@@ -1,5 +1,5 @@
-using Microsoft.AspNetCore.Http;
 using AskVest.SharedKernel;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Metadata;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
@@ -8,7 +8,7 @@ namespace AskVest.Api;
 
 internal static class StandardErrors
 {
-    private static readonly (int Status, string Code, string Message)[] Entries =
+    private static readonly (int Status, string Code, string Message)[] _entries =
     [
         (400, ErrorCodes.ValidationFailed, "The request is not valid."),
         (400, ErrorCodes.RequestMalformed, "The request body is not valid."),
@@ -31,7 +31,7 @@ internal static class StandardErrors
     public static void Apply(OpenApiOperation operation)
     {
         operation.Responses ??= new OpenApiResponses();
-        foreach (var (status, code, message) in Entries)
+        foreach (var (status, code, message) in _entries)
         {
             var statusKey = status.ToString();
             if (operation.Responses.ContainsKey(statusKey))

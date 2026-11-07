@@ -1,5 +1,5 @@
-using Microsoft.OpenApi;
 using Microsoft.AspNetCore.OpenApi;
+using Microsoft.OpenApi;
 
 namespace AskVest.Api;
 

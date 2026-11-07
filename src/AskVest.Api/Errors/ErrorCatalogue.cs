@@ -4,7 +4,7 @@ namespace AskVest.Api;
 
 internal static class ErrorCatalogue
 {
-    private static readonly IReadOnlyDictionary<string, (int Status, ErrorType Type, string Message)> Entries =
+    private static readonly IReadOnlyDictionary<string, (int Status, ErrorType Type, string Message)> _entries =
         new Dictionary<string, (int, ErrorType, string)>(StringComparer.Ordinal)
         {
             [ErrorCodes.ValidationFailed] = (400, ErrorType.Validation, "The request is not valid."),
@@ -45,7 +45,7 @@ internal static class ErrorCatalogue
 
     public static bool TryGet(string code, out int status, out ErrorType type, out string message)
     {
-        if (Entries.TryGetValue(code, out var entry))
+        if (_entries.TryGetValue(code, out var entry))
         {
             (status, type, message) = entry;
             return true;
@@ -57,5 +57,5 @@ internal static class ErrorCatalogue
         return false;
     }
 
-    public static IEnumerable<string> AllCodes => Entries.Keys;
+    public static IEnumerable<string> AllCodes => _entries.Keys;
 }

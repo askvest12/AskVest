@@ -1,9 +1,9 @@
+using AskVest.IntegrationTests.Infrastructure;
 using AskVest.Modules.Identity.Configuration;
 using AskVest.Modules.Identity.Crypto;
 using AskVest.Modules.Identity.Domain.Enums;
 using AskVest.Modules.Identity.Persistence;
 using AskVest.Modules.Identity.Services;
-using AskVest.IntegrationTests.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;

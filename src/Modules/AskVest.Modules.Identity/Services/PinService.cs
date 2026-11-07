@@ -36,22 +36,22 @@ public sealed class PinService(
     IMessageChannel messageChannel,
     TimeProvider timeProvider)
 {
-    private static readonly Error PinNotSet = new(
+    private static readonly Error _pinNotSet = new(
         ErrorCodes.AuthPinNotSet,
         "No PIN is set on this account.",
         ErrorType.BusinessRule);
 
-    private static readonly Error PinInvalid = new(
+    private static readonly Error _pinInvalid = new(
         ErrorCodes.AuthPinInvalid,
         "The PIN is incorrect or does not meet the requirements.",
         ErrorType.BusinessRule);
 
-    private static readonly Error InvalidCredentials = new(
+    private static readonly Error _invalidCredentials = new(
         ErrorCodes.AuthInvalidCredentials,
         "The email or password is incorrect.",
         ErrorType.Unauthenticated);
 
-    private static readonly Error InvalidCode = new(
+    private static readonly Error _invalidCode = new(
         ErrorCodes.AuthInvalidCode,
         "The code is invalid or has expired.",
         ErrorType.BusinessRule);
@@ -89,7 +89,7 @@ public sealed class PinService(
         {
             securityEvents.Record(SecurityEventType.LoginFailed, user.Id, ip, userAgent, correlationId);
             await db.SaveChangesAsync(cancellationToken);
-            return Result.Failure(InvalidCredentials);
+            return Result.Failure(_invalidCredentials);
         }
 
         var pinError = ValidateNewPin(request.Pin);
@@ -155,7 +155,7 @@ public sealed class PinService(
 
         if (user.PinHash is null)
         {
-            return Result.Failure(PinNotSet);
+            return Result.Failure(_pinNotSet);
         }
 
         if (await oneTimeCodes.CanSendAsync(
@@ -195,14 +195,14 @@ public sealed class PinService(
         {
             securityEvents.Record(SecurityEventType.LoginFailed, user.Id, ip, userAgent, correlationId);
             await db.SaveChangesAsync(cancellationToken);
-            return Result.Failure(InvalidCredentials);
+            return Result.Failure(_invalidCredentials);
         }
 
         var verified = await oneTimeCodes.TryVerifyAsync(
             user.Id, OneTimeCodePurpose.PinReset, request.Code ?? string.Empty, cancellationToken);
         if (!verified)
         {
-            return Result.Failure(InvalidCode);
+            return Result.Failure(_invalidCode);
         }
 
         var pinError = ValidateNewPin(request.Pin);
@@ -250,7 +250,7 @@ public sealed class PinService(
 
         if (user.PinHash is null)
         {
-            return new PinVerification(false, PinNotSet);
+            return new PinVerification(false, _pinNotSet);
         }
 
         if (user.PinLockedUntil is not null)
@@ -285,7 +285,7 @@ public sealed class PinService(
         }
 
         await db.SaveChangesAsync(cancellationToken);
-        return new PinVerification(false, PinInvalid);
+        return new PinVerification(false, _pinInvalid);
     }
 
     private async Task<UserAccount?> LoadUserAsync(Guid userId, CancellationToken cancellationToken)

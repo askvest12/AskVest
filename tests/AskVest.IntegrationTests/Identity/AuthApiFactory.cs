@@ -1,7 +1,7 @@
 using AskVest.Api;
+using AskVest.IntegrationTests.Infrastructure;
 using AskVest.Modules.Identity.Crypto;
 using AskVest.Modules.Identity.Messaging;
-using AskVest.IntegrationTests.Infrastructure;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;

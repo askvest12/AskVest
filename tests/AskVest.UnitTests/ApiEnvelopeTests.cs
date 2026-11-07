@@ -1,8 +1,8 @@
 using AskVest.Api;
 using AskVest.SharedKernel;
-using Error = AskVest.SharedKernel.Error;
 using Shouldly;
 using Xunit;
+using Error = AskVest.SharedKernel.Error;
 
 namespace AskVest.UnitTests;
 

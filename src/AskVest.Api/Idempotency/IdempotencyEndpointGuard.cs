@@ -6,7 +6,7 @@ namespace AskVest.Api;
 
 internal static class IdempotencyEndpointGuard
 {
-    private static readonly HashSet<string> SafeMethods = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly HashSet<string> _safeMethods = new(StringComparer.OrdinalIgnoreCase)
     {
         HttpMethods.Get, HttpMethods.Head, HttpMethods.Options,
     };
@@ -17,7 +17,7 @@ internal static class IdempotencyEndpointGuard
         foreach (var endpoint in endpoints.OfType<RouteEndpoint>())
         {
             var methods = endpoint.Metadata.GetMetadata<Microsoft.AspNetCore.Routing.HttpMethodMetadata>()?.HttpMethods;
-            if (methods is null || methods.All(SafeMethods.Contains))
+            if (methods is null || methods.All(_safeMethods.Contains))
             {
                 continue;
             }

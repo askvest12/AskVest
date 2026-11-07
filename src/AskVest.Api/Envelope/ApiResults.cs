@@ -1,7 +1,7 @@
 using System.Text.Json;
 using AskVest.SharedKernel;
-using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Http.Json;
+using Microsoft.Extensions.Options;
 
 namespace AskVest.Api;
 

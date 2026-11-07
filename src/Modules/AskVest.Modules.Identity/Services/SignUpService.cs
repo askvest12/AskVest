@@ -20,7 +20,7 @@ public sealed class SignUpService(
     IMessageChannel messageChannel,
     TimeProvider timeProvider)
 {
-    private static readonly Error InvalidEmail = new(
+    private static readonly Error _invalidEmail = new(
         ErrorCodes.ValidationFailed,
         "The email address is invalid.",
         ErrorType.Validation,
@@ -47,7 +47,7 @@ public sealed class SignUpService(
         var email = EmailNormalizer.Normalize(rawEmail, 254);
         if (email.IsFailure)
         {
-            return Result.Failure(InvalidEmail);
+            return Result.Failure(_invalidEmail);
         }
 
         var normalized = email.Value;

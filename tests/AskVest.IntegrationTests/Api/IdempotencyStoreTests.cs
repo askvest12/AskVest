@@ -1,6 +1,6 @@
 using AskVest.Api;
-using AskVest.Platform;
 using AskVest.IntegrationTests.Infrastructure;
+using AskVest.Platform;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;

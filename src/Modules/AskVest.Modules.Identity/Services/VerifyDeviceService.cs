@@ -19,7 +19,7 @@ public sealed class VerifyDeviceService(
     IMessageChannel messageChannel,
     TimeProvider timeProvider)
 {
-    private static readonly Error InvalidCode = new(
+    private static readonly Error _invalidCode = new(
         ErrorCodes.AuthInvalidCode,
         "The code is invalid, expired or already used.",
         ErrorType.Validation);
@@ -33,7 +33,7 @@ public sealed class VerifyDeviceService(
     {
         if (request.ChallengeId is null || string.IsNullOrWhiteSpace(request.Code))
         {
-            return LoginAttempt.Failed(InvalidCode);
+            return LoginAttempt.Failed(_invalidCode);
         }
 
         var code = await db.OneTimeCodes
@@ -43,7 +43,7 @@ public sealed class VerifyDeviceService(
                 cancellationToken);
         if (code is null)
         {
-            return LoginAttempt.Failed(InvalidCode);
+            return LoginAttempt.Failed(_invalidCode);
         }
 
         var user = await db.Users.FirstOrDefaultAsync(u => u.Id == code.UserId, cancellationToken);
@@ -52,7 +52,7 @@ public sealed class VerifyDeviceService(
             : await db.Devices.FirstOrDefaultAsync(d => d.Id == code.DeviceId.Value, cancellationToken);
         if (user is null || device is null || user.Status != UserStatus.Active)
         {
-            return LoginAttempt.Failed(InvalidCode);
+            return LoginAttempt.Failed(_invalidCode);
         }
 
         var verified = await oneTimeCodes.TryVerifyCodeAsync(
@@ -61,7 +61,7 @@ public sealed class VerifyDeviceService(
         {
             securityEvents.Record(SecurityEventType.LoginFailed, user.Id, ip, userAgent, correlationId, device.Id);
             await db.SaveChangesAsync(cancellationToken);
-            return LoginAttempt.Failed(InvalidCode);
+            return LoginAttempt.Failed(_invalidCode);
         }
 
         device.TrustedAt = timeProvider.GetUtcNow();

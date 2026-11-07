@@ -30,7 +30,7 @@ public sealed class StepUpService(
     IOptions<IdentityOptions> options,
     TimeProvider timeProvider) : IStepUpAuthorizer
 {
-    private static readonly Error StepUpInvalid = new(
+    private static readonly Error _stepUpInvalid = new(
         ErrorCodes.AuthStepUpInvalid,
         "The step-up grant is invalid or has expired.",
         ErrorType.Forbidden);
@@ -48,7 +48,7 @@ public sealed class StepUpService(
     {
         if (!StepUpPurposes.IsKnown(request.Purpose))
         {
-            return StepUpIssueResult.Failed(StepUpInvalid);
+            return StepUpIssueResult.Failed(_stepUpInvalid);
         }
 
         var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
@@ -119,7 +119,7 @@ public sealed class StepUpService(
 
         if (consumed.Count == 0)
         {
-            return Result.Failure(StepUpInvalid);
+            return Result.Failure(_stepUpInvalid);
         }
 
         securityEvents.Record(SecurityEventType.StepUpConsumed, userId, null, null, null);

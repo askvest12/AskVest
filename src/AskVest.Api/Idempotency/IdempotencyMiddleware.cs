@@ -6,13 +6,13 @@ namespace AskVest.Api;
 
 internal sealed class IdempotencyMiddleware(RequestDelegate next)
 {
-    private static readonly HashSet<string> CoveredMethods = new(StringComparer.OrdinalIgnoreCase) { "POST", "PUT", "PATCH", "DELETE" };
+    private static readonly HashSet<string> _coveredMethods = new(StringComparer.OrdinalIgnoreCase) { "POST", "PUT", "PATCH", "DELETE" };
 
     public async Task InvokeAsync(HttpContext context)
     {
         var endpoint = context.GetEndpoint();
         if (endpoint is null
-            || !CoveredMethods.Contains(context.Request.Method)
+            || !_coveredMethods.Contains(context.Request.Method)
             || endpoint.Metadata.GetMetadata<IdempotencyExemptAttribute>() is not null)
         {
             await next(context);

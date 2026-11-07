@@ -1,0 +1,5 @@
+{
+  "dotnet.defaultSolution": "AskVest.slnx",
+  "dotnet.server.useOmnisharp": false,
+  "editor.formatOnSave": true
+}

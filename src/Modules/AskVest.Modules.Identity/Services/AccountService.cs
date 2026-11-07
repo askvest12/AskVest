@@ -56,7 +56,7 @@ public sealed class AccountService(
     SecurityEventRecorder securityEvents,
     TimeProvider timeProvider)
 {
-    private static readonly Error NotFound = new(
+    private static readonly Error _notFound = new(
         ErrorCodes.ResourceNotFound,
         "The resource was not found.",
         ErrorType.NotFound);
@@ -66,7 +66,7 @@ public sealed class AccountService(
         var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
         if (user is null)
         {
-            return Result.Failure<AccountProfile>(NotFound);
+            return Result.Failure<AccountProfile>(_notFound);
         }
 
         var roles = await db.UserRoles
@@ -122,7 +122,7 @@ public sealed class AccountService(
             .FirstOrDefaultAsync(s => s.Id == sessionId, cancellationToken);
         if (session is null || session.UserId != userId)
         {
-            return Result.Failure(NotFound);
+            return Result.Failure(_notFound);
         }
 
         await sessions.RevokeAsync(sessionId, userId, "user_revoked", ip, userAgent, correlationId, cancellationToken);
@@ -179,7 +179,7 @@ public sealed class AccountService(
             .FirstOrDefaultAsync(d => d.Id == deviceId, cancellationToken);
         if (device is null || device.UserId != userId)
         {
-            return Result.Failure(NotFound);
+            return Result.Failure(_notFound);
         }
 
         var now = timeProvider.GetUtcNow();

@@ -6,7 +6,7 @@ namespace AskVest.Modules.Identity.Crypto;
 
 public static partial class EmailNormalizer
 {
-    private static readonly Error InvalidEmail = new(
+    private static readonly Error _invalidEmail = new(
         "validation.failed",
         "The email address is invalid.",
         SharedKernel.ErrorType.Validation);
@@ -15,39 +15,39 @@ public static partial class EmailNormalizer
     {
         if (string.IsNullOrWhiteSpace(raw))
         {
-            return Result.Failure<string>(InvalidEmail);
+            return Result.Failure<string>(_invalidEmail);
         }
 
         var trimmed = raw.Trim();
         if (trimmed.Length > maxLength || trimmed.Length < 3)
         {
-            return Result.Failure<string>(InvalidEmail);
+            return Result.Failure<string>(_invalidEmail);
         }
 
         foreach (var character in trimmed)
         {
             if (char.IsControl(character))
             {
-                return Result.Failure<string>(InvalidEmail);
+                return Result.Failure<string>(_invalidEmail);
             }
         }
 
         var parts = trimmed.Split('@');
         if (parts.Length != 2)
         {
-            return Result.Failure<string>(InvalidEmail);
+            return Result.Failure<string>(_invalidEmail);
         }
 
         var local = parts[0];
         var domain = parts[1];
         if (local.Length is < 1 or > 64 || !LocalPartPattern().IsMatch(local))
         {
-            return Result.Failure<string>(InvalidEmail);
+            return Result.Failure<string>(_invalidEmail);
         }
 
         if (!IsValidDomain(domain))
         {
-            return Result.Failure<string>(InvalidEmail);
+            return Result.Failure<string>(_invalidEmail);
         }
 
         return Result.Success(trimmed.ToLowerInvariant());

@@ -118,3 +118,24 @@ reset their password. Plan this as a maintenance event.
 - `ConnectionStrings:Platform is required`: set the connection string env var or appsettings.
 - Containers unhealthy: `docker compose logs api postgres migrator`.
 - Emails not arriving in dev: check `http://localhost:18025` and `docker compose logs api | grep -i smtp`.
+
+### Editor shows red errors or warnings that the build does not
+
+The command-line build is the source of truth (`dotnet build` must show 0
+warnings). If VS Code disagrees:
+
+1. Install the recommended extensions: `ms-dotnettools.csdevkit` and
+   `ms-dotnettools.csharp` (see `.vscode/extensions.json`).
+2. Reload the window: `Ctrl+Shift+P` then "Developer: Reload Window".
+3. Restart the C# language server: `Ctrl+Shift+P` then "C#: Restart Language
+   Server".
+4. Confirm the editor uses the pinned SDK: `.vscode/settings.json` points at
+   `AskVest.slnx`; `global.json` pins SDK `10.0.114` with `latestFeature`
+   roll-forward, so any 10.0.1xx SDK works.
+5. Delete stale build output and restore:
+   `find . -type d \( -name bin -o -name obj \) -exec rm -rf {} +` then
+   `dotnet restore AskVest.slnx --locked-mode`.
+6. If red lines persist, run `dotnet build` and `dotnet format AskVest.slnx
+   --verify-no-changes`; both must be clean. `.editorconfig` is the shared
+   rule set; rules that the compiler cannot enforce are set to suggestion so
+   they never show as errors.

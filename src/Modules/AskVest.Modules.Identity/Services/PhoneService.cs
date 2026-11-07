@@ -18,12 +18,12 @@ public sealed class PhoneService(
     IOptions<IdentityOptions> options,
     TimeProvider timeProvider)
 {
-    private static readonly Error InvalidCode = new(
+    private static readonly Error _invalidCode = new(
         ErrorCodes.AuthInvalidCode,
         "The code is invalid or has expired.",
         ErrorType.BusinessRule);
 
-    private static readonly Error InvalidPhone = new(
+    private static readonly Error _invalidPhone = new(
         ErrorCodes.ValidationFailed,
         "The phone number is invalid.",
         ErrorType.Validation);
@@ -47,7 +47,7 @@ public sealed class PhoneService(
         var normalized = PhoneNormalizer.Normalize(request.Phone, _options.DefaultPhoneRegion);
         if (normalized.IsFailure)
         {
-            return Result.Failure(InvalidPhone);
+            return Result.Failure(_invalidPhone);
         }
 
         var e164 = normalized.Value;
@@ -89,7 +89,7 @@ public sealed class PhoneService(
             .FirstOrDefaultAsync(cancellationToken);
         if (pending is null)
         {
-            return Result.Failure(InvalidCode);
+            return Result.Failure(_invalidCode);
         }
 
         var verified = await oneTimeCodes.TryVerifyCodeAsync(
@@ -97,7 +97,7 @@ public sealed class PhoneService(
             request.Code ?? string.Empty, cancellationToken);
         if (!verified)
         {
-            return Result.Failure(InvalidCode);
+            return Result.Failure(_invalidCode);
         }
 
         var e164 = pending.Destination;
@@ -106,7 +106,7 @@ public sealed class PhoneService(
             cancellationToken);
         if (taken)
         {
-            return Result.Failure(InvalidCode);
+            return Result.Failure(_invalidCode);
         }
 
         user.PhoneE164 = e164;
@@ -118,7 +118,7 @@ public sealed class PhoneService(
         }
         catch (DbUpdateException)
         {
-            return Result.Failure(InvalidCode);
+            return Result.Failure(_invalidCode);
         }
 
         return Result.Success();

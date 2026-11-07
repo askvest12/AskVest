@@ -9,7 +9,7 @@ public static class StepUpPurposes
     public const string DeleteAccount = "delete_account";
     public const string ChangePin = "change_pin";
 
-    private static readonly HashSet<string> Known = new(StringComparer.Ordinal)
+    private static readonly HashSet<string> _known = new(StringComparer.Ordinal)
     {
         AuthorizeOrder,
         AuthorizeWithdrawal,
@@ -19,5 +19,5 @@ public static class StepUpPurposes
         ChangePin,
     };
 
-    public static bool IsKnown(string? purpose) => purpose is not null && Known.Contains(purpose);
+    public static bool IsKnown(string? purpose) => purpose is not null && _known.Contains(purpose);
 }

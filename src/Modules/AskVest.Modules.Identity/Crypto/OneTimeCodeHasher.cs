@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
-using AskVest.Modules.Identity.Domain.Enums;
 using AskVest.Modules.Identity.Configuration;
+using AskVest.Modules.Identity.Domain.Enums;
 using Microsoft.Extensions.Options;
 
 namespace AskVest.Modules.Identity.Crypto;

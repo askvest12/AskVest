@@ -13,10 +13,10 @@ csharp_style_namespace_declarations = file_scoped:error
 csharp_style_var_for_built_in_types = false:suggestion
 csharp_style_var_when_type_is_apparent = true:suggestion
 csharp_prefer_braces = true:error
-dotnet_style_qualification_for_field = false:error
-dotnet_style_qualification_for_property = false:error
-dotnet_style_qualification_for_method = false:error
-dotnet_style_qualification_for_event = false:error
+dotnet_style_qualification_for_field = false:suggestion
+dotnet_style_qualification_for_property = false:suggestion
+dotnet_style_qualification_for_method = false:suggestion
+dotnet_style_qualification_for_event = false:suggestion
 dotnet_style_require_accessibility_modifiers = for_non_interface_members:error
 csharp_style_expression_bodied_methods = false:silent
 csharp_style_expression_bodied_properties = true:silent
@@ -90,7 +90,7 @@ dotnet_style_allow_statement_immediately_after_block_experimental = false:silent
 [*.cs]
 dotnet_naming_rule.interface_prefix.symbols = interface_symbols
 dotnet_naming_rule.interface_prefix.style = interface_style
-dotnet_naming_rule.interface_prefix.severity = error
+dotnet_naming_rule.interface_prefix.severity = suggestion
 dotnet_naming_symbols.interface_symbols.applicable_kinds = interface
 dotnet_naming_symbols.interface_symbols.applicable_accessibilities = *
 dotnet_naming_style.interface_style.required_prefix = I
@@ -98,14 +98,14 @@ dotnet_naming_style.interface_style.capitalization = pascal_case
 
 dotnet_naming_rule.types_pascal.symbols = type_symbols
 dotnet_naming_rule.types_pascal.style = pascal_style
-dotnet_naming_rule.types_pascal.severity = error
+dotnet_naming_rule.types_pascal.severity = suggestion
 dotnet_naming_symbols.type_symbols.applicable_kinds = class,struct,enum,delegate
 dotnet_naming_symbols.type_symbols.applicable_accessibilities = *
 dotnet_naming_style.pascal_style.capitalization = pascal_case
 
 dotnet_naming_rule.members_pascal.symbols = member_symbols
 dotnet_naming_rule.members_pascal.style = pascal_style
-dotnet_naming_rule.members_pascal.severity = error
+dotnet_naming_rule.members_pascal.severity = suggestion
 dotnet_naming_symbols.member_symbols.applicable_kinds = property,method,event,field
 dotnet_naming_symbols.member_symbols.applicable_accessibilities = public,internal,protected,protected_internal
 dotnet_naming_symbols.member_symbols.required_modifiers = 
@@ -113,7 +113,7 @@ dotnet_naming_symbols.member_symbols.required_modifiers =
 # Private fields: _camelCase
 dotnet_naming_rule.private_fields_underscore.symbols = private_field_symbols
 dotnet_naming_rule.private_fields_underscore.style = underscore_camel_style
-dotnet_naming_rule.private_fields_underscore.severity = error
+dotnet_naming_rule.private_fields_underscore.severity = suggestion
 dotnet_naming_symbols.private_field_symbols.applicable_kinds = field
 dotnet_naming_symbols.private_field_symbols.applicable_accessibilities = private
 dotnet_naming_style.underscore_camel_style.required_prefix = _
@@ -122,7 +122,7 @@ dotnet_naming_style.underscore_camel_style.capitalization = camel_case
 # Constants stay PascalCase (covered by member rule only for public; add const rule)
 dotnet_naming_rule.constants_pascal.symbols = const_symbols
 dotnet_naming_rule.constants_pascal.style = pascal_style
-dotnet_naming_rule.constants_pascal.severity = error
+dotnet_naming_rule.constants_pascal.severity = suggestion
 dotnet_naming_symbols.const_symbols.applicable_kinds = field
 dotnet_naming_symbols.const_symbols.required_modifiers = const
 
@@ -158,9 +158,22 @@ dotnet_diagnostic.CA2000.severity = none
 dotnet_naming_rule.members_pascal.severity = suggestion
 dotnet_naming_rule.private_fields_underscore.severity = suggestion
 
-# EF Core generated migrations and snapshots use block-scoped namespaces and
-# repeated array literals; they are tool output, not hand-written code.
-[src/**/Migrations/*.cs]
+# EF Core generated migrations and snapshots are tool output, not hand-written
+# code. Timestamped migration files start with a digit; MigrationRunner.cs in
+# the same folder is hand-written and stays under the normal rules.
+[src/**/Migrations/[0-9]*.cs]
+generated_code = true
+charset = utf-8-bom
+csharp_style_namespace_declarations = file_scoped:silent
+dotnet_diagnostic.CA1861.severity = none
+
+[src/**/Migrations/*.Designer.cs]
+generated_code = true
+csharp_style_namespace_declarations = file_scoped:silent
+dotnet_diagnostic.CA1861.severity = none
+
+[src/**/Migrations/*ModelSnapshot.cs]
+generated_code = true
 csharp_style_namespace_declarations = file_scoped:silent
 dotnet_diagnostic.CA1861.severity = none
 

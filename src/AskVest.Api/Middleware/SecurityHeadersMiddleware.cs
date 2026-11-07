@@ -2,14 +2,14 @@ namespace AskVest.Api;
 
 internal sealed class SecurityHeadersMiddleware(RequestDelegate next)
 {
-    private static readonly string[] DocsPrefixes = ["/scalar", "/openapi"];
+    private static readonly string[] _docsPrefixes = ["/scalar", "/openapi"];
 
     public async Task InvokeAsync(HttpContext context)
     {
         context.Response.OnStarting(() =>
         {
             var path = context.Request.Path.Value ?? string.Empty;
-            var isDocs = DocsPrefixes.Any(prefix => path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
+            var isDocs = _docsPrefixes.Any(prefix => path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
             if (!isDocs)
             {
                 var headers = context.Response.Headers;

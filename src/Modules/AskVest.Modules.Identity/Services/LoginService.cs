@@ -37,7 +37,7 @@ public sealed class LoginService(
     IMessageChannel messageChannel,
     TimeProvider timeProvider)
 {
-    private static readonly Error InvalidCredentials = new(
+    private static readonly Error _invalidCredentials = new(
         ErrorCodes.AuthInvalidCredentials,
         "The email or password is incorrect.",
         ErrorType.Unauthenticated);
@@ -82,7 +82,7 @@ public sealed class LoginService(
             await throttle.RecordFailureAsync(ThrottleKind.Account, accountKey, cancellationToken);
             await throttle.RecordFailureAsync(ThrottleKind.ClientIp, ipKey, cancellationToken);
             await db.SaveChangesAsync(cancellationToken);
-            return LoginAttempt.Failed(InvalidCredentials);
+            return LoginAttempt.Failed(_invalidCredentials);
         }
 
         if (user.Status == UserStatus.PendingVerification)
@@ -111,7 +111,7 @@ public sealed class LoginService(
 
         if (user.Status != UserStatus.Active)
         {
-            return LoginAttempt.Failed(InvalidCredentials);
+            return LoginAttempt.Failed(_invalidCredentials);
         }
 
         await throttle.ResetAsync(ThrottleKind.Account, accountKey, cancellationToken);

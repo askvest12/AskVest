@@ -28,12 +28,12 @@ public sealed class RefreshService(
     IOptions<IdentityOptions> options,
     TimeProvider timeProvider)
 {
-    private static readonly Error RefreshInvalid = new(
+    private static readonly Error _refreshInvalid = new(
         ErrorCodes.AuthRefreshInvalid,
         "The refresh token is not valid.",
         ErrorType.Unauthenticated);
 
-    private static readonly Error RefreshConflict = new(
+    private static readonly Error _refreshConflict = new(
         ErrorCodes.AuthRefreshConflict,
         "The refresh token was already rotated.",
         ErrorType.Conflict);
@@ -53,14 +53,14 @@ public sealed class RefreshService(
             .FirstOrDefaultAsync(t => t.TokenHash == tokenHash, cancellationToken);
         if (token is null)
         {
-            return Result.Failure<RefreshedSession>(RefreshInvalid);
+            return Result.Failure<RefreshedSession>(_refreshInvalid);
         }
 
         var session = await db.Sessions
             .FirstOrDefaultAsync(s => s.Id == token.SessionId, cancellationToken);
         if (session is null || session.RevokedAt is not null || session.AbsoluteExpiresAt <= now)
         {
-            return Result.Failure<RefreshedSession>(RefreshInvalid);
+            return Result.Failure<RefreshedSession>(_refreshInvalid);
         }
 
         var installationId = await db.Devices
@@ -76,16 +76,16 @@ public sealed class RefreshService(
         {
             if (now - rotatedAt <= _options.RefreshReuseGrace && sameDevice)
             {
-                return Result.Failure<RefreshedSession>(RefreshConflict);
+                return Result.Failure<RefreshedSession>(_refreshConflict);
             }
 
             await HandleReuseAsync(session, ip, userAgent, correlationId, cancellationToken);
-            return Result.Failure<RefreshedSession>(RefreshInvalid);
+            return Result.Failure<RefreshedSession>(_refreshInvalid);
         }
 
         if (token.IdleExpiresAt <= now)
         {
-            return Result.Failure<RefreshedSession>(RefreshInvalid);
+            return Result.Failure<RefreshedSession>(_refreshInvalid);
         }
 
         var replacementId = Guid.CreateVersion7();
@@ -125,11 +125,11 @@ public sealed class RefreshService(
                 && now - winnerRotatedAt <= _options.RefreshReuseGrace
                 && sameDevice)
             {
-                return Result.Failure<RefreshedSession>(RefreshConflict);
+                return Result.Failure<RefreshedSession>(_refreshConflict);
             }
 
             await HandleReuseAsync(session, ip, userAgent, correlationId, cancellationToken);
-            return Result.Failure<RefreshedSession>(RefreshInvalid);
+            return Result.Failure<RefreshedSession>(_refreshInvalid);
         }
 
         session.LastUsedAt = now;

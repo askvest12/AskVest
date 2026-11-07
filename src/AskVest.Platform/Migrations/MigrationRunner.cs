@@ -4,7 +4,7 @@ namespace AskVest.Platform;
 
 public static class MigrationRunner
 {
-    private static readonly IReadOnlyList<Func<string, DbContext>> ContextFactories =
+    private static readonly IReadOnlyList<Func<string, DbContext>> _contextFactories =
     [
         connectionString => new PlatformDbContext(PlatformDbContextOptions.Create(connectionString)),
     ];
@@ -16,8 +16,8 @@ public static class MigrationRunner
     {
         var applied = new List<string>();
         var factories = additionalContextFactories is null
-            ? ContextFactories
-            : ContextFactories.Concat(additionalContextFactories).ToList();
+            ? _contextFactories
+            : _contextFactories.Concat(additionalContextFactories).ToList();
         foreach (var factory in factories)
         {
             await using var context = factory(connectionString);

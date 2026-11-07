@@ -1,10 +1,10 @@
-using FluentValidation;
 using AskVest.Modules.Identity.Configuration;
-using AskVest.Modules.Identity.Persistence;
-using Microsoft.EntityFrameworkCore;
 using AskVest.Modules.Identity.Endpoints;
 using AskVest.Modules.Identity.Messaging;
+using AskVest.Modules.Identity.Persistence;
 using AskVest.Modules.Identity.Services;
+using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -96,6 +96,7 @@ public static class IdentityModuleExtensions
         services.AddScoped<AccountAnonymizationService>();
         services.AddScoped<MaintenanceService>();
         services.AddScoped<Contracts.IStepUpAuthorizer>(provider => provider.GetRequiredService<StepUpService>());
+        services.AddScoped<Contracts.IUserDirectory, UserDirectoryService>();
         services.AddValidatorsFromAssembly(typeof(IdentityModuleExtensions).Assembly);
 
         services.AddSingleton<MessageChannel>();

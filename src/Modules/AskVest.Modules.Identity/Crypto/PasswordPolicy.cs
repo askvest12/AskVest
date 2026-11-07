@@ -14,7 +14,7 @@ public sealed partial class PasswordPolicy(
     IOptions<IdentityOptions> options,
     IBreachPasswordChecker breachChecker) : IPasswordPolicy
 {
-    private static readonly HashSet<string> DeniedPasswords = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly HashSet<string> _deniedPasswords = new(StringComparer.OrdinalIgnoreCase)
     {
         "password", "password1", "password123", "1234567890", "12345678910",
         "qwertyuiop", "letmein123", "welcome123", "admin12345", "iloveyou1",
@@ -37,7 +37,7 @@ public sealed partial class PasswordPolicy(
             return Invalid("Password must contain at least one letter and one digit.");
         }
 
-        if (DeniedPasswords.Contains(password))
+        if (_deniedPasswords.Contains(password))
         {
             return Invalid("Password is too common.");
         }

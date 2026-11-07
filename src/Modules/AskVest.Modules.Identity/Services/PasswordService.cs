@@ -22,12 +22,12 @@ public sealed class PasswordService(
     IMessageChannel messageChannel,
     TimeProvider timeProvider)
 {
-    private static readonly Error InvalidCredentials = new(
+    private static readonly Error _invalidCredentials = new(
         ErrorCodes.AuthInvalidCredentials,
         "The email or password is incorrect.",
         ErrorType.Unauthenticated);
 
-    private static readonly Error InvalidCode = new(
+    private static readonly Error _invalidCode = new(
         ErrorCodes.AuthInvalidCode,
         "The code is invalid or has expired.",
         ErrorType.BusinessRule);
@@ -90,7 +90,7 @@ public sealed class PasswordService(
             user.Id, OneTimeCodePurpose.PasswordReset, request.Code!, cancellationToken);
         if (!verified)
         {
-            return Result.Failure(InvalidCode);
+            return Result.Failure(_invalidCode);
         }
 
         user!.PasswordHash = await passwordHasher.HashAsync(
@@ -133,7 +133,7 @@ public sealed class PasswordService(
         {
             securityEvents.Record(SecurityEventType.LoginFailed, user.Id, ip, userAgent, correlationId);
             await db.SaveChangesAsync(cancellationToken);
-            return Result.Failure(InvalidCredentials);
+            return Result.Failure(_invalidCredentials);
         }
 
         var policy = await passwordPolicy.ValidateAsync(request.Password, user.NormalizedEmail, cancellationToken);

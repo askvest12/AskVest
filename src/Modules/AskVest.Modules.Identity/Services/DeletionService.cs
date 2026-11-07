@@ -24,12 +24,12 @@ public sealed class DeletionService(
     IOptions<IdentityOptions> options,
     TimeProvider timeProvider)
 {
-    private static readonly Error InvalidCredentials = new(
+    private static readonly Error _invalidCredentials = new(
         ErrorCodes.AuthInvalidCredentials,
         "The credentials are not valid.",
         ErrorType.Unauthenticated);
 
-    private static readonly Error NotPending = new(
+    private static readonly Error _notPending = new(
         ErrorCodes.ResourceNotFound,
         "There is no pending deletion for this account.",
         ErrorType.NotFound);
@@ -60,7 +60,7 @@ public sealed class DeletionService(
 
         if (user.Status != UserStatus.Active)
         {
-            return Result.Failure(InvalidCredentials);
+            return Result.Failure(_invalidCredentials);
         }
 
         var passwordValid = await passwordHasher.VerifyAsync(
@@ -72,7 +72,7 @@ public sealed class DeletionService(
         {
             securityEvents.Record(SecurityEventType.LoginFailed, user.Id, ip, userAgent, correlationId);
             await db.SaveChangesAsync(cancellationToken);
-            return Result.Failure(InvalidCredentials);
+            return Result.Failure(_invalidCredentials);
         }
 
         var consumed = await stepUp.ConsumeAsync(
@@ -122,7 +122,7 @@ public sealed class DeletionService(
         var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
         if (user is null || user.Status != UserStatus.DeletionRequested)
         {
-            return Result.Failure(NotPending);
+            return Result.Failure(_notPending);
         }
 
         user.Status = UserStatus.Active;

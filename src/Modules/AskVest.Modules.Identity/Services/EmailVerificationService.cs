@@ -1,8 +1,8 @@
-using AskVest.SharedKernel;
 using AskVest.Modules.Identity.Crypto;
 using AskVest.Modules.Identity.Domain.Enums;
 using AskVest.Modules.Identity.Messaging;
 using AskVest.Modules.Identity.Persistence;
+using AskVest.SharedKernel;
 using Microsoft.EntityFrameworkCore;
 
 namespace AskVest.Modules.Identity.Services;
@@ -14,7 +14,7 @@ public sealed class EmailVerificationService(
     IMessageChannel messageChannel,
     TimeProvider timeProvider)
 {
-    private static readonly Error InvalidCode = new(
+    private static readonly Error _invalidCode = new(
         SharedKernel.ErrorCodes.AuthInvalidCode,
         "The code is invalid, expired or already used.",
         SharedKernel.ErrorType.Validation);
@@ -30,7 +30,7 @@ public sealed class EmailVerificationService(
         var email = EmailNormalizer.Normalize(rawEmail, 254);
         if (email.IsFailure || string.IsNullOrWhiteSpace(code))
         {
-            return Result.Failure(InvalidCode);
+            return Result.Failure(_invalidCode);
         }
 
         var user = await db.Users.FirstOrDefaultAsync(
@@ -38,14 +38,14 @@ public sealed class EmailVerificationService(
             cancellationToken);
         if (user is null)
         {
-            return Result.Failure(InvalidCode);
+            return Result.Failure(_invalidCode);
         }
 
         var verified = await oneTimeCodes.TryVerifyAsync(
             user.Id, OneTimeCodePurpose.EmailVerification, code.Trim(), cancellationToken);
         if (!verified)
         {
-            return Result.Failure(InvalidCode);
+            return Result.Failure(_invalidCode);
         }
 
         user.EmailVerifiedAt = timeProvider.GetUtcNow();

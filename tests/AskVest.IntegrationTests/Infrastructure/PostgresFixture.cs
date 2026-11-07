@@ -1,9 +1,9 @@
 using AskVest.Modules.Identity.Persistence;
 using AskVest.Platform;
+using DotNet.Testcontainers.Configurations;
 using Npgsql;
 using Respawn;
 using Respawn.Graph;
-using DotNet.Testcontainers.Configurations;
 using Testcontainers.PostgreSql;
 using Xunit;
 
@@ -57,11 +57,11 @@ public sealed class PostgresFixture : IAsyncLifetime
             _respawner = await Respawner.CreateAsync(
                 connection,
                 new RespawnerOptions
-            {
-                DbAdapter = DbAdapter.Postgres,
-                SchemasToInclude = ["platform", "identity"],
-                TablesToIgnore = ["platform.__ef_migrations_history", "identity.__ef_migrations_history"],
-            });
+                {
+                    DbAdapter = DbAdapter.Postgres,
+                    SchemasToInclude = ["platform", "identity"],
+                    TablesToIgnore = ["platform.__ef_migrations_history", "identity.__ef_migrations_history"],
+                });
         }
     }
 

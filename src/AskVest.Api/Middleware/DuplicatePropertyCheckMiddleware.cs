@@ -5,14 +5,14 @@ namespace AskVest.Api;
 
 internal sealed class DuplicatePropertyCheckMiddleware(RequestDelegate next)
 {
-    private static readonly HashSet<string> JsonMethods = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly HashSet<string> _jsonMethods = new(StringComparer.OrdinalIgnoreCase)
     {
         "POST", "PUT", "PATCH",
     };
 
     public async Task InvokeAsync(HttpContext context)
     {
-        if (JsonMethods.Contains(context.Request.Method)
+        if (_jsonMethods.Contains(context.Request.Method)
             && context.Request.ContentType?.Contains("application/json", StringComparison.OrdinalIgnoreCase) == true
             && context.Request.ContentLength is > 0)
         {

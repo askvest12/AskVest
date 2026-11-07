@@ -53,6 +53,7 @@ internal static class ErrorCatalogue
             [ErrorCodes.LedgerBookMismatch] = (422, ErrorType.BusinessRule, "The journal mixes books."),
             [ErrorCodes.LedgerIdempotencyConflict] = (409, ErrorType.Conflict, "The idempotency key was already used with different content."),
             [ErrorCodes.LedgerAlreadyReversed] = (409, ErrorType.Conflict, "The journal was already reversed."),
+            [ErrorCodes.CatalogAddressInvalid] = (422, ErrorType.BusinessRule, "The address is not valid for this chain."),
         };
 
     public static bool TryGet(string code, out int status, out ErrorType type, out string message)

@@ -114,3 +114,27 @@ changing the KYC status.
 - Device: created untrusted to `trusted` on first verified login or device code; `trusted` to `revoked`. Revoking a device revokes its sessions.
 - One-time code: issued to `consumed` or `expired`; attempts increment atomically up to the cap. Single use.
 - Step-up grant: issued to `consumed` or `expired`; 120 second life, single use.
+
+## Catalog token (Catalog, Phase 4)
+
+```mermaid
+stateDiagram-v2
+    [*] --> draft
+    draft --> listed: listing guard passes
+    listed --> suspended: issuer or ops action
+    suspended --> listed: relisted
+    listed --> delisted
+    suspended --> delisted
+    delisted --> [*]
+```
+
+`delisted` is terminal: a returning token is a new token row. `ever_listed`
+is set on first entry to `listed` and freezes the immutable fields (chain,
+address, decimals, issuer, instrument, ledger asset code) forever after.
+Sellers may still exit a `delisted` token when its chain is enabled and a
+gateway key exists.
+
+## Catalog issuer and instrument
+
+- Issuer status is `approved` or `suspended` (review metadata lives on the row; expiry of the review blocks new listings, not exits).
+- Instrument status is `active` or `delisted`; delisting an instrument hides it from Practice without touching token rows.

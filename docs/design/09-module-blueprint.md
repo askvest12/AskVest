@@ -4,7 +4,7 @@ Every business module follows this template. Phase 1 implements it for Identity.
 
 ## Layout
 
-- Project: `src/Modules/AskVest.Modules.<Name>` referencing only `AskVest.SharedKernel` and `AskVest.Platform`.
+- Project: `src/Modules/AskVest.Modules.<Name>` referencing `AskVest.SharedKernel` and `AskVest.Platform`, plus other modules only when a phase names them; usage stays inside their `Contracts` namespaces (architecture tests enforce).
 - Internal folders: `Domain`, `Application`, `Infrastructure`, `Endpoints`, `Contracts`.
 - `Contracts` is the only namespace other projects may reference.
 - One `Add<Name>Module` service-registration extension and one `Map<Name>Endpoints` endpoint-mapping extension.

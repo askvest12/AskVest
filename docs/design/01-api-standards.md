@@ -73,6 +73,7 @@ Pattern `^[a-z]+(_[a-z]+)*(\.[a-z]+(_[a-z]+)*)+$`.
 | `ledger.book_mismatch` | 422 | Lines span books or an account belongs to another book |
 | `ledger.idempotency_conflict` | 409 | Same idempotency key, different journal content |
 | `ledger.already_reversed` | 409 | Journal already has a reversal |
+| `catalog.address_invalid` | 422 | Address fails the chain family's validation or canonicalization |
 | `idempotency.key_missing` | 400 | State-changing call without `Idempotency-Key` |
 | `idempotency.key_invalid` | 400 | Key fails the format rule |
 | `idempotency.key_reused` | 422 | Same key, different request fingerprint |

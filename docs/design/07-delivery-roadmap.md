@@ -8,7 +8,7 @@ Phases 0 to 17. Each phase ends with the Definition of Done in `CLAUDE.md`.
 | 1 | Identity and access: users, credentials, sessions, devices, PIN (done) | 0 |
 | 2 | Compliance: country eligibility, KYC, consents, Practice/Real mode switch (provider interfaces and fakes only; real adapters when a provider is chosen; manual review queue stays in 15) | 1 |
 | 3 | Ledger: double-entry journals, accounts, balances, transaction scope, outbox, Practice and Real books (done) | 2 |
-| 4 | Catalog: companies, tokens, issuers, rights and risk disclosures | 3 |
+| 4 | Catalog: chains, issuers, instruments, tokens, mandatory disclosures, availability, chain-agnostic seams | 3 |
 | 5 | Market data: prices, candles, freshness labels | 4 |
 | 6 | Practice: virtual credits, simulated orders | 3, 4, 5 |
 | 7 | Learning: lessons, quizzes, streaks | 1 |

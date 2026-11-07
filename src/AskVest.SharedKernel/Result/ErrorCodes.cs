@@ -48,4 +48,5 @@ public static class ErrorCodes
     public const string LedgerBookMismatch = "ledger.book_mismatch";
     public const string LedgerIdempotencyConflict = "ledger.idempotency_conflict";
     public const string LedgerAlreadyReversed = "ledger.already_reversed";
+    public const string CatalogAddressInvalid = "catalog.address_invalid";
 }

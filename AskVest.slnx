@@ -3,6 +3,7 @@
     <Project Path="src/Modules/AskVest.Modules.Identity/AskVest.Modules.Identity.csproj" />
     <Project Path="src/Modules/AskVest.Modules.Compliance/AskVest.Modules.Compliance.csproj" />
     <Project Path="src/Modules/AskVest.Modules.Ledger/AskVest.Modules.Ledger.csproj" />
+    <Project Path="src/Modules/AskVest.Modules.Catalog/AskVest.Modules.Catalog.csproj" />
     <Project Path="src/AskVest.Api/AskVest.Api.csproj" />
     <Project Path="src/AskVest.Migrator/AskVest.Migrator.csproj" />
     <Project Path="src/AskVest.Platform/AskVest.Platform.csproj" />

@@ -635,6 +635,19 @@
           "Serilog.Sinks.Console": "[6.1.1, )"
         }
       },
+      "askvest.modules.catalog": {
+        "type": "Project",
+        "dependencies": {
+          "AskVest.Modules.Compliance": "[1.0.0, )",
+          "AskVest.Modules.Ledger": "[1.0.0, )",
+          "AskVest.Platform": "[1.0.0, )",
+          "AskVest.SharedKernel": "[1.0.0, )",
+          "EFCore.NamingConventions": "[10.0.1, )",
+          "FluentValidation": "[12.2.0, )",
+          "FluentValidation.DependencyInjectionExtensions": "[12.2.0, )",
+          "Npgsql.EntityFrameworkCore.PostgreSQL": "[10.0.3, )"
+        }
+      },
       "askvest.modules.compliance": {
         "type": "Project",
         "dependencies": {

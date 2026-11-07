@@ -43,7 +43,7 @@
 | T21 | Offering a service in an unsupported country | declared plus KYC-verified country gating, blocked and real-money country lists in configuration, eligibility gate on `/practice` and `/real`, legal review before real money | 2 |
 | T22 | Practice and Real confusion | separate route groups enforced by `PracticeEligible`/`RealEligible` authorization policies, separate books, kill switch `RealMoneyEnabled`, tests that block crossover | 2, 3, 6 |
 | T23 | Stale or wrong market data driving orders | freshness labels, reject stale prices | 5, 10 |
-| T24 | Token rights misrepresented | mandatory rights and risk fields on every asset | 4 |
+| T24 | Token rights misrepresented | mandatory claim type, backing, custodian, redemption, dividend, voting, transfer restriction, fee and risk disclosures on every token; listing guard refuses incomplete disclosures; review expiry blocks new buys; disclosures served verbatim in the token detail API | 4 |
 
 | T20 | Refresh token theft and replay | rotation, reuse detection, session revocation, alert email | 1 |
 | T21 | OTP brute force | keyed hashes, attempt caps, expiry, constant-time compare, resend limits | 1 |
@@ -54,3 +54,6 @@
 | T26 | Secrets captured by idempotency store | returns-secrets tag, replay storage exemption, architecture rule | 0, 1 |
 | T27 | Ledger tampering (edited or deleted history, direct balance writes) | `askvest_app` gets insert and select only on journals and entries; balances only change inside the posting transaction; deferred zero-sum trigger re-checks at commit; corrections are linked one-time reversals; scheduled reconciliation detects corruption without repairing it | 3 |
 | T28 | Outbox duplicate or lost delivery | at-least-once delivery by design, handlers tolerate duplicates; atomic enqueue inside the business transaction; lease-based claiming so two dispatchers never take the same message; exponential backoff then dead-letter; payloads carry ids only, never amounts or secrets | 3 |
+| T29 | Contract-address swap after listing (token contract upgraded or address reused) | once `ever_listed`, chain, canonical address, decimals, issuer, instrument and ledger asset code are immutable; a change requires a new token row and a new listing review; EIP-55 checksum canonicalization rejects lookalike addresses | 4 |
+| T30 | Tampered catalog data (hostile data file or compromised import) | data files are reviewed through git like code; import is strict (unknown properties rejected), validates every reference and reports all problems before writing anything; import is all-or-nothing inside one transaction; application role is select-only on catalog tables | 4 |
+| T31 | Stale disclosures (issuer terms changed, review expired) | every token carries reviewed-at and review-expires-at enforced by the listing guard and availability rules; an expired review blocks buying (`disclosure_review_expired`) but never selling; exit is always preserved | 4 |

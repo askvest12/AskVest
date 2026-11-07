@@ -28,7 +28,7 @@ flowchart LR
 | Identity | 1 | users, credentials, sessions, devices, PIN |
 | Compliance | 2 | country eligibility, KYC state, consents, mode switch |
 | Ledger | 3 | accounts, journal entries, balances (Practice and Real books) |
-| Catalog | 4 | companies, tokens, issuers, rights and risk disclosures |
+| Catalog | 4 | chains, issuers, instruments, tokens, rights and risk disclosures |
 | MarketData | 5 | prices, candles, freshness labels |
 | Practice | 6 | virtual credits, simulated orders |
 | Learning | 7 | lessons, quizzes, streaks |
@@ -74,6 +74,22 @@ One command handler equals one database transaction at Read Committed unless a p
 ## Practice versus Real
 
 Separate route groups `/api/v1/practice/...` and `/api/v1/real/...`, separate ledger books, separate authorization. Confirmed in Phases 2 and 6. A client can never confuse them.
+
+## Catalog chain-agnostic rules
+
+The product is multi-chain and provider research is still open, so the catalog assumes nothing about a specific chain, issuer or provider.
+
+- Chains are identified by CAIP-2 ids and carry a family (`evm`, `svm`, `move`, `other`). Every chain has exactly one family.
+- Tokens are identified internally by UUIDv7 and externally by CAIP-19 asset ids computed from chain, token standard and canonical address. CAIP-19 is computed, never supplied.
+- Addresses are canonical strings produced by the chain family handler, never numbers. EVM uses the EIP-55 checksum form.
+- The chain family handler is the only seam that knows chain details: address validation and canonicalization, identifier parsing and building, explorer links. EVM-specific library types may appear only inside the EVM handler (architecture test).
+- Each token maps to exactly one ledger asset with an explicit immutable code, registered with kind `token` and scale equal to the token's decimals (at most 18).
+- Practice trades instruments; Real trades tokens. Availability is computed per instrument for Practice and per token for Real.
+- Catalog content comes from reviewed versioned data files imported idempotently at deploy time. The API only reads; the application role has select-only access.
+- Once a token has ever been listed, its chain, address, decimals, issuer, instrument and ledger asset code can never change. Removal means `delisted`; rows are never deleted.
+- Selling is never blocked by an expired review or a country change: users must always be able to exit.
+- Each token carries a free-form gateway key naming the execution adapter that will handle it (Phase 10). It is required for listing, stored, never exposed by the API, and no adapter is assumed.
+- The repository ships no real catalog data. Sample data is fictional, lives in a separate folder and loads only when `Catalog:LoadSampleData` is true; the importer refuses it in Production.
 
 ## Non-goals and undecided product statuses
 

@@ -39,7 +39,7 @@ internal sealed class TransactionScope(
             ?? throw new InvalidOperationException("Cannot commit: no transaction scope is active.");
         await transaction.CommitAsync(cancellationToken);
         _completed = true;
-        await DisposeResourcesAsync();
+        await EndTransactionAsync();
     }
 
     public async Task RollbackAsync(CancellationToken cancellationToken = default)
@@ -51,7 +51,7 @@ internal sealed class TransactionScope(
 
         await _transaction.RollbackAsync(cancellationToken);
         _completed = true;
-        await DisposeResourcesAsync();
+        await EndTransactionAsync();
     }
 
     public async ValueTask DisposeAsync()
@@ -68,10 +68,16 @@ internal sealed class TransactionScope(
             }
         }
 
-        await DisposeResourcesAsync();
+        await EndTransactionAsync();
+
+        if (_connection is not null)
+        {
+            await _connection.DisposeAsync();
+            _connection = null;
+        }
     }
 
-    private async Task DisposeResourcesAsync()
+    private async Task EndTransactionAsync()
     {
         if (_transaction is not null)
         {
@@ -79,10 +85,11 @@ internal sealed class TransactionScope(
             _transaction = null;
         }
 
-        if (_connection is not null)
+        // The connection instance is shared with enlisted DbContexts for the life of the scope,
+        // so commit and rollback close it for pooling instead of disposing the object.
+        if (_connection is { State: ConnectionState.Open })
         {
-            await _connection.DisposeAsync();
-            _connection = null;
+            await _connection.CloseAsync();
         }
     }
 }

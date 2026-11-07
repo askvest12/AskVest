@@ -25,6 +25,9 @@ public static class LedgerModuleExtensions
             .ValidateOnStart();
 
         services.AddScoped<Contracts.ILedger, Services.LedgerService>();
+        services.AddScoped<Services.LedgerQueryService>();
+        services.AddScoped<AskVest.Modules.Identity.Contracts.IDeletionBlocker, Services.LedgerDeletionBlocker>();
+        services.AddHostedService<Services.LedgerReconciliationService>();
 
         services.AddDbContext<LedgerDbContext>((IServiceProvider provider, DbContextOptionsBuilder options) =>
         {

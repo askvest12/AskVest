@@ -156,3 +156,56 @@ Note: two PostgreSQL containers exist on this machine. The compose file in this
 repository publishes `askvest-dev-postgres-1` on port 55433 while a second
 `askvest-postgres-1` container from the same compose project runs without a
 published port; migration and inspection must target the 55433 instance.
+
+## Step 6: read API, probes, deletion blocker and reconciliation
+
+`GET /api/v1/{practice,real}/balances` returns the caller's per-asset
+available and held balances as decimal strings; system accounts never appear.
+`GET /api/v1/{practice,real}/ledger/entries` returns the caller's own entries
+newest first with keyset cursor pagination over `(posted_at, entry id)`.
+Both route groups sit behind the Phase 2 `PracticeEligible` and
+`RealEligible` policies. `POST /api/v1/{practice,real}/diagnostics/ledger-post`
+exists only when `Diagnostics:EnableProbes` is on (404 otherwise), requires an
+`Idempotency-Key`, and posts a credit from the book's system source or a debit
+to it. Probe idempotency keys are scoped per user
+(`ledger:probe:{userId}:{key}`) so identical keys from different users never
+collide. `LedgerDeletionBlocker` reports `real_balance_remaining` only when a
+real-book user available or held balance is non-zero.
+`LedgerReconciliationService` is a hosted job that runs one cycle at startup
+and then every `Ledger:ReconciliationIntervalMinutes`, paging
+`account_balances`, comparing each balance to the sum of its journal entries,
+and checking every book and asset nets to zero. Mismatches log at error level
+with the account id and delta (the spec-mandated exception to the no-ids-in-
+logs rule), nothing is auto-corrected, and a failed cycle is logged and the
+loop continues.
+
+`TransactionScope.CommitAsync`/`RollbackAsync` previously disposed the shared
+`NpgsqlConnection`, which broke the idempotency store's `CompleteAsync` later
+in the same request (`ObjectDisposedException`, HTTP 500 after a successful
+post). Commit and rollback now close the connection for pooling while keeping
+the instance for the life of the scope; `DisposeAsync` still disposes it.
+
+Verification:
+
+- `tests/AskVest.IntegrationTests/Ledger/LedgerApiTests.cs` (8 tests, real
+  HTTP): unauthenticated requests get 401; an ineligible user gets 403
+  `compliance.not_eligible` on both books; practice probe credit 100, debit 30,
+  balances read 70, debit 100 returns 422 `ledger.insufficient_funds` and the
+  balance stays 70; probe replay returns the identical journal; the same
+  idempotency key from two users produces two journals; real routes stay 403
+  until KYC approval then post and read separately from practice; history
+  paginates 5 entries over 3 pages of 2 with string amounts and a second user
+  sees none of them; probes return 404 when the diagnostics flag is off.
+- `tests/AskVest.IntegrationTests/Ledger/LedgerOperationsTests.cs` (4 tests,
+  real PostgreSQL): the deletion blocker reports `real_balance_remaining`
+  only for a non-zero real balance and ignores practice; reconciliation logs
+  zero mismatches after mixed operations; a corrupted balance row is reported
+  with exactly that account and delta and left unchanged, and the non-zero
+  book/asset net is also reported; the hosted loop survives a database error
+  and runs a second failing cycle (fake clock).
+- `tests/AskVest.ArchitectureTests` (24 tests): log and outbox payload hygiene
+  guards pass; the reconciliation mismatch log uses neutral placeholder names
+  because the spec requires account id and delta in that one error line while
+  banning them everywhere else.
+- Full integration suite: 236 total, 236 passed, 0 skipped.
+- Unit suite: 225 passed. `dotnet format --verify-no-changes` clean.

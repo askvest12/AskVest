@@ -14,6 +14,7 @@ internal static class AnonymousEndpointCatalog
         new("/api/v1/auth/refresh", "The refresh token itself is the credential."),
         new("/api/v1/auth/forgot-password", "Password recovery precedes authentication."),
         new("/api/v1/auth/reset-password", "Reset consumes a code, not a session."),
+        new("/api/v1/webhooks/kyc/{provider}", "Provider webhook authenticates by signature, not a user session."),
         new("/api/v1/system/info", "Service metadata for load balancers and clients."),
         new("/health/live", "Liveness probe must not require auth."),
         new("/health/ready", "Readiness probe must not require auth."),

@@ -63,6 +63,7 @@ Pattern `^[a-z]+(_[a-z]+)*(\.[a-z]+(_[a-z]+)*)+$`.
 | `account.deletion_blocked` | 422 | A registered blocker prevents deletion, reasons in details |
 | `compliance.not_eligible` | 403 | Practice or Real gate failed; one detail per blocker reason code |
 | `compliance.consent_version_mismatch` | 409 | Consent request does not match current document versions |
+| `compliance.kyc_attempts_exhausted` | 409 | KYC attempt limit reached |
 | `webhook.invalid_signature` | 401 | Webhook signature verification failed |
 | `webhook.stale_timestamp` | 400 | Webhook timestamp missing or outside tolerance |
 | `idempotency.key_missing` | 400 | State-changing call without `Idempotency-Key` |

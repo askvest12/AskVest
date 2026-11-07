@@ -1,5 +1,6 @@
 using AskVest.Modules.Compliance.Configuration;
 using AskVest.Modules.Compliance.Persistence;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,6 +31,24 @@ public static class ComplianceModuleExtensions
             var platformOptions = provider.GetRequiredService<IOptions<AskVest.Platform.PlatformOptions>>().Value;
             ComplianceDbContextOptions.Configure(options, connectionString, platformOptions.CommandTimeoutSeconds);
         });
+
+        services.AddScoped<Services.ProfileStore>();
+        services.AddScoped<Services.ConsentService>();
+        services.AddScoped<Services.CountryService>();
+        services.AddScoped<Contracts.IComplianceEligibility, Services.EligibilityService>();
+        services.AddValidatorsFromAssembly(typeof(ComplianceModuleExtensions).Assembly);
+
+        services.AddAuthorization(options =>
+        {
+            options.AddPolicy(Contracts.CompliancePolicyNames.PracticeEligible, policy => policy
+                .RequireAuthenticatedUser()
+                .AddRequirements(new Authorization.EligibilityRequirement(Contracts.CompliancePolicyNames.PracticeEligible)));
+            options.AddPolicy(Contracts.CompliancePolicyNames.RealEligible, policy => policy
+                .RequireAuthenticatedUser()
+                .AddRequirements(new Authorization.EligibilityRequirement(Contracts.CompliancePolicyNames.RealEligible)));
+        });
+        services.AddScoped<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, Authorization.EligibilityAuthorizationHandler>();
+        services.AddSingleton<Microsoft.AspNetCore.Authorization.IAuthorizationMiddlewareResultHandler, Authorization.ComplianceAuthorizationResultHandler>();
 
         return services;
     }

@@ -35,5 +35,10 @@ public static class ErrorCodes
     public const string IdempotencyReplayUnavailable = "idempotency.replay_unavailable";
     public const string RateLimitExceeded = "rate_limit.exceeded";
     public const string ServiceUnavailable = "service.unavailable";
+    public const string ComplianceNotEligible = "compliance.not_eligible";
+    public const string ComplianceConsentVersionMismatch = "compliance.consent_version_mismatch";
+    public const string ComplianceKycAttemptsExhausted = "compliance.kyc_attempts_exhausted";
+    public const string WebhookInvalidSignature = "webhook.invalid_signature";
+    public const string WebhookStaleTimestamp = "webhook.stale_timestamp";
     public const string ServerUnexpected = "server.unexpected";
 }

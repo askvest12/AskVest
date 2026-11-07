@@ -40,6 +40,11 @@ internal static class ErrorCatalogue
             [ErrorCodes.IdempotencyReplayUnavailable] = (409, ErrorType.Conflict, "The stored response for this Idempotency-Key is unavailable."),
             [ErrorCodes.RateLimitExceeded] = (429, ErrorType.RateLimited, "Too many requests."),
             [ErrorCodes.ServiceUnavailable] = (503, ErrorType.Unavailable, "The service is temporarily unavailable."),
+            [ErrorCodes.ComplianceNotEligible] = (403, ErrorType.Forbidden, "The account is not eligible for this mode."),
+            [ErrorCodes.ComplianceConsentVersionMismatch] = (409, ErrorType.Conflict, "The consent request does not match the current documents."),
+            [ErrorCodes.ComplianceKycAttemptsExhausted] = (409, ErrorType.Conflict, "The verification attempt limit was reached."),
+            [ErrorCodes.WebhookInvalidSignature] = (401, ErrorType.Unauthenticated, "The webhook signature is not valid."),
+            [ErrorCodes.WebhookStaleTimestamp] = (400, ErrorType.Validation, "The webhook timestamp is missing or stale."),
             [ErrorCodes.ServerUnexpected] = (500, ErrorType.Failure, "An unexpected error occurred."),
         };
 

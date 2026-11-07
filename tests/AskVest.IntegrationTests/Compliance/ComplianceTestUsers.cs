@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using AskVest.IntegrationTests.Identity;
 using AskVest.IntegrationTests.Infrastructure;
+using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 using Xunit;
 
@@ -50,8 +51,11 @@ internal static class ComplianceTestUsers
         return settings;
     }
 
-    public static AuthApiFactory CreateFactory(PostgresFixture fixture, IReadOnlyDictionary<string, string?>? settings = null)
-        => new(fixture.AppConnectionString, settings ?? Settings());
+    public static AuthApiFactory CreateFactory(
+        PostgresFixture fixture,
+        IReadOnlyDictionary<string, string?>? settings = null,
+        Action<IServiceCollection>? configureServices = null)
+        => new(fixture.AppConnectionString, settings ?? Settings(), configureServices);
 
     public static async Task<string> CreateVerifiedUserAsync(AuthApiFactory factory)
     {
@@ -134,6 +138,38 @@ internal static class ComplianceTestUsers
         var json = await response.Content.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken);
         return json.GetProperty("data");
     }
+
+    public static async Task<JsonElement> AcceptDocumentsAsync(
+        HttpClient client,
+        string token,
+        params (string Type, string Version, string Sha256)[] documents)
+    {
+        var body = new
+        {
+            documents = documents.Select(d => new { type = d.Type, version = d.Version, sha256 = d.Sha256 }),
+        };
+        using var response = await client.SendAsync(
+            Post("/api/v1/compliance/consents", body).Auth(token),
+            TestContext.Current.CancellationToken);
+        response.StatusCode.ShouldBe(System.Net.HttpStatusCode.OK);
+        return await DataAsync(response);
+    }
+
+    public static async Task SetCountryAsync(HttpClient client, string token, string country)
+    {
+        using var response = await client.SendAsync(
+            Put("/api/v1/compliance/country", new { country }).Auth(token),
+            TestContext.Current.CancellationToken);
+        response.StatusCode.ShouldBe(System.Net.HttpStatusCode.OK);
+    }
+
+    public static readonly (string Type, string Version, string Sha256)[] AllDocuments =
+    [
+        ("terms", "v1", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
+        ("privacy", "v1", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"),
+        ("risk_disclosure", "v1", "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"),
+        ("token_disclosure", "v1", "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"),
+    ];
 
     public static async Task<JsonElement> EnvelopeAsync(HttpResponseMessage response)
     {

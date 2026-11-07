@@ -32,9 +32,15 @@ public static class ComplianceModuleExtensions
             ComplianceDbContextOptions.Configure(options, connectionString, platformOptions.CommandTimeoutSeconds);
         });
 
+        services.AddSingleton<Providers.IKycProvider>(provider =>
+            Providers.ProviderFactories.CreateKycProvider(provider.GetRequiredService<IConfiguration>()));
+        services.AddSingleton<Providers.IScreeningProvider>(provider =>
+            Providers.ProviderFactories.CreateScreeningProvider(provider.GetRequiredService<IConfiguration>()));
         services.AddScoped<Services.ProfileStore>();
         services.AddScoped<Services.ConsentService>();
         services.AddScoped<Services.CountryService>();
+        services.AddScoped<Services.KycService>();
+        services.AddScoped<Services.KycWebhookService>();
         services.AddScoped<Contracts.IComplianceEligibility, Services.EligibilityService>();
         services.AddValidatorsFromAssembly(typeof(ComplianceModuleExtensions).Assembly);
 

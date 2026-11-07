@@ -56,6 +56,12 @@ public sealed class ComplianceOptions
             Check(System.Text.Encoding.UTF8.GetByteCount(options.Kyc.WebhookSecret ?? string.Empty) >= 32,
                 "Kyc:WebhookSecret must be at least 32 bytes.");
             Check(options.WebhookTolerance > TimeSpan.Zero, "WebhookTolerance must be positive.");
+            Check(
+                Providers.ProviderFactories.IsSupportedKycProvider(options.Kyc.Provider),
+                $"Compliance:Kyc:Provider '{options.Kyc.Provider}' is not supported.");
+            Check(
+                Providers.ProviderFactories.IsSupportedScreeningProvider(options.Screening.Provider),
+                $"Compliance:Screening:Provider '{options.Screening.Provider}' is not supported.");
 
             return failures.Count == 0 ? ValidateOptionsResult.Success : ValidateOptionsResult.Fail(failures);
         }

@@ -13,6 +13,9 @@ public static class ComplianceEndpointsExtensions
         compliance.MapDocumentEndpoints();
         compliance.MapCountryEndpoints();
         compliance.MapEligibilityEndpoints();
+        compliance.MapKycEndpoints();
+
+        api.MapWebhookEndpoints();
 
         var practice = api.MapGroup("/practice")
             .RequireAuthorization(CompliancePolicyNames.PracticeEligible);

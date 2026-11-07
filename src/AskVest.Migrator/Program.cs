@@ -1,6 +1,11 @@
+using AskVest.Modules.Catalog;
+using AskVest.Modules.Catalog.Import;
 using AskVest.Modules.Catalog.Persistence;
+using AskVest.Modules.Compliance;
 using AskVest.Modules.Compliance.Persistence;
+using AskVest.Modules.Identity;
 using AskVest.Modules.Identity.Persistence;
+using AskVest.Modules.Ledger;
 using AskVest.Modules.Ledger.Persistence;
 using AskVest.Platform;
 using Microsoft.Extensions.Configuration;
@@ -15,6 +20,12 @@ builder.Services.AddSerilog((_, loggerConfiguration) => loggerConfiguration
     .ReadFrom.Configuration(builder.Configuration)
     .Enrich.FromLogContext()
     .WriteTo.Console(new CompactJsonFormatter()));
+
+builder.Services.AddPlatformPersistence(builder.Configuration);
+builder.Services.AddIdentityModule(builder.Configuration);
+builder.Services.AddComplianceModule(builder.Configuration);
+builder.Services.AddLedgerModule(builder.Configuration);
+builder.Services.AddCatalogModule(builder.Configuration);
 
 var host = builder.Build();
 var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("AskVest.Migrator");
@@ -51,6 +62,29 @@ try
                 logger.LogInformation("Applied migration {MigrationId}.", migrationId);
             }
         }
+    }
+
+    await using var scope = host.Services.CreateAsyncScope();
+    var import = await scope.ServiceProvider
+        .GetRequiredService<CatalogImportService>()
+        .ImportAsync(cancellation.Token);
+    if (import.IsFailure)
+    {
+        if (logger.IsEnabled(LogLevel.Critical))
+        {
+            logger.LogCritical("Catalog import failed: {Error}", import.Error!.Message);
+        }
+
+        return 1;
+    }
+
+    var report = import.Value;
+    if (logger.IsEnabled(LogLevel.Information))
+    {
+        logger.LogInformation(
+            "Catalog import finished: validateOnly={ValidateOnly} chains={Chains} issuers={Issuers} instruments={Instruments} tokens={Tokens} delisted={Delisted} events={Events} outbox={Outbox} warnings={Warnings}.",
+            report.ValidateOnly, report.Chains, report.Issuers, report.Instruments,
+            report.Tokens, report.TokensDelisted, report.Events, report.OutboxMessages, report.Warnings.Count);
     }
 
     return 0;

@@ -1,0 +1,32 @@
+{
+  "version": "2026-11-01",
+  "issuers": [
+    {
+      "id": "sample-issuer-north",
+      "legalName": "Sample Issuer North Ltd (fictional)",
+      "jurisdiction": "US",
+      "website": "https://issuer-north.example.com",
+      "regulatoryStatus": "Sample regulatory status text",
+      "legalDocumentLinks": [
+        "https://issuer-north.example.com/legal/terms",
+        "https://issuer-north.example.com/legal/privacy"
+      ],
+      "status": "approved",
+      "reviewedAt": "2026-01-01T00:00:00Z",
+      "reviewExpiresAt": "2027-01-01T00:00:00Z"
+    },
+    {
+      "id": "sample-issuer-south",
+      "legalName": "Sample Issuer South Ltd (fictional)",
+      "jurisdiction": "KE",
+      "website": "https://issuer-south.example.com",
+      "regulatoryStatus": "Sample regulatory status text",
+      "legalDocumentLinks": [
+        "https://issuer-south.example.com/legal/terms"
+      ],
+      "status": "suspended",
+      "reviewedAt": "2026-01-01T00:00:00Z",
+      "reviewExpiresAt": "2027-01-01T00:00:00Z"
+    }
+  ]
+}

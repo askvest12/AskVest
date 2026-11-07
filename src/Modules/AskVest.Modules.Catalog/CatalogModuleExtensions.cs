@@ -26,6 +26,9 @@ public static class CatalogModuleExtensions
 
         services.AddSingleton<IChainFamilyHandler, EvmChainFamilyHandler>();
         services.AddSingleton<ChainFamilyRegistry>();
+        services.AddScoped<Import.CatalogImportValidator>();
+        services.AddScoped<Import.CatalogImportService>();
+
         services.AddDbContext<CatalogDbContext>((IServiceProvider provider, DbContextOptionsBuilder options) =>
         {
             var platformOptions = provider.GetRequiredService<IOptions<AskVest.Platform.PlatformOptions>>().Value;

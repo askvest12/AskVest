@@ -15,6 +15,8 @@ internal sealed class TransactionScope(
 
     public NpgsqlConnection Connection => _connection ??= new NpgsqlConnection(connectionString);
 
+    public DbTransaction? Transaction => _transaction;
+
     public bool IsActive => _transaction is not null;
 
     public async Task BeginAsync(CancellationToken cancellationToken = default)

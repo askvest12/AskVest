@@ -1,3 +1,4 @@
+using System.Data.Common;
 using Npgsql;
 
 namespace AskVest.Platform;
@@ -5,6 +6,8 @@ namespace AskVest.Platform;
 public interface ITransactionScope
 {
     NpgsqlConnection Connection { get; }
+
+    DbTransaction? Transaction { get; }
 
     bool IsActive { get; }
 

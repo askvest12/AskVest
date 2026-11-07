@@ -1,0 +1,25 @@
+{
+  "version": "2026-11-01",
+  "chains": [
+    {
+      "id": "eip155:11155111",
+      "family": "evm",
+      "name": "Ethereum Sepolia (sample)",
+      "nativeAssetSymbol": "ETH",
+      "nativeDecimals": 18,
+      "explorerLinkTemplate": "https://sepolia.etherscan.io/address/{address}",
+      "requiredConfirmations": 1,
+      "status": "enabled"
+    },
+    {
+      "id": "eip155:17000",
+      "family": "evm",
+      "name": "Ethereum Holesky (sample, disabled)",
+      "nativeAssetSymbol": "ETH",
+      "nativeDecimals": 18,
+      "explorerLinkTemplate": "https://holesky.etherscan.io/address/{address}",
+      "requiredConfirmations": 1,
+      "status": "disabled"
+    }
+  ]
+}

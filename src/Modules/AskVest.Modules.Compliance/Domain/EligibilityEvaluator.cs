@@ -41,7 +41,7 @@ public static class EligibilityEvaluator
             practiceBlockers.Add(Blocker(BlockerCodes.CountryNotSupported, "AskVest is not available in this country."));
         }
 
-        var practiceMissing = MissingConsents(options, acceptedConsentKeys, practiceOnly: true);
+        var practiceMissing = MissingConsents(options, acceptedConsentKeys, "practice");
         if (practiceMissing.Count > 0)
         {
             practiceBlockers.Add(Blocker(
@@ -61,7 +61,7 @@ public static class EligibilityEvaluator
             realBlockers.Add(Blocker(BlockerCodes.CountryNotSupported, "Real money is not available in this country."));
         }
 
-        var realMissing = MissingConsents(options, acceptedConsentKeys, practiceOnly: false);
+        var realMissing = MissingConsents(options, acceptedConsentKeys, "real");
         if (realMissing.Count > 0)
         {
             realBlockers.Add(Blocker(
@@ -89,12 +89,12 @@ public static class EligibilityEvaluator
     private static List<string> MissingConsents(
         ComplianceOptions options,
         IReadOnlySet<string> acceptedConsentKeys,
-        bool practiceOnly)
+        string requiredFor)
     {
         var missing = new List<string>();
         foreach (var document in options.Documents)
         {
-            if (practiceOnly && document.RequiredFor != "practice")
+            if (document.RequiredFor != requiredFor)
             {
                 continue;
             }

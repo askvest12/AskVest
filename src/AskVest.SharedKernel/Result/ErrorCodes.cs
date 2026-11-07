@@ -41,4 +41,11 @@ public static class ErrorCodes
     public const string WebhookInvalidSignature = "webhook.invalid_signature";
     public const string WebhookStaleTimestamp = "webhook.stale_timestamp";
     public const string ServerUnexpected = "server.unexpected";
+    public const string LedgerUnbalanced = "ledger.unbalanced";
+    public const string LedgerInsufficientFunds = "ledger.insufficient_funds";
+    public const string LedgerAmountInvalid = "ledger.amount_invalid";
+    public const string LedgerAssetUnknown = "ledger.asset_unknown";
+    public const string LedgerBookMismatch = "ledger.book_mismatch";
+    public const string LedgerIdempotencyConflict = "ledger.idempotency_conflict";
+    public const string LedgerAlreadyReversed = "ledger.already_reversed";
 }

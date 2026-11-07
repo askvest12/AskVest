@@ -28,7 +28,7 @@ public sealed class LedgerSchemaTests
 
         var rows = await Database.QueryAsync(
             _fixture.OwnerConnectionString,
-            "SELECT code, kind, scale FROM ledger.assets ORDER BY code",
+            "SELECT code, kind, scale FROM ledger.assets WHERE code IN ('USD', 'USDC') ORDER BY code",
             TestContext.Current.CancellationToken);
         rows.Count.ShouldBe(2);
         rows[0]["code"].ShouldBe("USD");

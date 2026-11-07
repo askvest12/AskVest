@@ -30,6 +30,7 @@ public sealed class PostgresFixture : IAsyncLifetime
             .WithEnvironment("ASKVEST_OWNER_PASSWORD", OwnerPassword)
             .WithEnvironment("ASKVEST_APP_PASSWORD", AppPassword)
             .WithBindMount(initDirectory, "/docker-entrypoint-initdb.d", AccessMode.ReadOnly)
+            .WithCommand("-c", "max_connections=400")
             .Build();
     }
 

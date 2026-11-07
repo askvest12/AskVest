@@ -24,6 +24,8 @@ public static class LedgerModuleExtensions
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        services.AddScoped<Contracts.ILedger, Services.LedgerService>();
+
         services.AddDbContext<LedgerDbContext>((IServiceProvider provider, DbContextOptionsBuilder options) =>
         {
             var platformOptions = provider.GetRequiredService<IOptions<AskVest.Platform.PlatformOptions>>().Value;

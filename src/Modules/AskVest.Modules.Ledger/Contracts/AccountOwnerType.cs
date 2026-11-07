@@ -1,4 +1,4 @@
-namespace AskVest.Modules.Ledger.Domain.Enums;
+namespace AskVest.Modules.Ledger.Contracts;
 
 public enum AccountOwnerType
 {

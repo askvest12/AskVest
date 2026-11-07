@@ -46,6 +46,13 @@ internal static class ErrorCatalogue
             [ErrorCodes.WebhookInvalidSignature] = (401, ErrorType.Unauthenticated, "The webhook signature is not valid."),
             [ErrorCodes.WebhookStaleTimestamp] = (400, ErrorType.Validation, "The webhook timestamp is missing or stale."),
             [ErrorCodes.ServerUnexpected] = (500, ErrorType.Failure, "An unexpected error occurred."),
+            [ErrorCodes.LedgerUnbalanced] = (422, ErrorType.BusinessRule, "The journal entries do not balance."),
+            [ErrorCodes.LedgerInsufficientFunds] = (422, ErrorType.BusinessRule, "The account does not hold enough funds."),
+            [ErrorCodes.LedgerAmountInvalid] = (422, ErrorType.BusinessRule, "The amount is not valid for this asset."),
+            [ErrorCodes.LedgerAssetUnknown] = (422, ErrorType.BusinessRule, "The asset is not registered."),
+            [ErrorCodes.LedgerBookMismatch] = (422, ErrorType.BusinessRule, "The journal mixes books."),
+            [ErrorCodes.LedgerIdempotencyConflict] = (409, ErrorType.Conflict, "The idempotency key was already used with different content."),
+            [ErrorCodes.LedgerAlreadyReversed] = (409, ErrorType.Conflict, "The journal was already reversed."),
         };
 
     public static bool TryGet(string code, out int status, out ErrorType type, out string message)

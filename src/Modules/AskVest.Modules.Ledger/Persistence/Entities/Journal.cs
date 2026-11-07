@@ -1,4 +1,4 @@
-using AskVest.Modules.Ledger.Domain.Enums;
+using AskVest.Modules.Ledger.Contracts;
 
 namespace AskVest.Modules.Ledger.Persistence.Entities;
 

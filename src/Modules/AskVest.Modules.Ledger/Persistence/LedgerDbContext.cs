@@ -1,5 +1,6 @@
-using AskVest.Modules.Ledger.Domain.Enums;
+using AskVest.Modules.Ledger.Contracts;
 using AskVest.Modules.Ledger.Persistence.Entities;
+using AskVest.Modules.Ledger.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace AskVest.Modules.Ledger.Persistence;
@@ -24,7 +25,7 @@ public class LedgerDbContext(DbContextOptions<LedgerDbContext> options) : DbCont
             entity.ToTable("assets");
             entity.HasKey(asset => asset.Code);
             entity.Property(asset => asset.Code).HasMaxLength(16).IsRequired();
-            entity.Property(asset => asset.Kind).HasConversion(v => AssetKindText.ToDb(v), v => AssetKindText.FromDb(v)).HasMaxLength(16).IsRequired();
+            entity.Property(asset => asset.Kind).HasConversion(v => LedgerText.ToDb(v), v => LedgerText.AssetKindFromDb(v)).HasMaxLength(16).IsRequired();
             entity.Property(asset => asset.Scale).IsRequired();
             entity.ToTable(table => table.HasCheckConstraint(
                 "ck_assets_kind",
@@ -38,9 +39,9 @@ public class LedgerDbContext(DbContextOptions<LedgerDbContext> options) : DbCont
         {
             entity.ToTable("accounts");
             entity.HasKey(account => account.Id);
-            entity.Property(account => account.Book).HasConversion(v => BookText.ToDb(v), v => BookText.FromDb(v)).HasMaxLength(16).IsRequired();
-            entity.Property(account => account.OwnerType).HasConversion(v => OwnerTypeText.ToDb(v), v => OwnerTypeText.FromDb(v)).HasMaxLength(16).IsRequired();
-            entity.Property(account => account.Kind).HasConversion(v => AccountKindText.ToDb(v), v => AccountKindText.FromDb(v)).HasMaxLength(32).IsRequired();
+            entity.Property(account => account.Book).HasConversion(v => LedgerText.ToDb(v), v => LedgerText.BookFromDb(v)).HasMaxLength(16).IsRequired();
+            entity.Property(account => account.OwnerType).HasConversion(v => LedgerText.ToDb(v), v => LedgerText.OwnerTypeFromDb(v)).HasMaxLength(16).IsRequired();
+            entity.Property(account => account.Kind).HasConversion(v => LedgerText.ToDb(v), v => LedgerText.AccountKindFromDb(v)).HasMaxLength(32).IsRequired();
             entity.Property(account => account.AssetCode).HasMaxLength(16).IsRequired();
             entity.HasIndex(account => new { account.Book, account.OwnerType, account.OwnerId, account.Kind, account.AssetCode }).IsUnique();
             entity.HasIndex(account => new { account.Id, account.Book }).IsUnique();
@@ -69,7 +70,7 @@ public class LedgerDbContext(DbContextOptions<LedgerDbContext> options) : DbCont
         {
             entity.ToTable("journals");
             entity.HasKey(journal => journal.Id);
-            entity.Property(journal => journal.Book).HasConversion(v => BookText.ToDb(v), v => BookText.FromDb(v)).HasMaxLength(16).IsRequired();
+            entity.Property(journal => journal.Book).HasConversion(v => LedgerText.ToDb(v), v => LedgerText.BookFromDb(v)).HasMaxLength(16).IsRequired();
             entity.Property(journal => journal.ReasonCode).HasMaxLength(64).IsRequired();
             entity.Property(journal => journal.ReferenceType).HasMaxLength(64).IsRequired();
             entity.Property(journal => journal.IdempotencyKey).HasMaxLength(200).IsRequired();
@@ -86,7 +87,7 @@ public class LedgerDbContext(DbContextOptions<LedgerDbContext> options) : DbCont
         {
             entity.ToTable("journal_entries");
             entity.HasKey(entry => entry.Id);
-            entity.Property(entry => entry.Book).HasConversion(v => BookText.ToDb(v), v => BookText.FromDb(v)).HasMaxLength(16).IsRequired();
+            entity.Property(entry => entry.Book).HasConversion(v => LedgerText.ToDb(v), v => LedgerText.BookFromDb(v)).HasMaxLength(16).IsRequired();
             entity.Property(entry => entry.AssetCode).HasMaxLength(16).IsRequired();
             entity.Property(entry => entry.Amount).HasColumnType("numeric(28,18)").IsRequired();
             entity.HasIndex(entry => new { entry.JournalId, entry.LineNumber }).IsUnique();
@@ -104,57 +105,5 @@ public class LedgerDbContext(DbContextOptions<LedgerDbContext> options) : DbCont
                 "ck_account_balances_negative",
                 "allow_negative OR balance >= 0"));
         });
-    }
-
-    private static class BookText
-    {
-        public static string ToDb(Book book) => book == Book.Practice ? "practice" : "real";
-
-        public static Book FromDb(string value) => value == "practice" ? Book.Practice : Book.Real;
-    }
-
-    private static class AssetKindText
-    {
-        public static string ToDb(AssetKind kind) => kind switch
-        {
-            AssetKind.Fiat => "fiat",
-            AssetKind.Stablecoin => "stablecoin",
-            _ => "token",
-        };
-
-        public static AssetKind FromDb(string value) => value switch
-        {
-            "fiat" => AssetKind.Fiat,
-            "stablecoin" => AssetKind.Stablecoin,
-            _ => AssetKind.Token,
-        };
-    }
-
-    private static class OwnerTypeText
-    {
-        public static string ToDb(AccountOwnerType type) => type == AccountOwnerType.User ? "user" : "system";
-
-        public static AccountOwnerType FromDb(string value) => value == "user" ? AccountOwnerType.User : AccountOwnerType.System;
-    }
-
-    private static class AccountKindText
-    {
-        public static string ToDb(AccountKind kind) => kind switch
-        {
-            AccountKind.UserAvailable => "user_available",
-            AccountKind.UserHeld => "user_held",
-            AccountKind.SystemClearing => "system_clearing",
-            AccountKind.SystemFees => "system_fees",
-            _ => "system_practice_issuance",
-        };
-
-        public static AccountKind FromDb(string value) => value switch
-        {
-            "user_available" => AccountKind.UserAvailable,
-            "user_held" => AccountKind.UserHeld,
-            "system_clearing" => AccountKind.SystemClearing,
-            "system_fees" => AccountKind.SystemFees,
-            _ => AccountKind.SystemPracticeIssuance,
-        };
     }
 }

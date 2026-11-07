@@ -109,6 +109,49 @@ Verification, `tests/AskVest.IntegrationTests/Ledger/LedgerSchemaTests.cs`
   `127.0.0.1:55433`: `ledger.assets` seeded, all five tables present under the
   `ledger` schema.
 
+## Step 5: posting service
+
+`ILedger` in `AskVest.Modules.Ledger.Contracts` exposes `PostJournalAsync`,
+`ReverseJournalAsync`, `GetBalancesAsync` and `RegisterAssetAsync`, with
+`LedgerAccounts` helpers for the five account kinds and `LedgerReasonCodes` for
+the standard reason codes. `LedgerService` validates shape, per-line book,
+owner/kind consistency, asset registration, amount scale (never rounded) and
+per-asset zero sum; computes a deterministic order-independent SHA-256 content
+hash; resolves the idempotency key conflict-tolerantly; lazily creates accounts
+and balance rows under the unique constraints; locks balance rows in ascending
+account-id order; rejects user-account overdrafts; writes journal, entries,
+balance deltas and the `LedgerJournalPosted` outbox message inside the shared
+transaction scope; and maps deadlock/lock-timeout to `service.unavailable`.
+Reversal mirrors the original entries, links via `reverses_journal_id` and is
+refused a second time. Ledger writes use parameterized SQL on the shared
+connection because EF Core cannot join an externally begun Npgsql transaction
+for `SaveChanges`; module reads still go through EF.
+
+Verification:
+
+- `tests/AskVest.UnitTests/Ledger/JournalValidationTests.cs` (15 tests): zero
+  and oversized amounts, excess scale, unknown asset, cross-book line, issuance
+  in real book, unbalanced lines, deterministic order-independent content hash
+  that normalizes decimal scale.
+- `tests/AskVest.IntegrationTests/Ledger/LedgerPostingTests.cs` (16 tests, real
+  PostgreSQL, application role): balanced post updates balances, entries and
+  enqueues exactly one `LedgerJournalPosted`; unbalanced, unknown asset, invalid
+  amounts and cross-book requests fail with the documented codes and write
+  nothing; same key plus same content replays the original journal; same key
+  plus different content returns `ledger.idempotency_conflict`; 50 parallel
+  identical posts create one journal; insufficient funds leaves no partial
+  effects; 100 parallel debits of 10 against 500 succeed exactly 50 times and
+  finish at zero; 100 parallel opposing transfers conserve totals; reversal
+  mirrors, links and refuses a second reversal and an overdrawing reversal;
+  practice and real balances stay separate at service and row level; 20
+  parallel first uses create one user account; asset registration is
+  idempotent.
+- `PostgresFixture` now starts the container with `max_connections=400`; the
+  default 100 was exhausted by pooled connections plus the 100-way bursts.
+- Full suite once: 487 total, 469 passed, 14 skipped (smoke), 4 failures all
+  traced to the connection limit and green on rerun after the fixture change.
+- Commit: `feat(ledger): posting, reversal and balances`.
+
 Note: two PostgreSQL containers exist on this machine. The compose file in this
 repository publishes `askvest-dev-postgres-1` on port 55433 while a second
 `askvest-postgres-1` container from the same compose project runs without a

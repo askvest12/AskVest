@@ -77,6 +77,39 @@ PostgreSQL via Testcontainers):
   the shared-connection options signature surfaced the reference).
 - Commit: `feat(platform): transaction scope and outbox`.
 
-## Steps 4 to 8
+## Step 4: ledger schema, migration and database guards
 
-Recorded per step below as they land.
+`src/Modules/AskVest.Modules.Ledger` migration `20261107211008_InitialLedger`
+provisions the `ledger` schema, creates `assets`, `accounts`,
+`account_balances`, `journals` and `journal_entries`, seeds `USD` and `USDC`
+(scale 6), installs the deferred zero-sum trigger on journal entries, and grants
+`askvest_app` insert/select only on `journals` and `journal_entries` (append-only).
+Composite foreign keys `(id, book)` on accounts and `(id, book)` /
+`(account_id, asset_code)` on entries make cross-book and cross-asset mixing
+impossible at the database level. Check constraints enforce book/kind/owner
+rules, the practice-only issuance account, non-negative user balances and
+non-zero entry amounts.
+
+Verification, `tests/AskVest.IntegrationTests/Ledger/LedgerSchemaTests.cs`
+(13 tests, real PostgreSQL via Testcontainers, raw SQL independent of EF):
+
+- Migration reapply is a no-op; seeded assets return `USD`/`fiat`/6 and
+  `USDC`/`stablecoin`/6.
+- Raw failing statements prove: unbalanced journal rejected at commit by the
+  deferred trigger, single-entry journal rejected, zero-amount entry rejected,
+  entry referencing an account in another book rejected, entry asset differing
+  from account asset rejected, negative user-kind balance rejected, duplicate
+  idempotency key rejected, second reversal of one journal rejected, practice
+  issuance account in the real book rejected, duplicate system account rejected.
+- `askvest_app` cannot UPDATE or DELETE journals or entries and cannot ALTER
+  the table; it can INSERT a balanced journal and SELECT it back.
+- `tests/AskVest.UnitTests/Ledger/LedgerOptionsTests.cs` (3 tests): invalid
+  reconciliation interval/page size fail data-annotation validation.
+- Migration also verified against the compose development database on
+  `127.0.0.1:55433`: `ledger.assets` seeded, all five tables present under the
+  `ledger` schema.
+
+Note: two PostgreSQL containers exist on this machine. The compose file in this
+repository publishes `askvest-dev-postgres-1` on port 55433 while a second
+`askvest-postgres-1` container from the same compose project runs without a
+published port; migration and inspection must target the 55433 instance.

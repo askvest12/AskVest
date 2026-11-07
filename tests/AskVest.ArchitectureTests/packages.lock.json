@@ -626,6 +626,7 @@
         "dependencies": {
           "AskVest.Modules.Compliance": "[1.0.0, )",
           "AskVest.Modules.Identity": "[1.0.0, )",
+          "AskVest.Modules.Ledger": "[1.0.0, )",
           "AskVest.Platform": "[1.0.0, )",
           "Microsoft.Extensions.Hosting": "[10.0.14, )",
           "Serilog.Extensions.Hosting": "[10.0.0, )",

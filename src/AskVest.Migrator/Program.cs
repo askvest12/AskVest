@@ -1,5 +1,6 @@
 using AskVest.Modules.Compliance.Persistence;
 using AskVest.Modules.Identity.Persistence;
+using AskVest.Modules.Ledger.Persistence;
 using AskVest.Platform;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -32,6 +33,7 @@ try
         [
             connectionString => new IdentityDbContext(IdentityDbContextOptions.Create(connectionString)),
             connectionString => new ComplianceDbContext(ComplianceDbContextOptions.Create(connectionString)),
+            connectionString => new LedgerDbContext(LedgerDbContextOptions.Create(connectionString)),
         ],
         cancellation.Token);
     if (logger.IsEnabled(LogLevel.Information))

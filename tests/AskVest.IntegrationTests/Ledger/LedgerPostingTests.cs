@@ -1,3 +1,4 @@
+using System.Globalization;
 using AskVest.IntegrationTests.Infrastructure;
 using AskVest.Modules.Ledger;
 using AskVest.Modules.Ledger.Contracts;
@@ -80,13 +81,13 @@ public sealed class LedgerPostingTests(PostgresFixture fixture) : IAsyncLifetime
     }
 
     [Theory]
-    [InlineData(0)]
-    [InlineData(10_000_000_000)]
-    [InlineData(1.0000001)]
-    public async Task Invalid_Amounts_Fail_With_Amount_Invalid(double amount)
+    [InlineData("0")]
+    [InlineData("10000000000")]
+    [InlineData("1.0000001")]
+    public async Task Invalid_Amounts_Fail_With_Amount_Invalid(string amount)
     {
         var userId = Guid.CreateVersion7();
-        var decimalAmount = (decimal)amount;
+        var decimalAmount = decimal.Parse(amount, CultureInfo.InvariantCulture);
         var request = new PostJournalRequest(
             $"amt-{Guid.CreateVersion7():N}",
             Book.Practice,

@@ -6,6 +6,11 @@ using Xunit;
 
 namespace AskVest.SmokeTests;
 
+// All smoke tests share one stack and its per-IP rate limits, so they must run serially.
+[CollectionDefinition("SmokeStack")]
+public sealed class SmokeSuite;
+
+[Collection("SmokeStack")]
 public sealed class ApiSmokeTests
 {
     private static readonly string? BaseUrl = Environment.GetEnvironmentVariable("ASKVEST_SMOKE_BASE_URL");

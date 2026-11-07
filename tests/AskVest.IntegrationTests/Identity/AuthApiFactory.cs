@@ -43,7 +43,7 @@ public sealed class AuthApiFactory(
             }
 
             config.AddInMemoryCollection(settings);
-            foreach (var (key, value) in TestIdentitySecrets.Entries)
+            foreach (var (key, value) in TestIdentitySecrets.Entries.Concat(TestComplianceSecrets.Entries))
             {
                 config.AddInMemoryCollection(new Dictionary<string, string?> { [key] = value });
             }

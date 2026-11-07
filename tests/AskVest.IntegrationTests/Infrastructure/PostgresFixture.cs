@@ -1,3 +1,4 @@
+using AskVest.Modules.Compliance.Persistence;
 using AskVest.Modules.Identity.Persistence;
 using AskVest.Platform;
 using DotNet.Testcontainers.Configurations;
@@ -45,7 +46,10 @@ public sealed class PostgresFixture : IAsyncLifetime
 
         var applied = await MigrationRunner.RunAsync(
             OwnerConnectionString,
-            [connectionString => new IdentityDbContext(IdentityDbContextOptions.Create(connectionString))]);
+            [
+                connectionString => new IdentityDbContext(IdentityDbContextOptions.Create(connectionString)),
+                connectionString => new ComplianceDbContext(ComplianceDbContextOptions.Create(connectionString)),
+            ]);
         if (applied.Count == 0)
         {
             throw new InvalidOperationException("Expected InitialPlatform to apply on a fresh database.");
@@ -59,8 +63,12 @@ public sealed class PostgresFixture : IAsyncLifetime
                 new RespawnerOptions
                 {
                     DbAdapter = DbAdapter.Postgres,
-                    SchemasToInclude = ["platform", "identity"],
-                    TablesToIgnore = ["platform.__ef_migrations_history", "identity.__ef_migrations_history"],
+                    SchemasToInclude = ["platform", "identity", "compliance"],
+                    TablesToIgnore = [
+                        "platform.__ef_migrations_history",
+                        "identity.__ef_migrations_history",
+                        "compliance.__ef_migrations_history",
+                    ],
                 });
         }
     }

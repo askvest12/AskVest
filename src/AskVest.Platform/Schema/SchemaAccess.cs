@@ -24,6 +24,17 @@ public static partial class SchemaAccess
             """);
     }
 
+    public static void RestrictToAppendOnly(MigrationBuilder migrationBuilder, string schema, string table)
+    {
+        ArgumentNullException.ThrowIfNull(migrationBuilder);
+        ValidateName(schema, nameof(schema));
+        ValidateName(table, nameof(table));
+
+        migrationBuilder.Sql($$"""
+            REVOKE UPDATE, DELETE ON TABLE {{schema}}.{{table}} FROM {{AppRole}};
+            """);
+    }
+
     private static void ValidateName(string name, string parameterName)
     {
         if (!NamePattern().IsMatch(name))

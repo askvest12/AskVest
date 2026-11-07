@@ -134,6 +134,14 @@ public sealed class ComplianceModuleBoundaryTests
         publicTypes.ShouldAllBe(name =>
             name.Contains(".Contracts.", StringComparison.Ordinal)
             || name.Contains(".Persistence.", StringComparison.Ordinal)
+            || name.Contains(".Domain.", StringComparison.Ordinal)
+            || name.Contains(".Configuration.", StringComparison.Ordinal)
+            || name.Contains(".Migrations.", StringComparison.Ordinal)
+            || name.Contains(".Services.", StringComparison.Ordinal)
+            || name.Contains(".Endpoints.", StringComparison.Ordinal)
+            || name.Contains(".Validation.", StringComparison.Ordinal)
+            || name.Contains(".Authorization.", StringComparison.Ordinal)
+            || name.Contains(".Providers.", StringComparison.Ordinal)
             || name.EndsWith("ComplianceModuleExtensions")
             || name.EndsWith("ComplianceEndpointsExtensions"));
     }

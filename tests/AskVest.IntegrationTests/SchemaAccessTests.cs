@@ -34,4 +34,22 @@ public sealed class SchemaAccessTests
         SchemaAccess.ProvisionSchema(builder, "module_schema", "__ef_migrations_history");
         builder.Operations.ShouldNotBeEmpty();
     }
+
+    [Theory]
+    [InlineData("Bad-Schema")]
+    [InlineData("schema;drop")]
+    public void RestrictToAppendOnly_Rejects_InvalidNames(string name)
+    {
+        var builder = new MigrationBuilder("Npgsql");
+        Should.Throw<ArgumentException>(() => SchemaAccess.RestrictToAppendOnly(builder, name, "table_name"));
+        Should.Throw<ArgumentException>(() => SchemaAccess.RestrictToAppendOnly(builder, "schema_name", name));
+    }
+
+    [Fact]
+    public void RestrictToAppendOnly_EmitsRevoke()
+    {
+        var builder = new MigrationBuilder("Npgsql");
+        SchemaAccess.RestrictToAppendOnly(builder, "compliance", "compliance_events");
+        builder.Operations.ShouldNotBeEmpty();
+    }
 }

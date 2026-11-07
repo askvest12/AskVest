@@ -24,7 +24,7 @@ builder.Services.AddSerilog((_, loggerConfiguration) => loggerConfiguration
 
 builder.Services.AddPlatformPersistence(builder.Configuration);
 builder.Services.AddIdentityModule(builder.Configuration, builder.Environment);
-builder.Services.AddComplianceModule(builder.Configuration);
+builder.Services.AddComplianceModule(builder.Configuration, builder.Environment);
 builder.Services.AddScoped<IIdempotencyStore, EfIdempotencyStore>();
 builder.Services.AddSingleton<IIdempotencyScopeResolver, AuthenticatedIdempotencyScopeResolver>();
 builder.Services.AddHostedService<IdempotencyCleanupService>();

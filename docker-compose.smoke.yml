@@ -28,6 +28,10 @@ services:
       Messaging__Smtp__EnableStartTls: "false"
       Messaging__Sms__Mode: Development
       Messaging__Sms__ForwardTo: sms@askvest.local
+      Compliance__RealMoneyEnabled: "true"
+      Compliance__Kyc__Provider: "fake"
+      Compliance__Screening__Provider: "fake"
+      Compliance__Screening__HitNameMarker: "SMOKE-SANCTIONED"
     ports: !override
       - "127.0.0.1:${ASKVEST_SMOKE_API_PORT:-5081}:8080"
 

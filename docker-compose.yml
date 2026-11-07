@@ -73,6 +73,10 @@ services:
       Identity__Secrets__PasswordPepper: ${ASKVEST_IDENTITY_PASSWORD_PEPPER:?required}
       Identity__Secrets__PasswordPepperVersion: "1"
       Identity__Secrets__OneTimeCodeHashSecret: ${ASKVEST_IDENTITY_CODE_SECRET:?required}
+      Compliance__RealMoneyEnabled: "false"
+      Compliance__Kyc__Provider: "fake"
+      Compliance__Kyc__WebhookSecret: ${ASKVEST_COMPLIANCE_KYC_WEBHOOK_SECRET:?required}
+      Compliance__Screening__Provider: "fake"
     ports:
       - "127.0.0.1:${ASKVEST_API_PORT:-5080}:8080"
     depends_on:

@@ -36,6 +36,7 @@ jobs:
             echo "ASKVEST_IDENTITY_SIGNING_KEY=$(openssl ecparam -name prime256v1 -genkey -noout | openssl pkcs8 -topk8 -nocrypt | base64 -w0)"
             echo "ASKVEST_IDENTITY_PASSWORD_PEPPER=$(openssl rand -hex 32)"
             echo "ASKVEST_IDENTITY_CODE_SECRET=$(openssl rand -hex 32)"
+            echo "ASKVEST_COMPLIANCE_KYC_WEBHOOK_SECRET=$(openssl rand -hex 32)"
           } > .env
       - name: Start smoke stack
         run: docker compose -f docker-compose.yml -f docker-compose.smoke.yml up -d --build --wait

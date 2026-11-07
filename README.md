@@ -28,6 +28,9 @@ openssl ecparam -name prime256v1 -genkey -noout | openssl pkcs8 -topk8 -nocrypt 
 # Password pepper and one-time-code hash secret (64 hex chars each)
 openssl rand -hex 32
 openssl rand -hex 32
+
+# KYC webhook signing secret (64 hex chars)
+openssl rand -hex 32
 ```
 
 Set the results in `.env`:
@@ -36,6 +39,7 @@ Set the results in `.env`:
 - `ASKVEST_IDENTITY_PASSWORD_PEPPER` — first `openssl rand -hex 32` output
 - `ASKVEST_IDENTITY_CODE_SECRET` — second `openssl rand -hex 32` output
 - `ASKVEST_IDENTITY_SIGNING_KEY_PREVIOUS` — leave empty unless rotating keys
+- `ASKVEST_COMPLIANCE_KYC_WEBHOOK_SECRET` — the third `openssl rand -hex 32` output
 
 Never commit real secret values; `.env` is git-ignored and `.env.example`
 contains names only.
@@ -83,7 +87,30 @@ ASKVEST_SMOKE_BASE_URL=http://localhost:5081 dotnet test --project tests/AskVest
 ```
 
 The smoke stack (`docker-compose.smoke.yml`) runs the API in Development mode
-with Mailpit and probe endpoints enabled.
+with Mailpit and probe endpoints enabled. It also enables real money for the
+`NG` test country with the fake KYC and screening providers, so the full
+Practice and Real eligibility journey can run over HTTP.
+
+## Compliance smoke flows
+
+The smoke suite walks a verified user through documents, consents, country,
+KYC start and a signed provider webhook, then checks the gated
+`/api/v1/practice` and `/api/v1/real` probe endpoints.
+
+KYC webhooks are received at `POST /api/v1/webhooks/kyc/{provider}` and are
+signed with HMAC-SHA256 over `{timestamp}.{rawBody}`. To call it by hand:
+
+```bash
+BODY='{"eventId":"evt-1","providerReference":"<ref>","outcome":"approved","verifiedCountry":"NG","fullName":"Test User","dateOfBirth":"1990-01-01"}'
+TS=$(date +%s)
+SIG=$(printf '%s' "$TS.$BODY" | openssl dgst -sha256 -hmac "$ASKVEST_COMPLIANCE_KYC_WEBHOOK_SECRET" | awk '{print $2}')
+curl -X POST http://localhost:5081/api/v1/webhooks/kyc/fake \
+  -H "X-Webhook-Timestamp: $TS" -H "X-Webhook-Signature: $SIG" \
+  -H 'Content-Type: application/json' -d "$BODY"
+```
+
+The `providerReference` comes from `POST /api/v1/compliance/kyc/start`. A name
+containing `SMOKE-SANCTIONED` triggers the fake screening hit path.
 
 ## Rotating signing keys
 

@@ -38,7 +38,8 @@ public static class IdentityModuleExtensions
         services.AddDbContext<IdentityDbContext>((IServiceProvider provider, DbContextOptionsBuilder options) =>
         {
             var platformOptions = provider.GetRequiredService<IOptions<AskVest.Platform.PlatformOptions>>().Value;
-            IdentityDbContextOptions.Configure(options, connectionString, platformOptions.CommandTimeoutSeconds);
+            var scope = provider.GetService<AskVest.Platform.ITransactionScope>();
+            IdentityDbContextOptions.Configure(options, connectionString, platformOptions.CommandTimeoutSeconds, scope?.Connection);
         });
 
         services.AddSingleton<TimeProvider>(_ => TimeProvider.System);

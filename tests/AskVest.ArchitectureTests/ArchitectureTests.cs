@@ -28,7 +28,7 @@ public sealed class ModuleBoundaryTests
             .ShouldAllBe(name =>
                 name.StartsWith("Microsoft.", StringComparison.Ordinal)
                 || name.StartsWith("System", StringComparison.Ordinal)
-                || name.StartsWith("Npgsql.", StringComparison.Ordinal)
+                || name.StartsWith("Npgsql", StringComparison.Ordinal)
                 || name.StartsWith("EFCore.", StringComparison.Ordinal)
                 || name.StartsWith("Konscious.", StringComparison.Ordinal)
                 || name.Equals("PhoneNumbers", StringComparison.Ordinal)

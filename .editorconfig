@@ -190,6 +190,14 @@ dotnet_diagnostic.CA1031.severity = none
 [src/Modules/AskVest.Modules.Identity/Services/MaintenanceJob.cs]
 dotnet_diagnostic.CA1031.severity = none
 
+# The outbox dispatcher must survive any handler or database failure and retry.
+[src/AskVest.Platform/Outbox/OutboxDispatcher.cs]
+dotnet_diagnostic.CA1031.severity = none
+
+# Dispose must attempt rollback without throwing; the original failure is already surfacing.
+[src/AskVest.Platform/Transactions/TransactionScope.cs]
+dotnet_diagnostic.CA1031.severity = none
+
 # ECDsaSecurityKey takes ownership of the ECDsa instance; CA2000 cannot see the transfer.
 [src/Modules/AskVest.Modules.Identity/Crypto/AccessTokenService.cs]
 dotnet_diagnostic.CA2000.severity = none

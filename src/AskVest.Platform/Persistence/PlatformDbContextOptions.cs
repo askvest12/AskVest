@@ -1,3 +1,4 @@
+using System.Data.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace AskVest.Platform;
@@ -11,15 +12,27 @@ public static class PlatformDbContextOptions
         return builder.Options;
     }
 
-    public static void Configure(DbContextOptionsBuilder builder, string connectionString, int commandTimeoutSeconds)
+    public static void Configure(
+        DbContextOptionsBuilder builder,
+        string connectionString,
+        int commandTimeoutSeconds,
+        DbConnection? sharedConnection = null)
     {
-        builder.UseNpgsql(
-                connectionString,
-                npgsql =>
-                {
-                    npgsql.CommandTimeout(commandTimeoutSeconds);
-                    npgsql.MigrationsHistoryTable(PlatformDbContext.HistoryTable, PlatformDbContext.Schema);
-                })
-            .UseSnakeCaseNamingConvention();
+        void NpgsqlOptions(Npgsql.EntityFrameworkCore.PostgreSQL.Infrastructure.NpgsqlDbContextOptionsBuilder npgsql)
+        {
+            npgsql.CommandTimeout(commandTimeoutSeconds);
+            npgsql.MigrationsHistoryTable(PlatformDbContext.HistoryTable, PlatformDbContext.Schema);
+        }
+
+        if (sharedConnection is null)
+        {
+            builder.UseNpgsql(connectionString, NpgsqlOptions);
+        }
+        else
+        {
+            builder.UseNpgsql(sharedConnection, NpgsqlOptions);
+        }
+
+        builder.UseSnakeCaseNamingConvention();
     }
 }

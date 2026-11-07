@@ -29,7 +29,8 @@ public static class ComplianceModuleExtensions
         services.AddDbContext<ComplianceDbContext>((IServiceProvider provider, DbContextOptionsBuilder options) =>
         {
             var platformOptions = provider.GetRequiredService<IOptions<AskVest.Platform.PlatformOptions>>().Value;
-            ComplianceDbContextOptions.Configure(options, connectionString, platformOptions.CommandTimeoutSeconds);
+            var scope = provider.GetService<AskVest.Platform.ITransactionScope>();
+            ComplianceDbContextOptions.Configure(options, connectionString, platformOptions.CommandTimeoutSeconds, scope?.Connection);
         });
 
         services.AddSingleton<Providers.IKycProvider>(provider =>

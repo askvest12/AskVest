@@ -9,6 +9,8 @@ public class PlatformDbContext(DbContextOptions<PlatformDbContext> options) : Db
 
     public DbSet<IdempotencyRecord> IdempotencyRecords => Set<IdempotencyRecord>();
 
+    public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(Schema);
@@ -33,6 +35,23 @@ public class PlatformDbContext(DbContextOptions<PlatformDbContext> options) : Db
             entity.ToTable(table => table.HasCheckConstraint(
                 "ck_idempotency_keys_completed_has_status",
                 "state <> 'completed' OR response_status_code IS NOT NULL"));
+        });
+
+        modelBuilder.Entity<OutboxMessage>(entity =>
+        {
+            entity.ToTable("outbox_messages");
+            entity.HasKey(message => message.Id);
+            entity.Property(message => message.MessageType).HasColumnName("type").HasMaxLength(128).IsRequired();
+            entity.Property(message => message.Payload).HasColumnType("jsonb").IsRequired();
+            entity.Property(message => message.Status).HasMaxLength(16).IsRequired();
+            entity.Property(message => message.Outcome).HasMaxLength(32);
+            entity.Property(message => message.LastError).HasMaxLength(256);
+            entity.Property(message => message.DedupeKey).HasMaxLength(200);
+            entity.HasIndex(message => message.DedupeKey).IsUnique();
+            entity.HasIndex(message => new { message.Status, message.AvailableAt });
+            entity.ToTable(table => table.HasCheckConstraint(
+                "ck_outbox_messages_status",
+                $"status IN ('{OutboxMessage.StatusPending}', '{OutboxMessage.StatusProcessed}', '{OutboxMessage.StatusDead}')"));
         });
     }
 }

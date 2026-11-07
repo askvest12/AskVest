@@ -24,7 +24,7 @@ public sealed class LedgerModuleBoundaryTests
             .ShouldAllBe(name =>
                 name.StartsWith("Microsoft.", StringComparison.Ordinal)
                 || name.StartsWith("System", StringComparison.Ordinal)
-                || name.StartsWith("Npgsql.", StringComparison.Ordinal)
+                || name.StartsWith("Npgsql", StringComparison.Ordinal)
                 || name.StartsWith("EFCore.", StringComparison.Ordinal)
                 || name.StartsWith("FluentValidation", StringComparison.Ordinal)
                 || name.Equals("netstandard", StringComparison.Ordinal)

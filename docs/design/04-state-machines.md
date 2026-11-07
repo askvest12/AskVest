@@ -88,6 +88,25 @@ stateDiagram-v2
 
 `real_money_enabled` is terminal in this model; demotion is handled as a restriction flow in Phase 2, not a silent flip.
 
+## KYC verification (Compliance, Phase 2)
+
+```mermaid
+stateDiagram-v2
+    [*] --> not_started
+    not_started --> in_review: verification started
+    in_review --> approved: provider approval + screening clear
+    in_review --> approved: provider approval + screening hit (account restricted)
+    in_review --> rejected: provider rejection
+    approved --> expired: approval validity elapsed (computed, no job)
+    rejected --> in_review: new attempt while attempts remain
+```
+
+`kyc_status` on the compliance profile is `not_started`, `in_review`,
+`approved` or `rejected`. Expiry is derived from the stored expiry time
+against `TimeProvider`; there is no background job. Screening state is
+`not_run`, `clear` or `hit`; a hit restricts the account for Real without
+changing the KYC status.
+
 ## Identity state machines
 
 - User: `pending_verification` to `active` on email code verification; `active` to `deletion_requested` on deletion request; `deletion_requested` to `anonymized` by the scheduled job; `active` to `disabled` by later admin tooling. `anonymized` is terminal.

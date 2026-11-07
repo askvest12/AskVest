@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\AskVest.Platform\AskVest.Platform.csproj" />
     <ProjectReference Include="..\Modules\AskVest.Modules.Identity\AskVest.Modules.Identity.csproj" />
+    <ProjectReference Include="..\Modules\AskVest.Modules.Compliance\AskVest.Modules.Compliance.csproj" />
   </ItemGroup>
 
   <ItemGroup>

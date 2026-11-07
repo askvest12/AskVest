@@ -32,4 +32,15 @@ public sealed class DefaultDenyTests
             .ToList();
         unprotected.ShouldBeEmpty(string.Join("; ", unprotected));
     }
+
+    [Theory]
+    [InlineData("/api/v1/practice", "PracticeEligible")]
+    [InlineData("/api/v1/real", "RealEligible")]
+    public void Route_Groups_Carry_Their_Eligibility_Policy(string prefix, string policy)
+    {
+        using var factory = new ApiHostFactory();
+        var dataSource = factory.Services.GetRequiredService<EndpointDataSource>();
+        var violations = AskVest.Api.RouteGroupPolicyGuard.FindViolations(dataSource.Endpoints, prefix, policy);
+        violations.ShouldBeEmpty(string.Join("; ", violations));
+    }
 }

@@ -110,6 +110,108 @@ public sealed class AnonymousGuardTests
     }
 }
 
+public sealed class ComplianceModuleBoundaryTests
+{
+    private static readonly Assembly Compliance = typeof(AskVest.Modules.Compliance.ComplianceModuleExtensions).Assembly;
+
+    [Fact]
+    public void Compliance_References_Only_SharedKernel_Platform_And_Identity()
+    {
+        var askVestReferences = Compliance.GetReferencedAssemblies()
+            .Select(a => a.Name!)
+            .Where(name => name.StartsWith("AskVest.", StringComparison.Ordinal))
+            .ToHashSet(StringComparer.Ordinal);
+        askVestReferences.ShouldBeSubsetOf(["AskVest.SharedKernel", "AskVest.Platform", "AskVest.Modules.Identity"]);
+    }
+
+    [Fact]
+    public void Compliance_Public_Surface_Stays_Within_Module_Namespaces()
+    {
+        var publicTypes = Compliance.GetExportedTypes()
+            .Where(t => t.Namespace?.StartsWith("AskVest.Modules.Compliance", StringComparison.Ordinal) == true)
+            .Select(t => t.FullName!)
+            .ToList();
+        publicTypes.ShouldAllBe(name =>
+            name.Contains(".Contracts.", StringComparison.Ordinal)
+            || name.Contains(".Persistence.", StringComparison.Ordinal)
+            || name.EndsWith("ComplianceModuleExtensions")
+            || name.EndsWith("ComplianceEndpointsExtensions"));
+    }
+
+    [Fact]
+    public void Compliance_Uses_Identity_Only_Through_Contracts()
+    {
+        var projectDirectory = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory, "..", "..", "..", "..", "..",
+            "src", "Modules", "AskVest.Modules.Compliance"));
+        var violations = new List<string>();
+        foreach (var file in Directory.EnumerateFiles(projectDirectory, "*.cs", SearchOption.AllDirectories))
+        {
+            if (file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+                || file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            var text = File.ReadAllText(file);
+            var index = 0;
+            const string marker = "AskVest.Modules.Identity.";
+            while ((index = text.IndexOf(marker, index, StringComparison.Ordinal)) >= 0)
+            {
+                var tail = text[(index + marker.Length)..];
+                if (!tail.StartsWith("Contracts", StringComparison.Ordinal))
+                {
+                    violations.Add($"{Path.GetFileName(file)} references Identity outside Contracts");
+                    break;
+                }
+
+                index += marker.Length;
+            }
+        }
+
+        violations.ShouldBeEmpty(string.Join("; ", violations));
+    }
+}
+
+public sealed class RouteGroupPolicyGuardTests
+{
+    private static RouteEndpoint Endpoint(string route, params object[] metadata)
+        => new(_ => Task.CompletedTask, RoutePatternFactory.Parse(route), 0, new EndpointMetadataCollection(metadata), route);
+
+    private static RouteEndpoint Get(string route, string? policy)
+    {
+        object[] metadata = policy is null ? [] : [new AuthorizeAttribute { Policy = policy }];
+        return Endpoint(route, metadata);
+    }
+
+    [Fact]
+    public void Guard_Flags_Practice_Endpoint_Without_Practice_Policy()
+    {
+        var violations = AskVest.Api.RouteGroupPolicyGuard.FindViolations(
+        [
+            Get("/api/v1/practice/diagnostics/ping", "RealEligible"),
+            Get("/api/v1/practice/orders", null),
+        ],
+            "/api/v1/practice",
+            "PracticeEligible");
+        violations.Count.ShouldBe(2);
+    }
+
+    [Fact]
+    public void Guard_Accepts_Policy_And_Ignores_Other_Groups()
+    {
+        var violations = AskVest.Api.RouteGroupPolicyGuard.FindViolations(
+        [
+            Get("/api/v1/practice/diagnostics/ping", "PracticeEligible"),
+            Get("/api/v1/real/diagnostics/ping", "RealEligible"),
+            Get("/api/v1/account/me", null),
+        ],
+            "/api/v1/practice",
+            "PracticeEligible");
+        violations.ShouldBeEmpty();
+    }
+}
+
 public sealed class IdempotencyGuardTests
 {
     private static RouteEndpoint Endpoint(string route, params object[] metadata)

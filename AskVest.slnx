@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/Modules/AskVest.Modules.Identity/AskVest.Modules.Identity.csproj" />
+    <Project Path="src/Modules/AskVest.Modules.Compliance/AskVest.Modules.Compliance.csproj" />
     <Project Path="src/AskVest.Api/AskVest.Api.csproj" />
     <Project Path="src/AskVest.Migrator/AskVest.Migrator.csproj" />
     <Project Path="src/AskVest.Platform/AskVest.Platform.csproj" />

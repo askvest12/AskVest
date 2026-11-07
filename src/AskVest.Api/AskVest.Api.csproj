@@ -4,6 +4,7 @@
     <ProjectReference Include="..\AskVest.SharedKernel\AskVest.SharedKernel.csproj" />
     <ProjectReference Include="..\AskVest.Platform\AskVest.Platform.csproj" />
     <ProjectReference Include="..\Modules\AskVest.Modules.Identity\AskVest.Modules.Identity.csproj" />
+    <ProjectReference Include="..\Modules\AskVest.Modules.Compliance\AskVest.Modules.Compliance.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

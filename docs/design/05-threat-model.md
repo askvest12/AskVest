@@ -25,7 +25,7 @@
 | T3 | Race condition on balance (double spend) | row locking or serializable plus invariant checks | 3 |
 | T4 | Object-level authorization bypass (IDOR) | ownership in every query, not-found answers, cross-user tests per endpoint | 1 onward |
 | T5 | Quote tampering or stale quote | server-side signed quotes, expiry, never trust client amounts | 10 |
-| T6 | Webhook forgery or replay | HMAC signature, timestamp tolerance, event-id dedupe | 12 |
+| T6 | Webhook forgery or replay | HMAC-SHA256 signature over timestamp and raw body, constant-time compare, 5 minute tolerance, provider event-id dedupe (Phase 2 KYC webhook; funding webhooks in 12 reuse the same contract) | 2, 12 |
 | T7 | Provider outage or partial failure | pending states, timeouts, circuit breaker, reconciliation | 10, 12, 15 |
 | T8 | Signing key compromise | KMS or HSM, no raw keys in DB or env, rotation, signing limits | 11 |
 | T9 | Insider or admin abuse | RBAC, four-eyes on sensitive actions, immutable audit log | 15 |
@@ -40,8 +40,8 @@
 | T18 | Denial of service | rate limits, body and timeout limits, pagination caps, DB timeouts | 0 |
 | T19 | Erasure request versus financial retention | 30-day cooling-off, anonymization job, ledger keeps user id | 1, 16 |
 | T20 | Clock or timezone bugs | `TimeProvider`, UTC only | 0 |
-| T21 | Offering a service in an unsupported country | country gating, legal review before real money | 2 |
-| T22 | Practice and Real confusion | route separation, separate books, tests that block crossover | 2, 3, 6 |
+| T21 | Offering a service in an unsupported country | declared plus KYC-verified country gating, blocked and real-money country lists in configuration, eligibility gate on `/practice` and `/real`, legal review before real money | 2 |
+| T22 | Practice and Real confusion | separate route groups enforced by `PracticeEligible`/`RealEligible` authorization policies, separate books, kill switch `RealMoneyEnabled`, tests that block crossover | 2, 3, 6 |
 | T23 | Stale or wrong market data driving orders | freshness labels, reject stale prices | 5, 10 |
 | T24 | Token rights misrepresented | mandatory rights and risk fields on every asset | 4 |
 

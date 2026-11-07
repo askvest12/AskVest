@@ -61,6 +61,10 @@ Pattern `^[a-z]+(_[a-z]+)*(\.[a-z]+(_[a-z]+)*)+$`.
 | `auth.pin_locked` | 429 | PIN locked, `Retry-After` set |
 | `auth.step_up_invalid` | 403 | Step-up grant missing, expired, consumed, wrong purpose, session or binding |
 | `account.deletion_blocked` | 422 | A registered blocker prevents deletion, reasons in details |
+| `compliance.not_eligible` | 403 | Practice or Real gate failed; one detail per blocker reason code |
+| `compliance.consent_version_mismatch` | 409 | Consent request does not match current document versions |
+| `webhook.invalid_signature` | 401 | Webhook signature verification failed |
+| `webhook.stale_timestamp` | 400 | Webhook timestamp missing or outside tolerance |
 | `idempotency.key_missing` | 400 | State-changing call without `Idempotency-Key` |
 | `idempotency.key_invalid` | 400 | Key fails the format rule |
 | `idempotency.key_reused` | 422 | Same key, different request fingerprint |

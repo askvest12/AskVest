@@ -193,6 +193,18 @@
         "resolved": "10.0.13",
         "contentHash": "a+EovgC1fBnwdlQ6cn3j4JFBfKqiFaFvoAhjisOoSvazLAcIznaBzPQP0oYnvccmeXfqUH1KebVZOxSeH6rMaw=="
       },
+      "askvest.modules.compliance": {
+        "type": "Project",
+        "dependencies": {
+          "AskVest.Modules.Identity": "[1.0.0, )",
+          "AskVest.Platform": "[1.0.0, )",
+          "AskVest.SharedKernel": "[1.0.0, )",
+          "EFCore.NamingConventions": "[10.0.1, )",
+          "FluentValidation": "[12.2.0, )",
+          "FluentValidation.DependencyInjectionExtensions": "[12.2.0, )",
+          "Npgsql.EntityFrameworkCore.PostgreSQL": "[10.0.3, )"
+        }
+      },
       "askvest.modules.identity": {
         "type": "Project",
         "dependencies": {

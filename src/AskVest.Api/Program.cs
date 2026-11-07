@@ -1,5 +1,6 @@
 using AskVest.Api;
 using AskVest.Api.Endpoints;
+using AskVest.Modules.Compliance;
 using AskVest.Modules.Identity;
 using AskVest.Platform;
 using FluentValidation;
@@ -23,6 +24,7 @@ builder.Services.AddSerilog((_, loggerConfiguration) => loggerConfiguration
 
 builder.Services.AddPlatformPersistence(builder.Configuration);
 builder.Services.AddIdentityModule(builder.Configuration, builder.Environment);
+builder.Services.AddComplianceModule(builder.Configuration);
 builder.Services.AddScoped<IIdempotencyStore, EfIdempotencyStore>();
 builder.Services.AddSingleton<IIdempotencyScopeResolver, AuthenticatedIdempotencyScopeResolver>();
 builder.Services.AddHostedService<IdempotencyCleanupService>();
@@ -129,6 +131,7 @@ var api = app.MapGroup("/api/v1").RequireAuthorization().AddEndpointFilter<Valid
 api.MapSystemEndpoints();
 api.MapIdentityEndpoints(
     builder.Configuration.GetValue<bool>("Identity:PhoneVerificationEnabled"));
+api.MapComplianceEndpoints();
 
 if (docs.Enabled)
 {

@@ -1,3 +1,4 @@
+using AskVest.Modules.Compliance.Persistence;
 using AskVest.Modules.Identity.Persistence;
 using AskVest.Platform;
 using Microsoft.Extensions.Configuration;
@@ -28,7 +29,10 @@ try
 {
     var applied = await MigrationRunner.RunAsync(
         connectionString,
-        [connectionString => new IdentityDbContext(IdentityDbContextOptions.Create(connectionString))],
+        [
+            connectionString => new IdentityDbContext(IdentityDbContextOptions.Create(connectionString)),
+            connectionString => new ComplianceDbContext(ComplianceDbContextOptions.Create(connectionString)),
+        ],
         cancellation.Token);
     if (logger.IsEnabled(LogLevel.Information))
     {

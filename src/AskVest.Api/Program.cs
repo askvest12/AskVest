@@ -2,6 +2,7 @@ using AskVest.Api;
 using AskVest.Api.Endpoints;
 using AskVest.Modules.Compliance;
 using AskVest.Modules.Identity;
+using AskVest.Modules.Ledger;
 using AskVest.Platform;
 using FluentValidation;
 using Microsoft.AspNetCore.Http.Json;
@@ -25,6 +26,7 @@ builder.Services.AddSerilog((_, loggerConfiguration) => loggerConfiguration
 builder.Services.AddPlatformPersistence(builder.Configuration);
 builder.Services.AddIdentityModule(builder.Configuration, builder.Environment);
 builder.Services.AddComplianceModule(builder.Configuration, builder.Environment);
+builder.Services.AddLedgerModule(builder.Configuration, builder.Environment);
 builder.Services.AddScoped<IIdempotencyStore, EfIdempotencyStore>();
 builder.Services.AddSingleton<IIdempotencyScopeResolver, AuthenticatedIdempotencyScopeResolver>();
 builder.Services.AddHostedService<IdempotencyCleanupService>();
@@ -132,6 +134,7 @@ api.MapSystemEndpoints();
 api.MapIdentityEndpoints(
     builder.Configuration.GetValue<bool>("Identity:PhoneVerificationEnabled"));
 api.MapComplianceEndpoints(diagnostics.EnableProbes);
+api.MapLedgerEndpoints(diagnostics.EnableProbes);
 
 if (docs.Enabled)
 {

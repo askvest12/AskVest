@@ -25,6 +25,7 @@ AI-assisted investing in tokenized stocks and ETFs for Africans. Modular monolit
 19. **Secrets never enter idempotency storage.** Endpoints returning tokens, codes or grants carry the returns-secrets tag and are exempt from replay storage; the tag and the idempotency requirement never combine.
 20. **Modules follow `docs/design/09-module-blueprint.md`.** One project per module under `src/Modules`, contracts namespace only, own schema and history table.
 21. **Route groups `/practice` and `/real` carry the eligibility policies.** Every endpoint under `/api/v1/practice` requires `PracticeEligible` and every endpoint under `/api/v1/real` requires `RealEligible`; nothing may bypass them.
+22. **Ledger integrity.** Only the Ledger module touches ledger tables. Ledger writes happen only inside a transaction scope; the scope commits explicitly or rolls back everything, including outbox messages. Amounts, balances and account ids are never logged; outbox payloads carry ids only.
 
 ## Solution layout
 

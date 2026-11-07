@@ -21,8 +21,8 @@
 | Id | Threat | Mitigation | Phase |
 |---|---|---|---|
 | T1 | Account takeover (credential stuffing, OTP interception) | Argon2id+pepper, throttling buckets, device verification, step-up grants, alert emails | 1 |
-| T2 | Replay or duplicate money movement | idempotency middleware plus unique key per operation | 0, 3, 10, 12 |
-| T3 | Race condition on balance (double spend) | row locking or serializable plus invariant checks | 3 |
+| T2 | Replay or duplicate money movement | idempotency middleware plus unique key per operation; journals carry a unique idempotency key plus content hash, same key and content replays, different content conflicts; inserts tolerate conflicts without aborting the transaction | 0, 3, 10, 12 |
+| T3 | Race condition on balance (double spend) | Read Committed plus deterministic row locks on balance rows sorted by account id; user-kind balances forbidden negative by check constraint; deadlock or lock timeout surfaces `service.unavailable` and the client retries with its key | 3 |
 | T4 | Object-level authorization bypass (IDOR) | ownership in every query, not-found answers, cross-user tests per endpoint | 1 onward |
 | T5 | Quote tampering or stale quote | server-side signed quotes, expiry, never trust client amounts | 10 |
 | T6 | Webhook forgery or replay | HMAC-SHA256 signature over timestamp and raw body, constant-time compare, 5 minute tolerance, provider event-id dedupe (Phase 2 KYC webhook; funding webhooks in 12 reuse the same contract) | 2, 12 |
@@ -52,3 +52,5 @@
 | T24 | Signing key leakage | keys in secret manager only, key id pinning, rotation window | 1, 16 |
 | T25 | Session fixation | server-side sessions, new session per login, revocation | 1 |
 | T26 | Secrets captured by idempotency store | returns-secrets tag, replay storage exemption, architecture rule | 0, 1 |
+| T27 | Ledger tampering (edited or deleted history, direct balance writes) | `askvest_app` gets insert and select only on journals and entries; balances only change inside the posting transaction; deferred zero-sum trigger re-checks at commit; corrections are linked one-time reversals; scheduled reconciliation detects corruption without repairing it | 3 |
+| T28 | Outbox duplicate or lost delivery | at-least-once delivery by design, handlers tolerate duplicates; atomic enqueue inside the business transaction; lease-based claiming so two dispatchers never take the same message; exponential backoff then dead-letter; payloads carry ids only, never amounts or secrets | 3 |

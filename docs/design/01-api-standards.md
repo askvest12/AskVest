@@ -66,6 +66,13 @@ Pattern `^[a-z]+(_[a-z]+)*(\.[a-z]+(_[a-z]+)*)+$`.
 | `compliance.kyc_attempts_exhausted` | 409 | KYC attempt limit reached |
 | `webhook.invalid_signature` | 401 | Webhook signature verification failed |
 | `webhook.stale_timestamp` | 400 | Webhook timestamp missing or outside tolerance |
+| `ledger.unbalanced` | 422 | Journal entries do not sum to zero per asset |
+| `ledger.insufficient_funds` | 422 | Debit would take a user-kind balance negative |
+| `ledger.amount_invalid` | 422 | Zero amount, too many fractional digits for the asset scale, or too many integer digits |
+| `ledger.asset_unknown` | 422 | Asset code is not registered |
+| `ledger.book_mismatch` | 422 | Lines span books or an account belongs to another book |
+| `ledger.idempotency_conflict` | 409 | Same idempotency key, different journal content |
+| `ledger.already_reversed` | 409 | Journal already has a reversal |
 | `idempotency.key_missing` | 400 | State-changing call without `Idempotency-Key` |
 | `idempotency.key_invalid` | 400 | Key fails the format rule |
 | `idempotency.key_reused` | 422 | Same key, different request fingerprint |

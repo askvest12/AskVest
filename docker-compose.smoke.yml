@@ -50,6 +50,7 @@ services:
       MarketData__LiveThresholdSeconds: "5"
       MarketData__StaleThresholdSeconds: "15"
       MarketData__PollIntervalSeconds: "5"
+      MarketData__SymbolOverrides__sample-nvda: "SMOKE-UNKNOWN:NMS"
     ports: !override
       - "127.0.0.1:${ASKVEST_SMOKE_API_PORT:-5081}:8080"
 

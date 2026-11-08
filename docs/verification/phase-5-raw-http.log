@@ -1,0 +1,29 @@
+# Phase 5 raw HTTP evidence - 2026-11-08T03:04:40Z
+# Base: http://localhost:5081
+
+=== 1. GET /api/v1/marketdata/prices (no token) ===
+{"success":false,"message":"Authentication is required.","data":null,"error":{"code":"auth.unauthenticated","details":null},"correlationId":"0HNPT8J9PFIQ6:00000001"}
+HTTP 401
+
+=== 2. GET /api/v1/marketdata/prices?instrumentIds=sample-global-etf,sample-nvda,sample-aapl ===
+{"success":true,"message":"Prices retrieved.","data":[{"instrumentId":"sample-global-etf","price":"87.280000000000000000","currency":"USD","asOf":"2026-11-08T03:04:40.1029910Z","ageSeconds":0,"session":"regular","label":"live","usableForExecution":true,"source":"AskVest Demo Feed","previousClose":null},{"instrumentId":"sample-nvda","price":"31.890000000000000000","currency":"USD","asOf":"2026-11-08T03:04:40.1029910Z","ageSeconds":0,"session":"regular","label":"live","usableForExecution":true,"source":"AskVest Demo Feed","previousClose":null},{"instrumentId":"sample-aapl","price":"79.480000000000000000","currency":"USD","asOf":"2026-11-08T03:04:40.1029910Z","ageSeconds":0,"session":"regular","label":"live","usableForExecution":true,"source":"AskVest Demo Feed","previousClose":null}],"error":null,"correlationId":"01a1b91d7e5976e184646c762594c16c"}
+HTTP 200
+
+=== 3. GET candles 1d sample-nvda ===
+{"success":true,"message":"Candles retrieved.","data":{"source":"AskVest Demo Feed","stale":false,"candles":[{"openTime":"2026-11-05T00:00:00.0000000Z","open":"31.980000000000000000","high":"32.010000000000000000","low":"31.650000000000000000","close":"31.720000000000000000","volume":"58941.000000000000000000","adjusted":true,"partial":false},{"openTime":"2026-11-06T00:00:00.0000000Z","open":"31.950000000000000000","high":"31.970000000000000000","low":"31.770000000000000000","close":"31.830000000000000000","volume":"6220.000000000000000000","adjusted":true,"partial":false},{"openTime":"2026-11-07T00:00:00.0000000Z","open":"31.900000000000000000","high":"31.930000000000000000","low":"31.530000000000000000","close":"31.720000000000000000","volume":"44433.000000000000000000","adjusted":true,"partial":false},{"openTime":"2026-11-08T00:00:00.0000000Z","open":"31.910000000000000000","high":"31.970000000000000000","low":"31.710000000000000000","close":"31.730000000000000000","volume":"20904.000000000000000000","adjusted":true,"partial":true}]},"error":null,"correlationId":"01a1b91d7ef7752aa142da426d5ecc74"}
+HTTP 200
+
+=== 4. GET candles bad interval ===
+{"success":false,"message":"interval, from and to are required and must be valid.","data":null,"error":{"code":"validation.failed","details":null},"correlationId":"01a1b91d7f0e78a0ad37932ac1c9622a"}
+HTTP 400
+
+=== 5. GET candles unknown instrument ===
+{"success":false,"message":"interval, from and to are required and must be valid.","data":null,"error":{"code":"validation.failed","details":null},"correlationId":"01a1b91d7f217f579234a1c6ef86460a"}
+HTTP 400
+
+=== 6. GET prices 51 ids ===
+{"success":false,"message":"instrumentIds must contain between 1 and 50 ids.","data":null,"error":{"code":"validation.failed","details":null},"correlationId":"01a1b91d7f577672a6666a71746fb114"}
+HTTP 400
+=== 5b. GET candles unknown instrument (valid range) ===
+{"success":false,"message":"The instrument was not found.","data":null,"error":{"code":"resource.not_found","details":null},"correlationId":"01a1b91d91197b30a0235613b9d2f479"}
+HTTP 404

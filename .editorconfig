@@ -202,6 +202,10 @@ dotnet_diagnostic.CA1031.severity = none
 [src/Modules/AskVest.Modules.MarketData/Services/PricePoller.cs]
 dotnet_diagnostic.CA1031.severity = none
 
+# Scenario restore in finally must not mask the journey's own failure.
+[tests/AskVest.SmokeTests/MarketDataSmokeTests.cs]
+dotnet_diagnostic.CA1031.severity = none
+
 # Dispose must attempt rollback without throwing; the original failure is already surfacing.
 [src/AskVest.Platform/Transactions/TransactionScope.cs]
 dotnet_diagnostic.CA1031.severity = none

@@ -24,6 +24,11 @@ public static class PracticeModuleExtensions
             .ValidateOnStart();
         services.TryAddSingleton(TimeProvider.System);
 
+        services.AddScoped<Services.PracticeAccountService>();
+        services.AddScoped<Services.PracticePositionService>();
+        services.AddScoped<Services.PracticeAssetResolver>();
+        services.AddScoped<Services.PracticeEventWriter>();
+
         services.AddDbContext<PracticeDbContext>((IServiceProvider provider, DbContextOptionsBuilder options) =>
         {
             var platformOptions = provider.GetRequiredService<IOptions<AskVest.Platform.PlatformOptions>>().Value;

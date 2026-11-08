@@ -147,6 +147,8 @@ if (MarketDataModuleExtensions.IsEnabled(builder.Configuration))
     api.MapMarketDataEndpoints(diagnostics.EnableProbes);
 }
 
+api.MapPracticeEndpoints();
+
 if (docs.Enabled)
 {
     app.MapOpenApi().AllowAnonymous();

@@ -629,6 +629,7 @@
           "AskVest.Modules.Learning": "[1.0.0, )",
           "AskVest.Modules.Ledger": "[1.0.0, )",
           "AskVest.Modules.MarketData": "[1.0.0, )",
+          "AskVest.Modules.Portfolio": "[1.0.0, )",
           "AskVest.Modules.Practice": "[1.0.0, )",
           "AskVest.Platform": "[1.0.0, )",
           "Microsoft.Extensions.Hosting": "[10.0.14, )",

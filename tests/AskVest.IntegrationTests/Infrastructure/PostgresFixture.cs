@@ -4,6 +4,7 @@ using AskVest.Modules.Identity.Persistence;
 using AskVest.Modules.Learning.Persistence;
 using AskVest.Modules.Ledger.Persistence;
 using AskVest.Modules.MarketData.Persistence;
+using AskVest.Modules.Portfolio.Persistence;
 using AskVest.Modules.Practice.Persistence;
 using AskVest.Platform;
 using DotNet.Testcontainers.Configurations;
@@ -74,6 +75,7 @@ public sealed class PostgresFixture : IAsyncLifetime
                 connectionString => new MarketDataDbContext(MarketDataDbContextOptions.Create(connectionString)),
                 connectionString => new PracticeDbContext(PracticeDbContextOptions.Create(connectionString)),
                 connectionString => new LearningDbContext(LearningDbContextOptions.Create(connectionString)),
+                connectionString => new PortfolioDbContext(PortfolioDbContextOptions.Create(connectionString)),
             ]);
         if (applied.Count == 0)
         {

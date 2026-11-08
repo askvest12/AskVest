@@ -3,7 +3,7 @@ using FluentValidation;
 
 namespace AskVest.Modules.Practice.Validation;
 
-public sealed class PracticeOrderRequestValidator : AbstractValidator<PracticeOrderRequest>
+internal sealed class PracticeOrderRequestValidator : AbstractValidator<PracticeOrderRequest>
 {
     public PracticeOrderRequestValidator()
     {

@@ -88,6 +88,15 @@ services:
       Ledger__Outbox__BackoffCapMinutes: "15"
       Ledger__Outbox__ProcessedRetentionDays: "7"
       MarketData__Enabled: "false"
+      Practice__StartingCredits: "10000"
+      Practice__FeeBasisPoints: "0"
+      Practice__QuantityScale: "6"
+      Practice__MinOrderAmount: "1"
+      Practice__MaxOrderAmount: "100000"
+      Practice__MaxOpenStopOrders: "20"
+      Practice__StopEvaluationIntervalSeconds: "15"
+      Practice__ResetCooldownHours: "24"
+      Practice__MaxResetsPer30Days: "3"
     ports:
       - "127.0.0.1:${ASKVEST_API_PORT:-5080}:8080"
     depends_on:

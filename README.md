@@ -272,6 +272,51 @@ arrive as decimal text, timestamps in UTC, and prices already expressed in
 the instrument's quote currency (sub-unit amounts are normalized by the
 adapter, not the module).
 
+## Practice mode
+
+The Practice module is a simulated brokerage for eligible users. It issues a
+one-time grant of `Practice__StartingCredits` (default 10000 USD) into the
+real double-entry ledger's Practice book and trades only practice assets,
+whose codes are the catalog symbol prefixed with `P.` (the Catalog importer
+refuses `P.` codes on real tokens). Every balance and order lives in the
+`practice` schema; practice value can never reach the real book.
+
+Orders are placed under `/api/v1/practice` behind the `PracticeEligible`
+policy and every state-changing call requires an `Idempotency-Key`. A market
+buy takes a USD amount, a market sell takes a quantity or the sell-all flag,
+and both fill immediately at the latest market price that is usable for
+execution (`usableForExecution` from the MarketData freshness labels).
+`stop_loss` orders are sell-only: creation moves the shares from available to
+held in the ledger, the hosted evaluator triggers them when the latest usable
+price falls to or below the stop price, and the fill uses the current price so
+gaps and slippage stay visible. Stale, closed, halted or unavailable prices
+never trigger. Cancelling a stop reverses the hold. Open stops are capped by
+`Practice__MaxOpenStopOrders`.
+
+Reset returns the account to a clean slate: open stops are cancelled and
+their holds released, every practice balance is swept back, starting credits
+are reissued and reset history is kept. Resets are rate limited by
+`Practice__ResetCooldownHours` and `Practice__MaxResetsPer30Days`; a blocked
+reset answers `practice.reset_not_allowed`.
+
+All tunables are `Practice__*` environment variables (see
+`docker-compose.yml`). The smoke override sets a 50 basis point fee, a 2
+second stop evaluation interval and a 1 hour reset cooldown so the whole
+journey is observable quickly.
+
+### Practice smoke test
+
+The practice journey runs inside the smoke suite against the smoke stack
+(sample catalog, fake market data). It covers account start idempotency,
+buy/sell/sell-all and history, order replay, stop hold/cancel/trigger,
+market-unavailable and limit errors, a 20-way parallel buy burst, reset and
+cross-user isolation:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.smoke.yml up -d --build --wait
+ASKVEST_SMOKE_BASE_URL=http://localhost:5081 dotnet test --project tests/AskVest.SmokeTests
+```
+
 ## Rotating signing keys
 
 Access tokens are signed with ES256. To rotate:
@@ -297,6 +342,7 @@ reset their password. Plan this as a maintenance event.
 - `src/AskVest.Modules.Ledger` - ledger module: double-entry posting, balances, history, probes, reconciliation
 - `src/AskVest.Modules.Catalog` - catalog module: chains, issuers, instruments, tokens, disclosures, availability, read API
 - `src/AskVest.Modules.MarketData` - market data module: provider seam, fake provider, price poller, freshness labels, prices and candles API
+- `src/AskVest.Modules.Practice` - practice module: virtual account, market and stop-loss orders, reset, positions, order history
 - `src/AskVest.Api` - HTTP host: envelope, middleware, health, OpenAPI
 - `src/AskVest.Migrator` - forward-only migration runner
 - `tests/` - unit, architecture, integration (Testcontainers), smoke

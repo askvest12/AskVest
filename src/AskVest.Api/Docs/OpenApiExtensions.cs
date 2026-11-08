@@ -1,3 +1,4 @@
+using AskVest.SharedKernel;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
 
@@ -35,6 +36,22 @@ internal sealed class StandardErrorsOperationTransformer : IOpenApiOperationTran
     public Task TransformAsync(OpenApiOperation operation, OpenApiOperationTransformerContext context, CancellationToken cancellationToken)
     {
         StandardErrors.Apply(operation);
+        var metadata = context.Description.ActionDescriptor.EndpointMetadata;
+        if (metadata.OfType<RequiresIdempotencyAttribute>().Any()
+            && !metadata.OfType<IdempotencyExemptAttribute>().Any()
+            && (operation.Parameters ?? []).All(parameter => parameter.Name != IdempotencyKey.HeaderName))
+        {
+            operation.Parameters ??= [];
+            operation.Parameters.Add(new OpenApiParameter
+            {
+                Name = IdempotencyKey.HeaderName,
+                In = ParameterLocation.Header,
+                Required = true,
+                Description = "Unique key for safe retry. Replays return the stored response.",
+                Schema = new OpenApiSchema { Type = JsonSchemaType.String },
+            });
+        }
+
         return Task.CompletedTask;
     }
 }

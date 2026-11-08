@@ -74,6 +74,7 @@ Pattern `^[a-z]+(_[a-z]+)*(\.[a-z]+(_[a-z]+)*)+$`.
 | `ledger.idempotency_conflict` | 409 | Same idempotency key, different journal content |
 | `ledger.already_reversed` | 409 | Journal already has a reversal |
 | `catalog.address_invalid` | 422 | Address fails the chain family's validation or canonicalization |
+| `marketdata.unavailable` | 503 | Market data provider failed and no cached data exists; fail closed |
 | `idempotency.key_missing` | 400 | State-changing call without `Idempotency-Key` |
 | `idempotency.key_invalid` | 400 | Key fails the format rule |
 | `idempotency.key_reused` | 422 | Same key, different request fingerprint |
@@ -100,6 +101,10 @@ Version in the path (`/api/v1`). No version library. Breaking changes require `/
 ## Authentication
 
 Bearer JWT (ES256) in the `Authorization` header. Missing or invalid credentials return the standard 401 envelope with `WWW-Authenticate: Bearer`. Tokens in query strings are never accepted. Authenticated endpoints resolve the session by primary key on every request; revocation is immediate.
+
+## Market data responses
+
+Prices, volumes and candle values serialize as JSON strings, never numbers, and are never rounded silently. Every price item carries `source`, `asOf`, `ageSeconds`, `session`, `label`, `usableForExecution` and `previousClose`. The label vocabulary is fixed: `live`, `delayed`, `closed`, `halted`, `stale`, `unavailable`. `usableForExecution` is true only for `live` or `delayed` in a `regular` session; consumers must never execute on `stale`, `halted` or `unavailable`, and latest-price request handlers never call the provider (only the poller does).
 
 ## Pagination
 

@@ -14,4 +14,8 @@
 - Catalog: a second chain family handler (for example `svm` or `move`) ships with its data files when research chooses one; no schema change needed.
 - Catalog: automated issuer sync waits for research; imports are manual reviewed data files for now.
 - Catalog: admin create, edit, list and delist endpoints reuse the importer and listing guard (Phase 15).
+- MarketData: real provider adapter lands when provider research picks one; only the interface and fake ship in Phase 5.
+- MarketData: websocket or streaming push for prices, multi-provider failover, and a read rate limit policy.
+- MarketData: on-chain or issuer reference prices for tokens (premium or discount to the underlying); storage is ready via the subject type seam.
+- MarketData: currency conversion for display (Phase 12).
 - Portfolio: cross-chain aggregation of tokens per instrument (Phase 8).

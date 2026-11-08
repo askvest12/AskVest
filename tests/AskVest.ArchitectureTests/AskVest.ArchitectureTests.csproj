@@ -6,6 +6,7 @@
     <ProjectReference Include="..\..\src\AskVest.Api\AskVest.Api.csproj" />
     <ProjectReference Include="..\..\src\AskVest.Migrator\AskVest.Migrator.csproj" />
     <ProjectReference Include="..\..\src\Modules\AskVest.Modules.Catalog\AskVest.Modules.Catalog.csproj" />
+    <ProjectReference Include="..\..\src\Modules\AskVest.Modules.MarketData\AskVest.Modules.MarketData.csproj" />
   </ItemGroup>
 
   <ItemGroup>

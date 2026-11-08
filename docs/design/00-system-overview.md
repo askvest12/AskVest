@@ -92,6 +92,10 @@ The product is multi-chain and provider research is still open, so the catalog a
 - Each token carries a free-form gateway key naming the execution adapter that will handle it (Phase 10). It is required for listing, stored, never exposed by the API, and no adapter is assumed.
 - The repository ships no real catalog data. Sample data is fictional, lives in a separate folder and loads only when `Catalog:LoadSampleData` is true; the importer refuses it in Production.
 
+## Market data rules
+
+MarketData keeps the latest reference price of every active catalog instrument in its own schema. A hosted poller is the only caller of the provider for latest prices; request handlers read the database and never call the provider. Candles are fetched on demand only to fill the cache, under single-flight. Every price carries source, `as of`, age, session and a freshness label (`live`, `delayed`, `closed`, `halted`, `stale`, `unavailable`) plus `usableForExecution`. Consumers must honor `usableForExecution` and must never execute on `stale`, `halted` or `unavailable` prices. The module mentions instruments only; tokens and chains are never referenced.
+
 ## Non-goals and undecided product statuses
 
 Payments, remittances, merchant acceptance. Undecided until later phases: launch countries, issuers, chain, custody provider, fee model.

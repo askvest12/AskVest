@@ -34,6 +34,57 @@ The catalog token's free-form **gateway key** names which execution adapter hand
 
 Chain identity rules live in `00-system-overview.md` under "Catalog chain-agnostic rules": CAIP-2 chain ids, CAIP-19 asset ids computed from chain, standard and canonical address, and a chain family handler (`evm` implemented; `svm`, `move`, `other` reserved) as the only seam that knows address formats.
 
+## Market data provider contract (Phase 5)
+
+`IMarketDataProvider` is the only seam to a market data vendor. It fetches latest quotes for a batch of provider symbols and candles for one symbol, interval and range. It is provider-agnostic: no vendor, exchange list, feed type or licensing model is assumed.
+
+Each provider declares its capabilities at registration:
+
+- real-time or delayed, with the delay in minutes when delayed;
+- supported candle intervals and a maximum batch size;
+- whether it reports the market session (`pre`, `regular`, `post`, `closed`, `halted`, `unknown`).
+
+Rules every quote and candle must satisfy:
+
+- timestamps in UTC; prices and volumes parsed from the provider's text as `decimal`, never binary floating point;
+- sub-currency units normalized to the instrument's catalog quote currency before returning (for example pence versus pounds);
+- candles are requested split and dividend adjusted, and the adjusted flag is returned;
+- provider errors map to exactly four outcomes: transient failure, rate limited (with the retry delay), authentication failure, and symbol not found; anything else is a transient failure;
+- a call never blocks past the configured timeout.
+
+Latest prices are fetched only by the poller, which batches within the provider's declared maximum and the configured requests-per-minute budget. Request handlers never call the provider for latest prices; they read the database. Candle requests may call the provider only to fill the cache, under single-flight. Symbol mapping derives the provider symbol from the instrument's symbol, listing exchange and country, with optional per-instrument overrides in configuration. Redistribution and display rights are a research question recorded in the fact sheet below, not an adapter concern.
+
+## Market data adapter contract
+
+Any real adapter added later must satisfy, in addition to the general adapter rules above:
+
+1. Return UTC timestamps and parse prices and volumes from text as decimals; never return `double` or `float`.
+2. Normalize sub-currency units to the instrument's quote currency.
+3. Request split and dividend adjusted candles and return the adjusted flag.
+4. Declare real-time versus delayed, maximum batch size, supported intervals and whether it reports the session.
+5. Map provider errors to the four outcomes above; unknown errors are transient failures.
+6. Respect the configured timeout on every call.
+7. Pass the production guard: only the deterministic fake exists in this phase, and the fake is refused in Production.
+
+## Market data fact sheet (fill one column per provider during research)
+
+| Question | Provider A | Provider B | Provider C |
+|---|---|---|---|
+| Which exchanges and instrument types are covered | | | |
+| Real-time versus delayed feeds, and the cost of each | | | |
+| Is end-user display and redistribution licensed; per-user or per-instrument fees | | | |
+| Historical depth and supported candle intervals | | | |
+| Split and dividend adjustment behavior | | | |
+| Pre-market and post-market data availability | | | |
+| Trading halt and market status feeds | | | |
+| ETF net asset value data | | | |
+| REST versus streaming | | | |
+| Rate limits, batch size and request quotas | | | |
+| Sandbox availability | | | |
+| Timestamp semantics (exchange time, receipt time, delay) and currency conventions | | | |
+| Support and uptime commitments | | | |
+| On-chain or issuer reference prices for tokens | | | |
+
 ## Provider fact sheet (fill one column per provider during research)
 
 | Question | Provider A | Provider B | Provider C |

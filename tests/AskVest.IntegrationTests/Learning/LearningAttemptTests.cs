@@ -27,7 +27,11 @@ public sealed class LearningAttemptTests(PostgresFixture fixture) : IAsyncLifeti
         await Task.CompletedTask;
     }
 
-    public async ValueTask DisposeAsync() => await _factory.DisposeAsync();
+    public async ValueTask DisposeAsync()
+    {
+        await _factory.DisposeAsync();
+        LearningTestContent.WriteContent(fixture.LearningContentDirectory, """{"tracks":[]}""");
+    }
 
     private HttpClient Client() => _factory.CreateClient();
 

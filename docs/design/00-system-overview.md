@@ -83,6 +83,7 @@ The product is multi-chain and provider research is still open, so the catalog a
 - Tokens are identified internally by UUIDv7 and externally by CAIP-19 asset ids computed from chain, token standard and canonical address. CAIP-19 is computed, never supplied.
 - Addresses are canonical strings produced by the chain family handler, never numbers. EVM uses the EIP-55 checksum form.
 - The chain family handler is the only seam that knows chain details: address validation and canonicalization, identifier parsing and building, explorer links. EVM-specific library types may appear only inside the EVM handler (architecture test).
+- Adding a chain family means: implement `IChainFamilyHandler` for the family, register it in `AddCatalogModule` next to `EvmChainFamilyHandler`, and add chains to the data files with that family. No schema change is needed: addresses are stored as canonical text, decimals are capped at 18 for every family, and identifiers are CAIP strings produced by the handler.
 - Each token maps to exactly one ledger asset with an explicit immutable code, registered with kind `token` and scale equal to the token's decimals (at most 18).
 - Practice trades instruments; Real trades tokens. Availability is computed per instrument for Practice and per token for Real.
 - Catalog content comes from reviewed versioned data files imported idempotently at deploy time. The API only reads; the application role has select-only access.

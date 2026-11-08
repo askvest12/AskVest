@@ -115,6 +115,7 @@ public sealed class PracticeApiTests(PostgresFixture fixture) : IAsyncLifetime
     {
         var client = Client();
         var token = await EligibleUserAsync();
+        var grantsBefore = await GrantCountAsync();
 
         using var first = await client.SendAsync(
             ComplianceTestUsers.Post("/api/v1/practice/account", new { }, "start-key-1").Auth(token),
@@ -139,13 +140,16 @@ public sealed class PracticeApiTests(PostgresFixture fixture) : IAsyncLifetime
             TestContext.Current.CancellationToken);
         second.StatusCode.ShouldBe(HttpStatusCode.OK);
 
-        var grants = await Database.ExecuteScalarAsync<long>(
+        // The shared database is not reset between tests, so assert the delta.
+        (await GrantCountAsync() - grantsBefore).ShouldBe(1);
+    }
+
+    private async Task<long> GrantCountAsync()
+        => await Database.ExecuteScalarAsync<long>(
             fixture.OwnerConnectionString,
             "SELECT count(*) FROM ledger.journals WHERE book = 'practice' " +
             "AND reason_code = 'practice_credit_grant'",
             TestContext.Current.CancellationToken);
-        grants.ShouldBe(1);
-    }
 
     [Fact]
     public async Task Account_Get_And_Positions_Report_Cash_As_Strings()

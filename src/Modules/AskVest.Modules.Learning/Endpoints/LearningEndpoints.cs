@@ -25,6 +25,28 @@ public static class LearningEndpoints
                 GetLessonAsync(httpContext, reads, lessonId, cancellationToken))
             .WithName("GetLearningLesson")
             .WithSummary("One lesson's body and quiz questions without answers or explanations.");
+
+        learning.MapPost("/lessons/{lessonId}/quiz-attempts", (HttpContext httpContext,
+                LearningCommandService commands,
+                string lessonId, QuizAttemptRequest request, CancellationToken cancellationToken) =>
+                SubmitQuizAttemptAsync(httpContext, commands, lessonId, request, cancellationToken))
+            .WithName("SubmitLearningQuizAttempt")
+            .WithSummary("Submit graded answers for a lesson quiz.")
+            .WithMetadata(new RequiresIdempotencyAttribute());
+
+        learning.MapPost("/lessons/{lessonId}/complete", (HttpContext httpContext,
+                LearningCommandService commands,
+                string lessonId, CancellationToken cancellationToken) =>
+                CompleteLessonAsync(httpContext, commands, lessonId, cancellationToken))
+            .WithName("CompleteLearningLesson")
+            .WithSummary("Mark a lesson without a quiz as complete.")
+            .WithMetadata(new RequiresIdempotencyAttribute());
+
+        learning.MapGet("/progress", (HttpContext httpContext, LearningProgressService progress,
+                CancellationToken cancellationToken) =>
+                GetProgressAsync(httpContext, progress, cancellationToken))
+            .WithName("GetLearningProgress")
+            .WithSummary("The caller's learning progress, streaks and required lessons.");
     }
 
     private static async Task<IResult> ListTracksAsync(
@@ -129,6 +151,107 @@ public static class LearningEndpoints
                 lastAttemptAt = progress?.LastAttemptAt,
             },
         };
+    }
+
+    private static async Task<IResult> SubmitQuizAttemptAsync(
+        HttpContext httpContext,
+        LearningCommandService commands,
+        string lessonId,
+        QuizAttemptRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await commands.SubmitQuizAttemptAsync(
+            CurrentUserId(httpContext),
+            lessonId,
+            request.Answers,
+            httpContext.Request.Headers["Idempotency-Key"].FirstOrDefault() ?? string.Empty,
+            cancellationToken);
+        if (result.IsFailure)
+        {
+            return LearningResults.Error(result.Error!, httpContext);
+        }
+
+        var (grade, progress) = result.Value;
+        return LearningResults.Ok(
+            new
+            {
+                score = grade.Score,
+                passed = grade.Passed,
+                attemptsCount = progress.AttemptsCount,
+                lessonComplete = progress.Status == LessonProgress.StatusCompleted,
+                questions = grade.Questions.Select(question => new
+                {
+                    questionId = question.QuestionId,
+                    correct = question.Correct,
+                    selectedOptionId = question.SelectedOptionId,
+                    correctOptionId = question.CorrectOptionId,
+                    explanation = question.Explanation,
+                }),
+            },
+            "Quiz attempt graded.",
+            httpContext);
+    }
+
+    private static async Task<IResult> CompleteLessonAsync(
+        HttpContext httpContext,
+        LearningCommandService commands,
+        string lessonId,
+        CancellationToken cancellationToken)
+    {
+        var result = await commands.CompleteLessonAsync(
+            CurrentUserId(httpContext), lessonId, cancellationToken);
+        if (result.IsFailure)
+        {
+            return LearningResults.Error(result.Error!, httpContext);
+        }
+
+        var progress = result.Value;
+        return LearningResults.Ok(
+            new
+            {
+                lessonId = progress.LessonId,
+                status = progress.Status,
+                completedVersion = progress.CompletedVersion,
+                completedAt = progress.CompletedAt,
+            },
+            "Lesson completed.",
+            httpContext);
+    }
+
+    private static async Task<IResult> GetProgressAsync(
+        HttpContext httpContext,
+        LearningProgressService progress,
+        CancellationToken cancellationToken)
+    {
+        var view = await progress.GetAsync(CurrentUserId(httpContext), cancellationToken);
+        return LearningResults.Ok(
+            new
+            {
+                tracks = view.Tracks.Select(track => new
+                {
+                    id = track.Id,
+                    title = track.Title,
+                    totalLessons = track.TotalLessons,
+                    completedLessons = track.CompletedLessons,
+                    attemptedLessons = track.AttemptedLessons,
+                }),
+                streak = new
+                {
+                    current = view.CurrentStreak,
+                    longest = view.LongestStreak,
+                    todayCounted = view.TodayCounted,
+                },
+                requiredLessons = view.RequiredLessons.Select(lesson => new
+                {
+                    id = lesson.Id,
+                    trackId = lesson.TrackId,
+                    version = lesson.Version,
+                    status = lesson.Status,
+                    completedVersion = lesson.CompletedVersion,
+                }),
+            },
+            "Learning progress loaded.",
+            httpContext);
     }
 
     private static IResult NotFound(HttpContext httpContext)

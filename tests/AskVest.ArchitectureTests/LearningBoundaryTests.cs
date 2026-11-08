@@ -29,6 +29,7 @@ public sealed class LearningModuleBoundaryTests
                 || name.StartsWith("System", StringComparison.Ordinal)
                 || name.StartsWith("Npgsql", StringComparison.Ordinal)
                 || name.StartsWith("EFCore.", StringComparison.Ordinal)
+                || name.StartsWith("FluentValidation", StringComparison.Ordinal)
                 || name.Equals("netstandard", StringComparison.Ordinal)
                 || name.Equals("mscorlib", StringComparison.Ordinal));
     }

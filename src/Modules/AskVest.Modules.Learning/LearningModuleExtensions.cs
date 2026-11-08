@@ -1,6 +1,7 @@
 using AskVest.Modules.Learning.Configuration;
 using AskVest.Modules.Learning.Content;
 using AskVest.Modules.Learning.Persistence;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,6 +28,9 @@ public static class LearningModuleExtensions
             .ValidateOnStart();
         services.AddSingleton(snapshot);
         services.AddScoped<Services.LearningReadService>();
+        services.AddScoped<Services.LearningCommandService>();
+        services.AddScoped<Services.LearningProgressService>();
+        services.AddValidatorsFromAssembly(typeof(LearningModuleExtensions).Assembly);
         services.TryAddSingleton(TimeProvider.System);
 
         var connectionString = configuration.GetConnectionString("Learning")

@@ -5,6 +5,7 @@ using AskVest.Modules.Compliance;
 using AskVest.Modules.Identity;
 using AskVest.Modules.Ledger;
 using AskVest.Modules.MarketData;
+using AskVest.Modules.Practice;
 using AskVest.Platform;
 using FluentValidation;
 using Microsoft.AspNetCore.Http.Json;
@@ -31,6 +32,7 @@ builder.Services.AddComplianceModule(builder.Configuration, builder.Environment)
 builder.Services.AddLedgerModule(builder.Configuration, builder.Environment);
 builder.Services.AddCatalogModule(builder.Configuration);
 builder.Services.AddMarketDataModule(builder.Configuration, builder.Environment);
+builder.Services.AddPracticeModule(builder.Configuration);
 builder.Services.AddScoped<IIdempotencyStore, EfIdempotencyStore>();
 builder.Services.AddSingleton<IIdempotencyScopeResolver, AuthenticatedIdempotencyScopeResolver>();
 builder.Services.AddHostedService<IdempotencyCleanupService>();

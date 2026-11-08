@@ -3,6 +3,7 @@ using AskVest.Modules.Compliance.Persistence;
 using AskVest.Modules.Identity.Persistence;
 using AskVest.Modules.Ledger.Persistence;
 using AskVest.Modules.MarketData.Persistence;
+using AskVest.Modules.Practice.Persistence;
 using AskVest.Platform;
 using DotNet.Testcontainers.Configurations;
 using Npgsql;
@@ -57,6 +58,7 @@ public sealed class PostgresFixture : IAsyncLifetime
                 connectionString => new LedgerDbContext(LedgerDbContextOptions.Create(connectionString)),
                 connectionString => new CatalogDbContext(CatalogDbContextOptions.Create(connectionString)),
                 connectionString => new MarketDataDbContext(MarketDataDbContextOptions.Create(connectionString)),
+                connectionString => new PracticeDbContext(PracticeDbContextOptions.Create(connectionString)),
             ]);
         if (applied.Count == 0)
         {
@@ -82,8 +84,9 @@ public sealed class PostgresFixture : IAsyncLifetime
                 });
         }
 
-        // The catalog schema is select-only for the app role, so its reset runs
-        // as the owner while every other schema resets as the app role.
+        // The catalog schema is select-only for the app role and practice_events is
+        // append-only, so their resets run as the owner while every other schema
+        // resets as the app role.
         await using (var ownerConnection = new NpgsqlConnection(OwnerConnectionString))
         {
             await ownerConnection.OpenAsync();
@@ -92,8 +95,8 @@ public sealed class PostgresFixture : IAsyncLifetime
                 new RespawnerOptions
                 {
                     DbAdapter = DbAdapter.Postgres,
-                    SchemasToInclude = ["catalog"],
-                    TablesToIgnore = ["catalog.__ef_migrations_history"],
+                    SchemasToInclude = ["catalog", "practice"],
+                    TablesToIgnore = ["catalog.__ef_migrations_history", "practice.__ef_migrations_history"],
                 });
         }
     }

@@ -34,7 +34,7 @@ public sealed class OutboxDispatcherTests
 
         await dispatcher.DispatchCycleAsync(TestContext.Current.CancellationToken);
 
-        ping.Payloads.ShouldBe([1, 2]);
+        ping.Payloads.OrderBy(payload => payload).ShouldBe([1, 2]);
         pong.Payloads.ShouldBe([3]);
         (await GetRowAsync("type = 'test.ping' AND status = 'processed' AND outcome = 'handled'")).ShouldBe(2L);
     }

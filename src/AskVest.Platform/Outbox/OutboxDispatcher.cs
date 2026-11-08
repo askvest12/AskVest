@@ -77,7 +77,7 @@ internal sealed class OutboxDispatcher(
                   WHERE status = @pending
                     AND available_at <= @now
                     AND (lease_until IS NULL OR lease_until <= @now)
-                  ORDER BY occurred_at
+                  ORDER BY occurred_at, id
                   LIMIT @batchSize
                   FOR UPDATE SKIP LOCKED)
             RETURNING id, type, payload, attempts

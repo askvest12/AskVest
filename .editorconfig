@@ -202,6 +202,10 @@ dotnet_diagnostic.CA1031.severity = none
 [src/Modules/AskVest.Modules.MarketData/Services/PricePoller.cs]
 dotnet_diagnostic.CA1031.severity = none
 
+# The stop evaluator must survive any order or database failure and retry next cycle.
+[src/Modules/AskVest.Modules.Practice/Services/PracticeStopEvaluator.cs]
+dotnet_diagnostic.CA1031.severity = none
+
 # Scenario restore in finally must not mask the journey's own failure.
 [tests/AskVest.SmokeTests/MarketDataSmokeTests.cs]
 dotnet_diagnostic.CA1031.severity = none

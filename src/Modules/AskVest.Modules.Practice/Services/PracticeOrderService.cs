@@ -65,12 +65,6 @@ internal sealed class PracticeOrderService(
                 return Result.Failure<PracticeOrder>(invalid!);
             }
 
-            if (parsed.Type == PracticeOrderType.StopLoss)
-            {
-                await RollbackAsync(ownsScope, cancellationToken);
-                return Result.Failure<PracticeOrder>(OrderInvalid("stop_loss orders arrive with the stop-loss step"));
-            }
-
             var asset = await assets.ResolveAsync(parsed.InstrumentId, cancellationToken);
             if (asset.IsFailure)
             {
@@ -85,9 +79,11 @@ internal sealed class PracticeOrderService(
                 return Result.Failure<PracticeOrder>(MarketUnavailable(price));
             }
 
-            var result = parsed.Side == PracticeOrderSide.Buy
-                ? await PlaceMarketBuyAsync(userId, parsed, asset.Value, price, idempotencyKey, correlationId, cancellationToken)
-                : await PlaceMarketSellAsync(userId, parsed, asset.Value, price, idempotencyKey, correlationId, cancellationToken);
+            var result = parsed.Type == PracticeOrderType.StopLoss
+                ? await PlaceStopLossAsync(userId, parsed, asset.Value, price, idempotencyKey, cancellationToken)
+                : parsed.Side == PracticeOrderSide.Buy
+                    ? await PlaceMarketBuyAsync(userId, parsed, asset.Value, price, idempotencyKey, correlationId, cancellationToken)
+                    : await PlaceMarketSellAsync(userId, parsed, asset.Value, price, idempotencyKey, correlationId, cancellationToken);
 
             if (result.IsFailure)
             {
@@ -363,6 +359,179 @@ internal sealed class PracticeOrderService(
             FilledAt = now,
         };
         return await CompleteFillAsync(order, userId, correlationId, cancellationToken);
+    }
+
+    private async Task<Result<PracticeOrder>> PlaceStopLossAsync(
+        Guid userId,
+        ParsedOrder parsed,
+        string assetCode,
+        MarketDataPrice price,
+        string idempotencyKey,
+        CancellationToken cancellationToken)
+    {
+        if (parsed.StopPrice!.Value >= price.Price!.Value)
+        {
+            return Result.Failure<PracticeOrder>(OrderInvalid("stop price is not below the current market price"));
+        }
+
+        var balances = await ledger.GetBalancesAsync(userId, Book.Practice, cancellationToken);
+        if (balances.IsFailure)
+        {
+            return Result.Failure<PracticeOrder>(balances.Error!);
+        }
+
+        var available = balances.Value
+            .FirstOrDefault(balance => balance.AssetCode == assetCode)?.Available ?? 0m;
+        var quantity = parsed.SellAll
+            ? available
+            : PracticeRounding.RoundQuantity(parsed.Quantity!.Value, options.Value.QuantityScale);
+        if (available <= 0m || quantity <= 0m || quantity > available)
+        {
+            return Result.Failure<PracticeOrder>(new Error(
+                ErrorCodes.PracticeInsufficientPosition,
+                "The sell quantity exceeds the available practice position.",
+                ErrorType.BusinessRule));
+        }
+
+        var openStops = await db.PracticeOrders.CountAsync(
+            order => order.UserId == userId
+                && order.State == PracticeOrderState.Open
+                && order.Type == PracticeOrderType.StopLoss,
+            cancellationToken);
+        if (openStops >= options.Value.MaxOpenStopOrders)
+        {
+            return Result.Failure<PracticeOrder>(OrderInvalid("too many open stop orders"));
+        }
+
+        var notional = PracticeRounding.RoundMoney(quantity * price.Price.Value);
+        if (notional < options.Value.MinOrderAmount || notional > options.Value.MaxOrderAmount)
+        {
+            return Result.Failure<PracticeOrder>(OrderInvalid(
+                notional < options.Value.MinOrderAmount ? "order below the minimum" : "order above the maximum"));
+        }
+
+        var orderId = Guid.CreateVersion7();
+        var hold = PracticeOrderFills.Hold(orderId, userId, assetCode, quantity);
+        var posted = await ledger.PostJournalAsync(hold, cancellationToken);
+        if (posted.IsFailure)
+        {
+            return Result.Failure<PracticeOrder>(posted.Error!);
+        }
+
+        var order = new PracticeOrder
+        {
+            Id = orderId,
+            UserId = userId,
+            InstrumentId = parsed.InstrumentId,
+            Side = PracticeOrderSide.Sell,
+            Type = PracticeOrderType.StopLoss,
+            State = PracticeOrderState.Open,
+            RequestedQuantity = quantity,
+            SellAll = parsed.SellAll,
+            StopPrice = parsed.StopPrice,
+            HoldJournalId = posted.Value.Id,
+            IdempotencyKey = idempotencyKey,
+            CreatedAt = timeProvider.GetUtcNow(),
+        };
+        db.PracticeOrders.Add(order);
+        await db.SaveChangesAsync(cancellationToken);
+        return Result.Success(order);
+    }
+
+    /// <summary>
+    /// Evaluator entry point: locks the order row so a concurrent cancel or a
+    /// second evaluator instance observes the same state. Returns true when the
+    /// stop filled on this call.
+    /// </summary>
+    internal async Task<Result<bool>> TriggerStopAsync(Guid orderId, CancellationToken cancellationToken)
+    {
+        var ownsScope = !scope.IsActive;
+        if (ownsScope)
+        {
+            await scope.BeginAsync(cancellationToken);
+        }
+
+        try
+        {
+            await PracticeScope.EnlistAsync(db, scope, cancellationToken);
+            await db.Database.ExecuteSqlAsync(
+                $"SELECT 1 FROM practice.practice_orders WHERE id = {orderId} FOR UPDATE",
+                cancellationToken);
+            var order = await db.PracticeOrders
+                .FirstOrDefaultAsync(row => row.Id == orderId, cancellationToken);
+            if (order is null
+                || order.State != PracticeOrderState.Open
+                || order.Type != PracticeOrderType.StopLoss)
+            {
+                await RollbackAsync(ownsScope, cancellationToken);
+                return Result.Success(false);
+            }
+
+            var price = await marketData.GetLatestPriceAsync(order.InstrumentId, cancellationToken);
+            if (!IsUsable(price) || price.Price!.Value > order.StopPrice!.Value)
+            {
+                await RollbackAsync(ownsScope, cancellationToken);
+                return Result.Success(false);
+            }
+
+            var mapping = await db.PracticeInstruments
+                .FirstOrDefaultAsync(row => row.InstrumentId == order.InstrumentId, cancellationToken);
+            if (mapping is null || order.RequestedQuantity is not { } quantity)
+            {
+                await RollbackAsync(ownsScope, cancellationToken);
+                return Result.Failure<bool>(new Error(
+                    ErrorCodes.PracticeInstrumentUnavailable,
+                    "The stop order lost its practice asset mapping.",
+                    ErrorType.BusinessRule));
+            }
+
+            var computation = PracticeOrderMath.ComputeSell(
+                quantity, price.Price.Value, options.Value.FeeBasisPoints);
+            var fill = PracticeOrderFills.SellFill(
+                order.Id, order.UserId, mapping.AssetCode, quantity,
+                computation.Proceeds, computation.Fee, fromHeld: true);
+            var posted = await ledger.PostJournalAsync(fill, cancellationToken);
+            if (posted.IsFailure)
+            {
+                await RollbackAsync(ownsScope, cancellationToken);
+                return Result.Failure<bool>(posted.Error!);
+            }
+
+            var now = timeProvider.GetUtcNow();
+            order.State = PracticeOrderState.Filled;
+            order.FilledQuantity = quantity;
+            order.FillPrice = price.Price.Value;
+            order.CashAmount = computation.Proceeds - computation.Fee;
+            order.Fee = computation.Fee;
+            order.PriceAsOf = price.AsOf;
+            order.PriceLabel = price.Label;
+            order.PriceSession = price.Session;
+            order.FillJournalId = posted.Value.Id;
+            order.FilledAt = now;
+            events.Write(order.UserId, PracticeEventType.StopTriggered, order.Id, null);
+            await db.SaveChangesAsync(cancellationToken);
+            await outbox.EnqueueAsync(
+                OrderFilledMessageType,
+                new { orderId = order.Id, userId = order.UserId },
+                $"practice:order-filled:{order.Id:N}",
+                cancellationToken);
+            if (logger.IsEnabled(LogLevel.Information))
+            {
+                logger.LogInformation("Practice stop order {OrderId} triggered.", order.Id);
+            }
+
+            if (ownsScope)
+            {
+                await scope.CommitAsync(cancellationToken);
+            }
+
+            return Result.Success(true);
+        }
+        catch
+        {
+            await RollbackAsync(ownsScope, cancellationToken);
+            throw;
+        }
     }
 
     private async Task<Result<PracticeOrder>> PlaceMarketSellAsync(

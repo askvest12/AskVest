@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 namespace AskVest.Modules.Practice;
@@ -34,6 +35,9 @@ public static class PracticeModuleExtensions
         services.AddScoped<Contracts.IPractice>(provider =>
             provider.GetRequiredService<Services.PracticeContractService>());
         services.AddValidatorsFromAssembly(typeof(PracticeModuleExtensions).Assembly);
+        services.AddSingleton<Services.PracticeStopEvaluator>();
+        services.AddHostedService(provider =>
+            provider.GetRequiredService<Services.PracticeStopEvaluator>());
 
         services.AddDbContext<PracticeDbContext>((IServiceProvider provider, DbContextOptionsBuilder options) =>
         {

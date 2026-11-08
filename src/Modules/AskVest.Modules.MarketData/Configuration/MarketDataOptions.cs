@@ -7,11 +7,9 @@ public sealed class MarketDataOptions
 {
     public const string SectionName = "MarketData";
 
-    private static readonly HashSet<string> SupportedIntervals = new(StringComparer.Ordinal) { "15m", "1h", "1d" };
-    private static readonly HashSet<string> SupportedSessions = new(StringComparer.Ordinal)
-        { "pre", "regular", "post", "closed", "halted", "unknown" };
-    private static readonly HashSet<string> SupportedScenarios = new(StringComparer.Ordinal)
-        { "normal", "delayed", "halted", "closed", "outlier_spike", "outage", "rate_limited", "unknown_symbol" };
+    private static readonly HashSet<string> SupportedIntervals = Domain.MarketDataVocabulary.Intervals;
+    private static readonly HashSet<string> SupportedSessions = Domain.MarketDataVocabulary.Sessions;
+    private static readonly HashSet<string> SupportedScenarios = Domain.MarketDataVocabulary.Scenarios;
 
     public string Provider { get; set; } = "fake";
 

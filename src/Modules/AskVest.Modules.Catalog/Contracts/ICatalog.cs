@@ -14,6 +14,8 @@ public interface ICatalog
 
     Task<CatalogInstrument?> FindInstrumentAsync(string instrumentId, CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<CatalogInstrument>> ListActiveInstrumentsAsync(CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<CatalogToken>> ListListedTokensForChainAsync(string chainId, CancellationToken cancellationToken = default);
 
     Task<CatalogChain?> FindChainAsync(string chainId, CancellationToken cancellationToken = default);

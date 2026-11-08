@@ -36,10 +36,15 @@ internal sealed class FakeMarketDataProvider : IMarketDataProvider
 
     public void SetScenario(string scenario) => _scenario = scenario;
 
+    internal int QuotesCallCount { get; private set; }
+
+    internal int CandlesCallCount { get; private set; }
+
     public Task<ProviderQuotesResult> GetLatestQuotesAsync(
         IReadOnlyList<string> providerSymbols,
         CancellationToken cancellationToken)
     {
+        QuotesCallCount++;
         var scenario = _scenario;
         switch (scenario)
         {
@@ -52,11 +57,28 @@ internal sealed class FakeMarketDataProvider : IMarketDataProvider
                     [],
                     []));
             case "unknown_symbol":
-                return Task.FromResult(new ProviderQuotesResult(
-                    ProviderOutcome.Succeeded,
-                    null,
-                    [],
-                    providerSymbols));
+                {
+                    var unknown = providerSymbols
+                        .Where(symbol => symbol.Contains("UNKNOWN", StringComparison.Ordinal))
+                        .ToList();
+                    var known = providerSymbols.Except(unknown, StringComparer.Ordinal).ToList();
+                    var nowUnknown = _timeProvider.GetUtcNow();
+                    var sessionUnknown = SessionFor(scenario);
+                    var partialQuotes = known
+                        .Select(symbol => new ProviderQuote(
+                            symbol,
+                            PriceFor(symbol, scenario),
+                            _options.Currency,
+                            nowUnknown,
+                            sessionUnknown,
+                            null))
+                        .ToList();
+                    return Task.FromResult(new ProviderQuotesResult(
+                        ProviderOutcome.Succeeded,
+                        null,
+                        partialQuotes,
+                        unknown));
+                }
         }
 
         var now = _timeProvider.GetUtcNow();
@@ -80,6 +102,7 @@ internal sealed class FakeMarketDataProvider : IMarketDataProvider
         DateTimeOffset to,
         CancellationToken cancellationToken)
     {
+        CandlesCallCount++;
         var scenario = _scenario;
         switch (scenario)
         {

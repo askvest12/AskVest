@@ -26,5 +26,7 @@ public sealed class LatestPrice
 
     public DateTimeOffset? SuspectAt { get; set; }
 
+    public DateTimeOffset? UnmappedAt { get; set; }
+
     public DateTimeOffset UpdatedAt { get; set; }
 }

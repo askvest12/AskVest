@@ -40,6 +40,15 @@ internal sealed class CatalogService(
         return instrument is null ? null : ToContract(instrument);
     }
 
+    public async Task<IReadOnlyList<CatalogInstrument>> ListActiveInstrumentsAsync(CancellationToken cancellationToken = default)
+    {
+        var instruments = await db.Instruments.AsNoTracking()
+            .Where(i => i.Status == InstrumentStatus.Active)
+            .OrderBy(i => i.Id)
+            .ToListAsync(cancellationToken);
+        return instruments.Select(ToContract).ToList();
+    }
+
     public async Task<IReadOnlyList<CatalogToken>> ListListedTokensForChainAsync(
         string chainId,
         CancellationToken cancellationToken = default)

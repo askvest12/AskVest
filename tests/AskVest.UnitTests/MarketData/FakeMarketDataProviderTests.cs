@@ -110,13 +110,14 @@ public sealed class FakeMarketDataProviderTests
     }
 
     [Fact]
-    public async Task Unknown_Symbol_Scenario_Reports_All_Symbols_Unmapped()
+    public async Task Unknown_Symbol_Scenario_Reports_Only_Unknown_Marked_Symbols()
     {
-        var result = await Create("unknown_symbol").GetLatestQuotesAsync(["EX:AAA", "EX:BBB"], TestContext.Current.CancellationToken);
+        var result = await Create("unknown_symbol")
+            .GetLatestQuotesAsync(["EX:AAA", "EX:UNKNOWN-B", "EX:CCC"], TestContext.Current.CancellationToken);
 
         result.Outcome.ShouldBe(ProviderOutcome.Succeeded);
-        result.Quotes.ShouldBeEmpty();
-        result.UnknownSymbols.ShouldBe(["EX:AAA", "EX:BBB"]);
+        result.Quotes.Select(q => q.ProviderSymbol).ShouldBe(["EX:AAA", "EX:CCC"]);
+        result.UnknownSymbols.ShouldBe(["EX:UNKNOWN-B"]);
     }
 
     [Fact]

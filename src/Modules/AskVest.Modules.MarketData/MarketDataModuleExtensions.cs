@@ -4,6 +4,7 @@ using AskVest.Modules.MarketData.Providers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
@@ -25,9 +26,12 @@ public static class MarketDataModuleExtensions
         services.AddOptions<MarketDataOptions>()
             .Bind(configuration.GetSection(MarketDataOptions.SectionName))
             .ValidateOnStart();
+        services.TryAddSingleton(TimeProvider.System);
 
         services.AddSingleton<FakeMarketDataProvider>();
         services.AddSingleton<IMarketDataProvider>(provider => ProviderRegistry.Create(provider));
+        services.AddSingleton<Services.PricePoller>();
+        services.AddHostedService(provider => provider.GetRequiredService<Services.PricePoller>());
 
         services.AddDbContext<MarketDataDbContext>((IServiceProvider provider, DbContextOptionsBuilder options) =>
         {

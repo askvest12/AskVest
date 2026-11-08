@@ -165,6 +165,10 @@ namespace AskVest.Modules.MarketData.Migrations
                         .HasColumnType("numeric(38,18)")
                         .HasColumnName("suspect_price");
 
+                    b.Property<DateTimeOffset?>("UnmappedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("unmapped_at");
+
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");

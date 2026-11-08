@@ -198,6 +198,10 @@ dotnet_diagnostic.CA1031.severity = none
 [src/Modules/AskVest.Modules.Ledger/Services/LedgerReconciliationService.cs]
 dotnet_diagnostic.CA1031.severity = none
 
+# The price poller must survive any provider or database failure and retry next cycle.
+[src/Modules/AskVest.Modules.MarketData/Services/PricePoller.cs]
+dotnet_diagnostic.CA1031.severity = none
+
 # Dispose must attempt rollback without throwing; the original failure is already surfacing.
 [src/AskVest.Platform/Transactions/TransactionScope.cs]
 dotnet_diagnostic.CA1031.severity = none

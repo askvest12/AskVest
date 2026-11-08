@@ -336,7 +336,7 @@ internal sealed class PortfolioService(
             .ToDictionary(balance => balance.AssetCode, balance => balance.Available + balance.Held, StringComparer.Ordinal);
 
         var mismatched = balanceByAsset
-            .Where(pair => replayByAsset.GetValueOrDefault(pair.Key)?.Quantity != pair.Value)
+            .Where(pair => (replayByAsset.GetValueOrDefault(pair.Key)?.Quantity ?? 0m) != pair.Value)
             .Select(pair => pair.Key)
             .Concat(replayByAsset
                 .Where(pair => IsPositionAsset(pair.Key, kinds) && !balanceByAsset.ContainsKey(pair.Key) && pair.Value.Quantity != 0m)

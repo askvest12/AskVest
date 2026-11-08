@@ -21,6 +21,7 @@ public sealed class PortfolioApiTests(PostgresFixture fixture) : IAsyncLifetime
 
     private AuthApiFactory _factory = null!;
     private string _practiceInstrumentId = null!;
+    private string _practiceInstrumentId2 = null!;
     private string _realInstrumentId = null!;
     private string _tokenAssetA = null!;
     private string _tokenAssetB = null!;
@@ -29,6 +30,7 @@ public sealed class PortfolioApiTests(PostgresFixture fixture) : IAsyncLifetime
     {
         var suffix = CatalogImportTestData.Suffix();
         _practiceInstrumentId = $"instr-pa-{suffix}";
+        _practiceInstrumentId2 = $"instr-pb-{suffix}";
         _realInstrumentId = $"instr-ra-{suffix}";
         _tokenAssetA = CatalogImportTestData.AssetCode("RTA", suffix);
         _tokenAssetB = CatalogImportTestData.AssetCode("RTB", suffix);
@@ -57,6 +59,11 @@ public sealed class PortfolioApiTests(PostgresFixture fixture) : IAsyncLifetime
             CatalogImportTestData.Instrument(_practiceInstrumentId, null) with
             {
                 Symbol = $"PA{suffix[..4]}",
+                ListingExchange = "NMS",
+            },
+            CatalogImportTestData.Instrument(_practiceInstrumentId2, null) with
+            {
+                Symbol = $"PB{suffix[..4]}",
                 ListingExchange = "NMS",
             },
             CatalogImportTestData.Instrument(_realInstrumentId,
@@ -151,6 +158,87 @@ public sealed class PortfolioApiTests(PostgresFixture fixture) : IAsyncLifetime
                 new PostJournalRequest(key, Book.Real, reason, referenceType, referenceId, lines),
                 TestContext.Current.CancellationToken);
         result.IsSuccess.ShouldBeTrue(result.Error?.Message);
+    }
+
+    [Fact]
+    public async Task Practice_Portfolio_Replay_Spans_Movement_Pages()
+    {
+        var client = Client();
+        var token = await PracticeEligibleUserAsync(client);
+
+        await using (var scope = _factory.Services.CreateAsyncScope())
+        {
+            var registered = await scope.ServiceProvider
+                .GetRequiredService<ILedger>()
+                .RegisterAssetAsync("USD", AssetKind.Fiat, 6, TestContext.Current.CancellationToken);
+            registered.IsSuccess.ShouldBeTrue(registered.Error?.Message);
+        }
+
+        // 501 probe credits force the replay to cross the 500-movement page boundary.
+        for (var index = 0; index < 501; index++)
+        {
+            using var probe = await client.SendAsync(
+                ComplianceTestUsers.Post("/api/v1/practice/diagnostics/ledger-post",
+                    new { kind = "credit", asset = "USD", amount = "1" },
+                    $"page-{Guid.CreateVersion7():N}-{index}").Auth(token),
+                TestContext.Current.CancellationToken);
+            probe.StatusCode.ShouldBe(HttpStatusCode.OK);
+        }
+
+        using var response = await client.SendAsync(
+            ComplianceTestUsers.Get("/api/v1/practice/portfolio").Auth(token),
+            TestContext.Current.CancellationToken);
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var data = await DataAsync(response);
+        var cash = data.GetProperty("cash");
+        cash.GetArrayLength().ShouldBe(1);
+        decimal.Parse(cash[0].GetProperty("available").GetString()!).ShouldBe(501m);
+        data.GetProperty("holdings").GetArrayLength().ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task Practice_Portfolio_Ignores_Zeroed_Assets_From_Before_Reset()
+    {
+        var client = Client();
+        var token = await PracticeEligibleUserAsync(client);
+
+        using var start = await client.SendAsync(
+            ComplianceTestUsers.Post("/api/v1/practice/account", new { }).Auth(token),
+            TestContext.Current.CancellationToken);
+        start.StatusCode.ShouldBe(HttpStatusCode.OK);
+        await SeedPriceAsync(client, token);
+
+        // Buy and reset: the first instrument's balance row stays at zero while
+        // the replay epoch restarts, so it must not flag the new holding.
+        using var buyA = await client.SendAsync(
+            ComplianceTestUsers.Post("/api/v1/practice/orders",
+                new { instrumentId = _practiceInstrumentId, side = "buy", type = "market", amount = "100" },
+                $"buy-a-{Guid.CreateVersion7():N}").Auth(token),
+            TestContext.Current.CancellationToken);
+        buyA.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+        using var reset = await client.SendAsync(
+            ComplianceTestUsers.Post("/api/v1/practice/account/reset", new { }).Auth(token),
+            TestContext.Current.CancellationToken);
+        reset.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+        using var buyB = await client.SendAsync(
+            ComplianceTestUsers.Post("/api/v1/practice/orders",
+                new { instrumentId = _practiceInstrumentId2, side = "buy", type = "market", amount = "100" },
+                $"buy-b-{Guid.CreateVersion7():N}").Auth(token),
+            TestContext.Current.CancellationToken);
+        buyB.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+        using var response = await client.SendAsync(
+            ComplianceTestUsers.Get("/api/v1/practice/portfolio").Auth(token),
+            TestContext.Current.CancellationToken);
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var data = await DataAsync(response);
+        var holdings = data.GetProperty("holdings");
+        holdings.GetArrayLength().ShouldBe(1);
+        holdings[0].GetProperty("instrumentId").GetString().ShouldBe(_practiceInstrumentId2);
+        holdings[0].GetProperty("flags").EnumerateArray()
+            .Select(f => f.GetString()).ShouldNotContain("has_inconsistency");
     }
 
     [Fact]

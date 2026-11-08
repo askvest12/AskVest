@@ -1,0 +1,147 @@
+# Phase 6 practice raw HTTP evidence
+# base=http://localhost:5081 date=2026-11-08T10:31:24Z
+
+$ curl -X POST http://localhost:5081/api/v1/auth/sign-up  --data '{"email":"smoke-raw-1794133884@example.com","password":"CorrectHorseSmoke9"}'
+{"success":true,"message":"If this email can be verified, a verification code has been sent.","data":null,"error":null,"correlationId":"01a1bab67dff7dea861646bb2f7922aa"}
+# HTTP 200
+# verify code for smoke-raw-1794133884@example.com: 547744
+
+$ curl -X POST http://localhost:5081/api/v1/auth/verify-email  --data '{"email":"smoke-raw-1794133884@example.com","code":"547744"}'
+{"success":true,"message":"Email verified.","data":null,"error":null,"correlationId":"01a1bab688397849b57e4c7076b3e03b"}
+# HTTP 200
+# login ok, token acquired
+
+$ curl -X POST http://localhost:5081/api/v1/compliance/consents (practice documents)
+{"success":true,"message":"Consents recorded.","data":null,"error":null,"correlationId":"01a1bab68a237371ace5ee60d5de9f8f"}
+$ curl -X PUT http://localhost:5081/api/v1/compliance/country
+{"success":true,"message":"Country recorded.","data":{"country":"NG"},"error":null,"correlationId":"01a1bab68a4d7eba94adfbacb77f312d"}
+
+# 1. account start twice: one grant
+
+$ curl -X POST http://localhost:5081/api/v1/practice/account -H 'Authorization: Bearer <token>' --data '{}'
+{"success":true,"message":"Practice account ready.","data":{"started":true,"cash":"10000","resetCount":0,"resetsLeftInWindow":3,"nextResetAt":"2026-11-08T10:31:31.1981560Z"},"error":null,"correlationId":"01a1bab68a65715cb9e61ba6632efcf7"}
+# HTTP 200
+
+$ curl -X POST http://localhost:5081/api/v1/practice/account -H 'Authorization: Bearer <token>' --data '{}'
+{"success":true,"message":"Practice account ready.","data":{"started":true,"cash":"10000","resetCount":0,"resetsLeftInWindow":3,"nextResetAt":"2026-11-08T10:31:31.1981560Z"},"error":null,"correlationId":"01a1bab68a8b7966aff6acb3c682f9e8"}
+# HTTP 200
+
+$ curl -X GET http://localhost:5081/api/v1/practice/balances -H 'Authorization: Bearer <token>' 
+{"success":true,"message":"Balances loaded.","data":[{"asset":"USD","available":"10000","held":"0"}],"error":null,"correlationId":"01a1bab68aa37f3fb9c77ef08be7521f"}
+# HTTP 200
+
+$ curl -X GET http://localhost:5081/api/v1/practice/account -H 'Authorization: Bearer <token>' 
+{"success":true,"message":"Practice account loaded.","data":{"started":true,"cash":"10000","resetCount":0,"resetsLeftInWindow":3,"nextResetAt":"2026-11-08T10:31:31.1981560Z"},"error":null,"correlationId":"01a1bab68ab1745aa2d60ca8cb239149"}
+# HTTP 200
+
+# 2. market buy 1000, positions, history
+
+$ curl -X POST http://localhost:5081/api/v1/practice/orders -H 'Authorization: Bearer <token>' --data '{"instrumentId":"sample-nvda","side":"buy","type":"market","amount":"1000"}'
+{"success":true,"message":"Practice order placed.","data":{"id":"01a1bab6-8ace-7ddf-b2d5-739a9195916d","instrumentId":"sample-nvda","side":"buy","type":"market","state":"filled","requestedAmount":"1000","requestedQuantity":null,"sellAll":false,"stopPrice":null,"filledQuantity":"31.436655","fillPrice":"31.81","cashAmount":"1004.999996","fee":"5","priceAsOf":"2026-11-08T10:31:23.4653180Z","priceLabel":"live","priceSession":"regular","cancelReason":null,"createdAt":"2026-11-08T10:31:27.7110729Z","filledAt":"2026-11-08T10:31:27.7110729Z","cancelledAt":null},"error":null,"correlationId":"01a1bab68ac27c52b8316a244ee053df"}
+# HTTP 200
+
+$ curl -X GET http://localhost:5081/api/v1/practice/positions -H 'Authorization: Bearer <token>' 
+{"success":true,"message":"Practice positions loaded.","data":{"cash":"8995.000004","items":[{"instrumentId":"sample-nvda","symbol":"SNVDA","name":"SampleNvda Corporation (fictional)","availableQuantity":"31.436655","heldQuantity":"0","price":"31.81","priceLabel":"live","marketValue":"1000.00"}]},"error":null,"correlationId":"01a1bab68af17250be46299136d776aa"}
+# HTTP 200
+
+$ curl -X POST http://localhost:5081/api/v1/practice/orders -H 'Authorization: Bearer <token>' --data '{"instrumentId":"sample-nvda","side":"sell","type":"market","quantity":"15.7183275"}'
+{"success":true,"message":"Practice order placed.","data":{"id":"01a1bab6-8b44-767b-93ba-b9cf51d21ff1","instrumentId":"sample-nvda","side":"sell","type":"market","state":"filled","requestedAmount":null,"requestedQuantity":"15.718327","sellAll":false,"stopPrice":null,"filledQuantity":"15.718327","fillPrice":"31.81","cashAmount":"497.499982","fee":"2.5","priceAsOf":"2026-11-08T10:31:23.4653180Z","priceLabel":"live","priceSession":"regular","cancelReason":null,"createdAt":"2026-11-08T10:31:27.8294798Z","filledAt":"2026-11-08T10:31:27.8294798Z","cancelledAt":null},"error":null,"correlationId":"01a1bab68b367e0d89b31956a9e0f79d"}
+# HTTP 200
+
+$ curl -X POST http://localhost:5081/api/v1/practice/orders -H 'Authorization: Bearer <token>' --data '{"instrumentId":"sample-nvda","side":"sell","type":"market","sellAll":true}'
+{"success":true,"message":"Practice order placed.","data":{"id":"01a1bab6-8b75-732a-93ff-56e156312f52","instrumentId":"sample-nvda","side":"sell","type":"market","state":"filled","requestedAmount":null,"requestedQuantity":null,"sellAll":true,"stopPrice":null,"filledQuantity":"15.718328","fillPrice":"31.81","cashAmount":"497.500014","fee":"2.5","priceAsOf":"2026-11-08T10:31:23.4653180Z","priceLabel":"live","priceSession":"regular","cancelReason":null,"createdAt":"2026-11-08T10:31:27.8779071Z","filledAt":"2026-11-08T10:31:27.8779071Z","cancelledAt":null},"error":null,"correlationId":"01a1bab68b667265a84e7500927a15e1"}
+# HTTP 200
+
+$ curl -X GET http://localhost:5081/api/v1/practice/orders?limit=10 -H 'Authorization: Bearer <token>' 
+{"success":true,"message":"Practice orders loaded.","data":{"items":[{"id":"01a1bab6-8b75-732a-93ff-56e156312f52","instrumentId":"sample-nvda","side":"sell","type":"market","state":"filled","requestedAmount":null,"requestedQuantity":null,"sellAll":true,"stopPrice":null,"filledQuantity":"15.718328","fillPrice":"31.81","cashAmount":"497.500014","fee":"2.5","priceAsOf":"2026-11-08T10:31:23.4653180Z","priceLabel":"live","priceSession":"regular","cancelReason":null,"createdAt":"2026-11-08T10:31:27.8779070Z","filledAt":"2026-11-08T10:31:27.8779070Z","cancelledAt":null},{"id":"01a1bab6-8b44-767b-93ba-b9cf51d21ff1","instrumentId":"sample-nvda","side":"sell","type":"market","state":"filled","requestedAmount":null,"requestedQuantity":"15.718327","sellAll":false,"stopPrice":null,"filledQuantity":"15.718327","fillPrice":"31.81","cashAmount":"497.499982","fee":"2.5","priceAsOf":"2026-11-08T10:31:23.4653180Z","priceLabel":"live","priceSession":"regular","cancelReason":null,"createdAt":"2026-11-08T10:31:27.8294790Z","filledAt":"2026-11-08T10:31:27.8294790Z","cancelledAt":null},{"id":"01a1bab6-8ace-7ddf-b2d5-739a9195916d","instrumentId":"sample-nvda","side":"buy","type":"market","state":"filled","requestedAmount":"1000","requestedQuantity":null,"sellAll":false,"stopPrice":null,"filledQuantity":"31.436655","fillPrice":"31.81","cashAmount":"1004.999996","fee":"5","priceAsOf":"2026-11-08T10:31:23.4653180Z","priceLabel":"live","priceSession":"regular","cancelReason":null,"createdAt":"2026-11-08T10:31:27.7110720Z","filledAt":"2026-11-08T10:31:27.7110720Z","cancelledAt":null}],"nextCursor":null,"hasMore":false,"limit":10},"error":null,"correlationId":"01a1bab68b96728aa6e7ef718cb4f267"}
+# HTTP 200
+
+# 3. idempotent replay of the buy
+
+$ curl -X POST http://localhost:5081/api/v1/practice/orders -H 'Authorization: Bearer <token>' --data '{"instrumentId":"sample-nvda","side":"buy","type":"market","amount":"1000"}'
+{"success":true,"message":"Practice order placed.","data":{"id":"01a1bab6-8ace-7ddf-b2d5-739a9195916d","instrumentId":"sample-nvda","side":"buy","type":"market","state":"filled","requestedAmount":"1000","requestedQuantity":null,"sellAll":false,"stopPrice":null,"filledQuantity":"31.436655","fillPrice":"31.81","cashAmount":"1004.999996","fee":"5","priceAsOf":"2026-11-08T10:31:23.4653180Z","priceLabel":"live","priceSession":"regular","cancelReason":null,"createdAt":"2026-11-08T10:31:27.7110729Z","filledAt":"2026-11-08T10:31:27.7110729Z","cancelledAt":null},"error":null,"correlationId":"01a1bab68ac27c52b8316a244ee053df"}
+# HTTP 200
+
+# 4. stop-loss hold and cancel
+
+$ curl -X POST http://localhost:5081/api/v1/practice/orders -H 'Authorization: Bearer <token>' --data '{"instrumentId":"sample-nvda","side":"buy","type":"market","amount":"1000"}'
+{"success":true,"message":"Practice order placed.","data":{"id":"01a1bab6-8ce2-787e-8304-ce6cd2d4112e","instrumentId":"sample-nvda","side":"buy","type":"market","state":"filled","requestedAmount":"1000","requestedQuantity":null,"sellAll":false,"stopPrice":null,"filledQuantity":"31.436655","fillPrice":"31.81","cashAmount":"1004.999996","fee":"5","priceAsOf":"2026-11-08T10:31:23.4653180Z","priceLabel":"live","priceSession":"regular","cancelReason":null,"createdAt":"2026-11-08T10:31:28.2525179Z","filledAt":"2026-11-08T10:31:28.2525179Z","cancelledAt":null},"error":null,"correlationId":"01a1bab68be079028379b850a6b665a0"}
+# HTTP 200
+
+$ curl -X POST http://localhost:5081/api/v1/practice/orders -H 'Authorization: Bearer <token>' --data '{"instrumentId":"sample-nvda","side":"sell","type":"stop_loss","sellAll":true,"stopPrice":"30.219499999999996"}'
+{"success":true,"message":"Practice order placed.","data":{"id":"01a1bab6-8d1e-75f2-9326-bc4fc5563562","instrumentId":"sample-nvda","side":"sell","type":"stop_loss","state":"open","requestedAmount":null,"requestedQuantity":"31.436655","sellAll":true,"stopPrice":"30.219499999999996","filledQuantity":null,"fillPrice":null,"cashAmount":null,"fee":null,"priceAsOf":null,"priceLabel":null,"priceSession":null,"cancelReason":null,"createdAt":"2026-11-08T10:31:28.2940704Z","filledAt":null,"cancelledAt":null},"error":null,"correlationId":"01a1bab68d0f7345a10afe05cf529148"}
+# HTTP 200
+
+$ curl -X GET http://localhost:5081/api/v1/practice/positions -H 'Authorization: Bearer <token>' 
+{"success":true,"message":"Practice positions loaded.","data":{"cash":"8985.000004","items":[{"instrumentId":"sample-nvda","symbol":"SNVDA","name":"SampleNvda Corporation (fictional)","availableQuantity":"0","heldQuantity":"31.436655","price":"31.81","priceLabel":"live","marketValue":"1000.00"}]},"error":null,"correlationId":"01a1bab68d3678e3906fa8bf320b5de4"}
+# HTTP 200
+
+$ curl -X POST http://localhost:5081/api/v1/practice/orders/01a1bab6-8d1e-75f2-9326-bc4fc5563562/cancel -H 'Authorization: Bearer <token>' --data '{}'
+{"success":true,"message":"Practice order cancelled.","data":{"id":"01a1bab6-8d1e-75f2-9326-bc4fc5563562","instrumentId":"sample-nvda","side":"sell","type":"stop_loss","state":"cancelled","requestedAmount":null,"requestedQuantity":"31.436655","sellAll":true,"stopPrice":"30.219499999999996","filledQuantity":null,"fillPrice":null,"cashAmount":null,"fee":null,"priceAsOf":null,"priceLabel":null,"priceSession":null,"cancelReason":"user","createdAt":"2026-11-08T10:31:28.2940700Z","filledAt":null,"cancelledAt":"2026-11-08T10:31:28.6475568Z"},"error":null,"correlationId":"01a1bab68d687049bd3f4a5f3c7227b7"}
+# HTTP 200
+
+$ curl -X GET http://localhost:5081/api/v1/practice/positions -H 'Authorization: Bearer <token>' 
+{"success":true,"message":"Practice positions loaded.","data":{"cash":"8985.000004","items":[{"instrumentId":"sample-nvda","symbol":"SNVDA","name":"SampleNvda Corporation (fictional)","availableQuantity":"31.436655","heldQuantity":"0","price":"31.81","priceLabel":"live","marketValue":"1000.00"}]},"error":null,"correlationId":"01a1bab68fad76a89ae51b792bf8bed0"}
+# HTTP 200
+
+# 5. stop trigger on drop scenario
+
+$ curl -X POST http://localhost:5081/api/v1/practice/orders -H 'Authorization: Bearer <token>' --data '{"instrumentId":"sample-nvda","side":"sell","type":"stop_loss","sellAll":true,"stopPrice":"30.219499999999996"}'
+{"success":true,"message":"Practice order placed.","data":{"id":"01a1bab6-9008-74f8-8e46-7145c61023f2","instrumentId":"sample-nvda","side":"sell","type":"stop_loss","state":"open","requestedAmount":null,"requestedQuantity":"31.436655","sellAll":true,"stopPrice":"30.219499999999996","filledQuantity":null,"fillPrice":null,"cashAmount":null,"fee":null,"priceAsOf":null,"priceLabel":null,"priceSession":null,"cancelReason":null,"createdAt":"2026-11-08T10:31:29.0443385Z","filledAt":null,"cancelledAt":null},"error":null,"correlationId":"01a1bab68fc275f195e905060b9471b7"}
+# HTTP 200
+
+$ curl -X POST http://localhost:5081/api/v1/diagnostics/marketdata-scenario -H 'Authorization: Bearer <token>' --data '{"scenario":"drop"}'
+{"success":true,"message":"Scenario set and one poll cycle ran.","data":{"applied":true,"polled":true},"error":null,"correlationId":"01a1bab6905d77c18881c134d67f4621"}
+# HTTP 200
+
+$ curl -X GET http://localhost:5081/api/v1/practice/orders/01a1bab6-9008-74f8-8e46-7145c61023f2 -H 'Authorization: Bearer <token>' 
+{"success":true,"message":"Practice order loaded.","data":{"id":"01a1bab6-9008-74f8-8e46-7145c61023f2","instrumentId":"sample-nvda","side":"sell","type":"stop_loss","state":"filled","requestedAmount":null,"requestedQuantity":"31.436655","sellAll":true,"stopPrice":"30.219499999999996","filledQuantity":"31.436655","fillPrice":"25.36","cashAmount":"793.247403","fee":"3.986168","priceAsOf":"2026-11-08T10:31:29.1369710Z","priceLabel":"live","priceSession":"regular","cancelReason":null,"createdAt":"2026-11-08T10:31:29.0443380Z","filledAt":"2026-11-08T10:31:29.7384750Z","cancelledAt":null},"error":null,"correlationId":"01a1bab6a7fd7bd19592e6f7e8f1747d"}
+# HTTP 200
+
+$ curl -X POST http://localhost:5081/api/v1/diagnostics/marketdata-scenario -H 'Authorization: Bearer <token>' --data '{"scenario":"normal"}'
+{"success":true,"message":"Scenario set and one poll cycle ran.","data":{"applied":true,"polled":true},"error":null,"correlationId":"01a1bab6a80d7a1793eaf7c935ef6806"}
+# HTTP 200
+
+# 6. halted market refuses buys
+
+$ curl -X POST http://localhost:5081/api/v1/diagnostics/marketdata-scenario -H 'Authorization: Bearer <token>' --data '{"scenario":"halted"}'
+{"success":true,"message":"Scenario set and one poll cycle ran.","data":{"applied":true,"polled":true},"error":null,"correlationId":"01a1bab6a8a272d9997b63531634cb70"}
+# HTTP 200
+
+$ curl -X POST http://localhost:5081/api/v1/practice/orders -H 'Authorization: Bearer <token>' --data '{"instrumentId":"sample-nvda","side":"buy","type":"market","amount":"100"}'
+{"success":false,"message":"The latest price is not usable for execution.","data":null,"error":{"code":"practice.market_unavailable","details":[{"field":"label","message":"halted"},{"field":"session","message":"halted"}]},"correlationId":"01a1bab6acbf75078909c9176cd40017"}
+# HTTP 422
+
+$ curl -X POST http://localhost:5081/api/v1/diagnostics/marketdata-scenario -H 'Authorization: Bearer <token>' --data '{"scenario":"normal"}'
+{"success":true,"message":"Scenario set and one poll cycle ran.","data":{"applied":true,"polled":true},"error":null,"correlationId":"01a1bab6ade77c05b7317cdab2b8d6b8"}
+# HTTP 200
+
+# 7. error paths
+
+$ curl -X POST http://localhost:5081/api/v1/practice/orders -H 'Authorization: Bearer <token>' --data '{"instrumentId":"sample-nvda","side":"buy","type":"market","amount":"100000"}'
+{"success":false,"message":"The account does not hold enough funds for this journal.","data":null,"error":{"code":"ledger.insufficient_funds","details":null},"correlationId":"01a1bab6ae3479ddb2531ec5d4d228d9"}
+# HTTP 422
+
+$ curl -X POST http://localhost:5081/api/v1/practice/orders -H 'Authorization: Bearer <token>' --data '{"instrumentId":"sample-nvda","side":"sell","type":"market","quantity":"999999"}'
+{"success":false,"message":"The sell quantity exceeds the available practice position.","data":null,"error":{"code":"practice.insufficient_position","details":null},"correlationId":"01a1bab6ae5e747dbc3d2ee5fb323f48"}
+# HTTP 422
+
+$ curl -X POST http://localhost:5081/api/v1/practice/orders -H 'Authorization: Bearer <token>' --data '{"instrumentId":"sample-nvda","side":"sell","type":"stop_loss","sellAll":true,"stopPrice":"34.991"}'
+{"success":false,"message":"The order is not valid: stop price is not below the current market price.","data":null,"error":{"code":"practice.order_invalid","details":[{"field":"reason","message":"stop price is not below the current market price"}]},"correlationId":"01a1bab6ae917e24913a52f46b9e7c0e"}
+# HTTP 422
+
+# 8. reset
+
+$ curl -X POST http://localhost:5081/api/v1/practice/account/reset -H 'Authorization: Bearer <token>' --data '{}'
+{"success":true,"message":"Practice account reset.","data":{"started":true,"cash":"10000","resetCount":1,"resetsLeftInWindow":2,"nextResetAt":"2026-11-08T10:31:40.5927607Z"},"error":null,"correlationId":"01a1bab6af12701c9cae882f308cdd5b"}
+# HTTP 200
+
+$ curl -X POST http://localhost:5081/api/v1/practice/account/reset -H 'Authorization: Bearer <token>' --data '{}'
+{"success":false,"message":"The practice account cannot be reset yet: cooldown_not_elapsed.","data":null,"error":{"code":"practice.reset_not_allowed","details":null},"correlationId":"01a1bab6af4578a3a6f9fcd3686f7b92"}
+# HTTP 422
+
+$ curl -X GET http://localhost:5081/api/v1/practice/balances -H 'Authorization: Bearer <token>' 
+{"success":true,"message":"Balances loaded.","data":[{"asset":"P.SNVDA","available":"0","held":"0"},{"asset":"USD","available":"10000","held":"0"}],"error":null,"correlationId":"01a1bab6af5c73de8585311b6f72a4b6"}
+# HTTP 200
+
+# done

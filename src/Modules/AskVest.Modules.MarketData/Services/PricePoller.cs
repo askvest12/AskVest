@@ -99,7 +99,7 @@ internal sealed class PricePoller(
         var mappings = instruments
             .Select(instrument => new InstrumentMapping(
                 instrument,
-                ProviderSymbolFor(instrument, settings)))
+                ProviderSymbols.For(instrument, settings)))
             .ToList();
         if (mappings.Count == 0)
         {
@@ -335,11 +335,6 @@ internal sealed class PricePoller(
             .ToListAsync(cancellationToken);
         return rows.ToDictionary(p => p.SubjectId, StringComparer.Ordinal);
     }
-
-    private static string ProviderSymbolFor(CatalogInstrument instrument, MarketDataOptions settings)
-        => settings.SymbolOverrides.TryGetValue(instrument.Id, out var mapped)
-            ? mapped
-            : $"{instrument.Symbol}:{instrument.ListingExchange ?? instrument.CountryOfListing}";
 
     internal TimeSpan NextDelay()
     {

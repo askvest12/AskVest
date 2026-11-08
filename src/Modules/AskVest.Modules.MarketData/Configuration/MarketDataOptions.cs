@@ -33,14 +33,21 @@ public sealed class MarketDataOptions
 
     public Dictionary<string, string> SymbolOverrides { get; } = new(StringComparer.Ordinal);
 
-    public Collection<CandleIntervalOptions> CandleIntervals { get; } =
-    [
-        new() { Interval = "15m", MaxRangeDays = 7, MaxCandles = 500, OpenCacheSeconds = 120 },
-        new() { Interval = "1h", MaxRangeDays = 60, MaxCandles = 500, OpenCacheSeconds = 300 },
-        new() { Interval = "1d", MaxRangeDays = 1826, MaxCandles = 500, OpenCacheSeconds = 3600 },
-    ];
+    public Collection<CandleIntervalOptions> CandleIntervals { get; } = [];
 
     public FakeProviderOptions Fake { get; set; } = new();
+
+    internal void ApplyIntervalDefaults()
+    {
+        if (CandleIntervals.Count > 0)
+        {
+            return;
+        }
+
+        CandleIntervals.Add(new CandleIntervalOptions { Interval = "15m", MaxRangeDays = 7, MaxCandles = 500, OpenCacheSeconds = 120 });
+        CandleIntervals.Add(new CandleIntervalOptions { Interval = "1h", MaxRangeDays = 60, MaxCandles = 500, OpenCacheSeconds = 300 });
+        CandleIntervals.Add(new CandleIntervalOptions { Interval = "1d", MaxRangeDays = 1826, MaxCandles = 500, OpenCacheSeconds = 3600 });
+    }
 
     public static IValidateOptions<MarketDataOptions> Validator { get; } = new MarketDataOptionsValidator();
 

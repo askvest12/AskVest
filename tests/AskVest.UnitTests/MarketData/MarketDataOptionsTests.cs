@@ -12,13 +12,20 @@ namespace AskVest.UnitTests.MarketData;
 
 public sealed class MarketDataOptionsTests
 {
+    private static MarketDataOptions Options()
+    {
+        var options = new MarketDataOptions();
+        options.ApplyIntervalDefaults();
+        return options;
+    }
+
     private static ValidateOptionsResult Validate(MarketDataOptions options)
         => MarketDataOptions.Validator.Validate(null, options);
 
     [Fact]
     public void Defaults_Are_Valid()
     {
-        Validate(new MarketDataOptions()).Succeeded.ShouldBeTrue();
+        Validate(Options()).Succeeded.ShouldBeTrue();
     }
 
     [Theory]
@@ -27,7 +34,7 @@ public sealed class MarketDataOptionsTests
     [InlineData("1w", false)]
     public void Candle_Interval_Must_Be_Supported(string interval, bool valid)
     {
-        var options = new MarketDataOptions();
+        var options = Options();
         options.CandleIntervals.Clear();
         options.CandleIntervals.Add(new CandleIntervalOptions
         {
@@ -43,7 +50,7 @@ public sealed class MarketDataOptionsTests
     [Fact]
     public void Duplicate_Intervals_Fail()
     {
-        var options = new MarketDataOptions();
+        var options = Options();
         options.CandleIntervals.Add(new CandleIntervalOptions
         {
             Interval = "15m",
@@ -58,7 +65,7 @@ public sealed class MarketDataOptionsTests
     [Fact]
     public void Empty_Intervals_Fail()
     {
-        var options = new MarketDataOptions();
+        var options = Options();
         options.CandleIntervals.Clear();
 
         Validate(options).Succeeded.ShouldBeFalse();
@@ -71,7 +78,9 @@ public sealed class MarketDataOptionsTests
     [InlineData(301)]
     public void Stale_Threshold_Must_Exceed_Live_Threshold(int stale)
     {
-        var options = new MarketDataOptions { LiveThresholdSeconds = 30, StaleThresholdSeconds = stale };
+        var options = Options();
+        options.LiveThresholdSeconds = 30;
+        options.StaleThresholdSeconds = stale;
         Validate(options).Succeeded.ShouldBe(stale > 30);
     }
 
@@ -80,7 +89,8 @@ public sealed class MarketDataOptionsTests
     [InlineData(501)]
     public void Batch_Size_Bounds_Are_Enforced(int batchSize)
     {
-        var options = new MarketDataOptions { BatchSize = batchSize };
+        var options = Options();
+        options.BatchSize = batchSize;
         Validate(options).Succeeded.ShouldBeFalse();
     }
 
@@ -89,7 +99,7 @@ public sealed class MarketDataOptionsTests
     [InlineData("normal ")]
     public void Fake_Scenario_Must_Be_Known(string scenario)
     {
-        var options = new MarketDataOptions();
+        var options = Options();
         options.Fake.Scenario = scenario;
         Validate(options).Succeeded.ShouldBeFalse();
     }
@@ -97,7 +107,8 @@ public sealed class MarketDataOptionsTests
     [Fact]
     public void Unknown_Provider_Fails()
     {
-        var options = new MarketDataOptions { Provider = "vendor-x" };
+        var options = Options();
+        options.Provider = "vendor-x";
         Validate(options).Succeeded.ShouldBeFalse();
     }
 

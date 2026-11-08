@@ -26,12 +26,18 @@ public static class MarketDataModuleExtensions
         services.AddOptions<MarketDataOptions>()
             .Bind(configuration.GetSection(MarketDataOptions.SectionName))
             .ValidateOnStart();
+        services.PostConfigure<MarketDataOptions>(options => options.ApplyIntervalDefaults());
         services.TryAddSingleton(TimeProvider.System);
 
         services.AddSingleton<FakeMarketDataProvider>();
         services.AddSingleton<IMarketDataProvider>(provider => ProviderRegistry.Create(provider));
         services.AddSingleton<Services.PricePoller>();
         services.AddHostedService(provider => provider.GetRequiredService<Services.PricePoller>());
+        services.AddSingleton<System.Collections.Concurrent.ConcurrentDictionary<string, System.Threading.SemaphoreSlim>>(
+            _ => new System.Collections.Concurrent.ConcurrentDictionary<string, System.Threading.SemaphoreSlim>(StringComparer.Ordinal));
+        services.AddScoped<Services.MarketDataQueryService>();
+        services.AddScoped<Services.CandleService>();
+        services.AddScoped<Contracts.IMarketData>(provider => provider.GetRequiredService<Services.MarketDataQueryService>());
 
         services.AddDbContext<MarketDataDbContext>((IServiceProvider provider, DbContextOptionsBuilder options) =>
         {

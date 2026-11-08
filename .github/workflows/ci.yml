@@ -20,6 +20,8 @@ jobs:
           dotnet test tests/AskVest.UnitTests -c Release --no-build
           dotnet test tests/AskVest.ArchitectureTests -c Release --no-build
           dotnet test tests/AskVest.IntegrationTests -c Release --no-build
+      - name: Catalog data validation
+        run: dotnet test tests/AskVest.UnitTests -c Release --no-build --filter "FullyQualifiedName~Catalog"
       - name: Audit packages
         run: dotnet list AskVest.slnx package --vulnerable --include-transitive
 

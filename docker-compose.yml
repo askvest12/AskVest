@@ -41,6 +41,8 @@ services:
       dockerfile: docker/migrator/Dockerfile
     environment:
       ConnectionStrings__Platform: Host=postgres;Port=5432;Database=askvest;Username=askvest_owner;Password=${ASKVEST_OWNER_PASSWORD}
+      Compliance__RealMoneyEnabled: "false"
+      Compliance__Kyc__WebhookSecret: ${ASKVEST_COMPLIANCE_KYC_WEBHOOK_SECRET:?required}
     depends_on:
       postgres:
         condition: service_healthy

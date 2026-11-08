@@ -143,6 +143,66 @@ The API logs one reconciliation line per cycle:
   reach the database; it retries on the next interval
   (`Ledger__ReconciliationIntervalMinutes`, default 60).
 
+## Catalog data
+
+The instrument catalog (chains, issuers, instruments, tokens and their
+disclosures) lives in `data/catalog/` as three reviewed JSON files:
+`chains.json`, `issuers.json`, `instruments.json`. The Migrator imports them
+idempotently every time it runs, inside the same transaction as the Ledger
+asset registration for each token. The API only reads the catalog; the
+application database role has SELECT-only access to the `catalog` schema.
+
+**Production data is intentionally empty.** No real issuer, chain or token
+has been approved yet, so `data/catalog/` ships with empty lists. Do not add
+real entries until the provider and chain research in
+`docs/design/06-chain-and-provider-research.md` is complete.
+
+Fictional sample data for development and smoke tests lives in
+`data/catalog-sample/` (two EVM testnets, fictional issuers, every token
+status covered). It is only loaded when `Catalog__LoadSampleData=true` and
+the environment is not Production; the importer refuses it in Production and
+the production Migrator image does not even contain the sample files.
+
+### Validate catalog data locally
+
+The unit tests parse and validate both folders on every run:
+
+```bash
+dotnet test --project tests/AskVest.UnitTests --filter "FullyQualifiedName~Catalog"
+```
+
+To check the files against the database rules (listing guard, transitions,
+immutability) without writing anything, run the Migrator's validate-only path
+through the integration suite, or import into a scratch database with
+`Catalog__DataPath` pointed at the folder.
+
+### Add or change a token
+
+1. Edit the JSON in `data/catalog/` (or `data/catalog-sample/` for fictional
+   data). Tokens sit inside their instrument's `tokens` array.
+2. Keep `version` bumped and every mandatory disclosure field populated.
+   A token may only enter `listed` when the listing guard passes: approved
+   issuer, enabled chain with a supported family, complete disclosures, at
+   least one allowed country, gateway key, decimals at most 18, current
+   review dates, active instrument.
+3. Run the catalog unit tests above, then restart the stack so the Migrator
+   re-imports. Reimports are idempotent; removing a token from the files
+   delists it (rows are never deleted, and `delisted` is terminal).
+4. Never put the gateway key or reviewer label anywhere the API can reach;
+   both are stored but never serialized.
+
+### Catalog smoke test
+
+With the smoke stack running (it loads the sample data automatically):
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.smoke.yml up -d --build --wait
+ASKVEST_SMOKE_BASE_URL=http://localhost:5081 dotnet test --project tests/AskVest.SmokeTests
+```
+
+The catalog journey browses instruments, searches and pages, opens token
+disclosures, and checks buy/sell availability blockers per user country.
+
 ## Rotating signing keys
 
 Access tokens are signed with ES256. To rotate:
@@ -166,6 +226,7 @@ reset their password. Plan this as a maintenance event.
 - `src/AskVest.Modules.Identity` - identity module: auth flows, sessions, devices, PIN, step-up, phone, deletion, messaging
 - `src/AskVest.Modules.Compliance` - compliance module: documents, consents, country, eligibility, KYC webhook, screening
 - `src/AskVest.Modules.Ledger` - ledger module: double-entry posting, balances, history, probes, reconciliation
+- `src/AskVest.Modules.Catalog` - catalog module: chains, issuers, instruments, tokens, disclosures, availability, read API
 - `src/AskVest.Api` - HTTP host: envelope, middleware, health, OpenAPI
 - `src/AskVest.Migrator` - forward-only migration runner
 - `tests/` - unit, architecture, integration (Testcontainers), smoke

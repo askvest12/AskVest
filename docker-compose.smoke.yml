@@ -7,8 +7,20 @@ services:
       POSTGRES_PASSWORD: ${ASKVEST_ADMIN_PASSWORD:?required}
 
   migrator:
+    build:
+      context: .
+      dockerfile: docker/migrator/Dockerfile
+      args:
+        INCLUDE_SAMPLE_DATA: "true"
     environment:
       ConnectionStrings__Platform: Host=postgres;Port=5432;Database=askvest;Username=askvest_owner;Password=${ASKVEST_OWNER_PASSWORD}
+      DOTNET_ENVIRONMENT: Test
+      Catalog__LoadSampleData: "true"
+      Compliance__RealMoneyEnabled: "true"
+      Compliance__RealMoneyCountries__0: US
+      Compliance__RealMoneyCountries__1: GB
+      Compliance__RealMoneyCountries__2: NG
+      Compliance__RealMoneyCountries__3: KE
 
   api:
     environment:

@@ -1,0 +1,75 @@
+# Phase 7 learning raw HTTP evidence
+# base=http://localhost:5081 date=2026-11-08T13:26:16Z
+
+
+$ curl -X POST http://localhost:5081/api/v1/auth/sign-up  --data '{"email":"smoke-raw-82288304@example.com","password":"CorrectHorseSmoke9"}'
+{"success":true,"message":"If this email can be verified, a verification code has been sent.","data":null,"error":null,"correlationId":"01a1bb5696527ba1a5f9265fdb440f79"}
+# HTTP 200
+# verify code for smoke-raw-82288304@example.com: 467944
+
+$ curl -X POST http://localhost:5081/api/v1/auth/verify-email  --data '{"email":"smoke-raw-82288304@example.com","code":"467944"}'
+{"success":true,"message":"Email verified.","data":null,"error":null,"correlationId":"01a1bb569ed37e389e2b7b88f4c0def8"}
+# HTTP 200
+
+$ curl -X POST http://localhost:5081/api/v1/auth/login (device login)
+{"success": true, "message": "Signed in.", "data": {"result": "authenticated", "accessToken": "<token>", "refreshToken": "<redacted>", "accessTokenExpiresAt": "2026-11-08T13:36:18.7103430Z", "refreshIdleExpiresAt": "2026-12-08T13:26:18.7094816Z", "sessionId": "01a1bb56-9f56-7121-a390-341a3dfa5f82"}, "error": null, "correlationId": "01a1bb569f0472aca4171f4e420374da"}
+
+# 1. anonymous reads are refused
+
+$ curl -X GET http://localhost:5081/api/v1/learning/tracks  
+{"success":false,"message":"Authentication is required.","data":null,"error":{"code":"auth.unauthenticated","details":null},"correlationId":"0HNPTJ3MDECBA:00000001"}
+# HTTP 401
+
+$ curl -X GET http://localhost:5081/api/v1/learning/progress  
+{"success":false,"message":"Authentication is required.","data":null,"error":{"code":"auth.unauthenticated","details":null},"correlationId":"0HNPTJ3MDECBB:00000001"}
+# HTTP 401
+
+# 2. tracks and a lesson read: no answers or explanations
+
+$ curl -X GET http://localhost:5081/api/v1/learning/tracks -H 'Authorization: Bearer <token>' 
+{"success":true,"message":"Learning tracks loaded.","data":{"tracks":[{"id":"investing-basics","title":"Investing basics","summary":"Sample lessons that explain what you are actually buying.","lessons":[{"id":"what-is-a-stock","title":"What is a stock?","summary":"A plain explanation of what a share of a company represents.","estimatedMinutes":4,"requiredForReal":false,"status":"not_started"},{"id":"what-is-an-etf","title":"What is an ETF?","summary":"How exchange traded funds bundle many investments together.","estimatedMinutes":4,"requiredForReal":false,"status":"not_started"}]},{"id":"investing-safely","title":"Investing safely","summary":"Sample lessons on risk, ownership and costs.","lessons":[{"id":"risk-and-diversification","title":"Risk and diversification","summary":"Why spreading money matters and what risk really means.","estimatedMinutes":4,"requiredForReal":false,"status":"not_started"},{"id":"what-you-own","title":"What you actually own","summary":"Holding a token is not the same as owning the share.","estimatedMinutes":5,"requiredForReal":true,"status":"not_started"},{"id":"fees-and-costs","title":"Fees and costs","summary":"Small costs add up and change what you keep.","estimatedMinutes":3,"requiredForReal":false,"status":"not_started"}]}]},"error":null,"correlationId":"01a1bb569fc47e2aae80adbc7b72aa03"}
+# HTTP 200
+
+$ curl -X GET http://localhost:5081/api/v1/learning/lessons/what-is-a-stock -H 'Authorization: Bearer <token>' 
+{"success":true,"message":"Lesson loaded.","data":{"lesson":{"id":"what-is-a-stock","trackId":"investing-basics","title":"What is a stock?","summary":"A plain explanation of what a share of a company represents.","estimatedMinutes":4,"version":1,"requiredForReal":false,"blocks":[{"type":"heading","text":"A small piece of a company","items":null,"kind":null},{"type":"paragraph","text":"A stock is a share of ownership in a company. When you buy a stock you buy a small piece of that business, and its price moves with how the market values the company.","items":null,"kind":null},{"type":"bullets","text":null,"items":["Share prices change every day as buyers and sellers trade.","You can lose part or all of the money you put in.","Some companies also pay dividends, a share of their profits."],"kind":null},{"type":"callout","text":"Sample lesson. Real lessons are written and reviewed by the AskVest team before launch.","items":null,"kind":"info"}],"quiz":{"passMarkPercent":80,"questions":[{"id":"q1","prompt":"What does buying a stock give you?","options":[{"id":"a","text":"A loan to the company"},{"id":"b","text":"A small share of ownership in the company"},{"id":"c","text":"A promise of future profits"}]},{"id":"q2","prompt":"Can the value of a stock go down after you buy it?","options":[{"id":"a","text":"Yes, prices move both ways"},{"id":"b","text":"No, the price only rises over time"},{"id":"c","text":"Only during the first week"}]},{"id":"q3","prompt":"What are dividends?","options":[{"id":"a","text":"A tax on share sales"},{"id":"b","text":"A share of company profits paid to shareholders"},{"id":"c","text":"A fee charged by the exchange"}]}]},"progress":{"status":"not_started","attemptsCount":0,"bestScore":null,"completedVersion":null,"completedAt":null,"lastAttemptAt":null}}},"error":null,"correlationId":"01a1bb569fce751e98b25c2a63b249a1"}
+# HTTP 200
+
+# 3. wrong attempt fails with per-question results and explanations
+
+$ curl -X POST http://localhost:5081/api/v1/learning/lessons/what-is-a-stock/quiz-attempts -H 'Authorization: Bearer <token>' --data '{"answers":[{"questionId":"q1","optionId":"a"},{"questionId":"q2","optionId":"b"},{"questionId":"q3","optionId":"a"}]}'
+{"success":true,"message":"Quiz attempt graded.","data":{"score":0,"passed":false,"attemptsCount":1,"lessonComplete":false,"questions":[{"questionId":"q1","correct":false,"selectedOptionId":"a","correctOptionId":"b","explanation":"A stock is a share of ownership. It is not a loan and it does not promise any return."},{"questionId":"q2","correct":false,"selectedOptionId":"b","correctOptionId":"a","explanation":"Share prices change constantly and can fall as well as rise."},{"questionId":"q3","correct":false,"selectedOptionId":"a","correctOptionId":"b","explanation":"Some companies share part of their profits with shareholders as dividends."}]},"error":null,"correlationId":"01a1bb569fde741496db59a2cd24beeb"}
+# HTTP 200
+
+# 4. correct attempt passes; replay returns identical response
+
+$ curl -X POST http://localhost:5081/api/v1/learning/lessons/what-is-a-stock/quiz-attempts -H 'Authorization: Bearer <token>' --data '{"answers":[{"questionId":"q1","optionId":"b"},{"questionId":"q2","optionId":"a"},{"questionId":"q3","optionId":"b"}]}'
+{"success":true,"message":"Quiz attempt graded.","data":{"score":100,"passed":true,"attemptsCount":2,"lessonComplete":true,"questions":[{"questionId":"q1","correct":true,"selectedOptionId":"b","correctOptionId":"b","explanation":"A stock is a share of ownership. It is not a loan and it does not promise any return."},{"questionId":"q2","correct":true,"selectedOptionId":"a","correctOptionId":"a","explanation":"Share prices change constantly and can fall as well as rise."},{"questionId":"q3","correct":true,"selectedOptionId":"b","correctOptionId":"b","explanation":"Some companies share part of their profits with shareholders as dividends."}]},"error":null,"correlationId":"01a1bb56a0007c04b8e17f30df21988c"}
+# HTTP 200
+
+$ curl -X GET http://localhost:5081/api/v1/learning/progress -H 'Authorization: Bearer <token>' 
+{"success":true,"message":"Learning progress loaded.","data":{"tracks":[{"id":"investing-basics","title":"Investing basics","totalLessons":2,"completedLessons":1,"attemptedLessons":1},{"id":"investing-safely","title":"Investing safely","totalLessons":3,"completedLessons":0,"attemptedLessons":0}],"streak":{"current":1,"longest":1,"todayCounted":true},"requiredLessons":[{"id":"what-you-own","trackId":"investing-safely","version":1,"status":"not_started","completedVersion":null}]},"error":null,"correlationId":"01a1bb56a01a7bc28a4c1594085c5b67"}
+# HTTP 200
+
+# 5. quiz-less lesson completes; quiz lesson refuses /complete
+
+$ curl -X POST http://localhost:5081/api/v1/learning/lessons/risk-and-diversification/complete -H 'Authorization: Bearer <token>' --data '{}'
+{"success":true,"message":"Lesson completed.","data":{"lessonId":"risk-and-diversification","status":"completed","completedVersion":1,"completedAt":"2026-11-08T13:26:18.9353603Z"},"error":null,"correlationId":"01a1bb56a02b7abb8df984bc76a073e4"}
+# HTTP 200
+
+$ curl -X POST http://localhost:5081/api/v1/learning/lessons/what-is-a-stock/complete -H 'Authorization: Bearer <token>' --data '{}'
+{"success":false,"message":"This lesson has a quiz; pass it through quiz-attempts instead.","data":null,"error":{"code":"learning.quiz_required","details":null},"correlationId":"01a1bb56a052724fb3aeb83961a22eef"}
+# HTTP 422
+
+# 6. invalid answers rejected
+
+$ curl -X POST http://localhost:5081/api/v1/learning/lessons/fees-and-costs/quiz-attempts -H 'Authorization: Bearer <token>' --data '{"answers":[{"questionId":"q1","optionId":"a"},{"questionId":"q2","optionId":"a"}]}'
+{"success":false,"message":"Every question must be answered exactly once.","data":null,"error":{"code":"validation.failed","details":null},"correlationId":"01a1bb56a06f7560b62da1c9a0cd1973"}
+# HTTP 400
+
+$ curl -X POST http://localhost:5081/api/v1/learning/lessons/fees-and-costs/quiz-attempts -H 'Authorization: Bearer <token>' --data '{"answers":[{"questionId":"q9","optionId":"a"}]}'
+{"success":false,"message":"Every question must be answered exactly once.","data":null,"error":{"code":"validation.failed","details":null},"correlationId":"01a1bb56a09976e9a01b4db4f07c9069"}
+# HTTP 400
+
+$ curl -X GET http://localhost:5081/api/v1/compliance/eligibility -H 'Authorization: Bearer <token>' 
+{"success":true,"message":"Eligibility retrieved.","data":{"practiceAllowed":false,"realAllowed":false,"kycStatus":"NotStarted","blockers":{"practice":[{"code":"country_required","message":"A country of residence must be declared."},{"code":"consent_required","message":"Accept the current documents: terms, privacy."}],"real":[{"code":"country_required","message":"A country of residence must be declared."},{"code":"consent_required","message":"Accept the current documents: terms, privacy."},{"code":"consent_required","message":"Accept the current documents: risk_disclosure, token_disclosure."},{"code":"kyc_required","message":"Identity verification has not been started."},{"code":"learning_required","message":"Complete the required lessons: what-you-own."}]}},"error":null,"correlationId":"01a1bb56a0c571e3b9cf4aa9bdf64f20"}
+# HTTP 200

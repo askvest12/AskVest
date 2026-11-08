@@ -14,4 +14,7 @@ public interface IPortfolio
 
     Task<IReadOnlyList<WatchlistEntry>> GetWatchlistAsync(Guid userId, CancellationToken cancellationToken = default);
 
+    Task<Result> AddWatchlistItemAsync(Guid userId, string instrumentId, CancellationToken cancellationToken = default);
+
+    Task<Result> RemoveWatchlistItemAsync(Guid userId, string instrumentId, CancellationToken cancellationToken = default);
 }

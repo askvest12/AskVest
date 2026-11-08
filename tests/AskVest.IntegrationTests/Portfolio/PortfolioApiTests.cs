@@ -161,6 +161,7 @@ public sealed class PortfolioApiTests(PostgresFixture fixture) : IAsyncLifetime
         {
             "/api/v1/practice/portfolio",
             "/api/v1/real/portfolio",
+            "/api/v1/watchlist",
         })
         {
             using var response = await client.GetAsync(new Uri(path, UriKind.Relative), TestContext.Current.CancellationToken);

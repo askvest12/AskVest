@@ -57,4 +57,5 @@ public static class ErrorCodes
     public const string PracticeOrderInvalid = "practice.order_invalid";
     public const string PracticeResetNotAllowed = "practice.reset_not_allowed";
     public const string LearningQuizRequired = "learning.quiz_required";
+    public const string PortfolioWatchlistFull = "portfolio.watchlist_full";
 }

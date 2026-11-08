@@ -6,6 +6,7 @@ using AskVest.Modules.Portfolio.Contracts;
 using AskVest.Modules.Portfolio.Domain;
 using AskVest.Modules.Portfolio.Persistence;
 using AskVest.Modules.Practice.Contracts;
+using AskVest.Platform;
 using AskVest.SharedKernel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -24,6 +25,7 @@ internal sealed class PortfolioService(
     IPractice practice,
     PortfolioDbContext db,
     IOptions<PortfolioOptions> options,
+    ITransactionScope scope,
     TimeProvider timeProvider,
     ILogger<PortfolioService> logger) : IPortfolio
 {
@@ -64,12 +66,172 @@ internal sealed class PortfolioService(
         Guid userId,
         CancellationToken cancellationToken = default)
     {
-        return await db.WatchlistItems.AsNoTracking()
+        var items = await db.WatchlistItems.AsNoTracking()
             .Where(item => item.UserId == userId)
             .OrderBy(item => item.AddedAt)
             .ThenBy(item => item.InstrumentId)
-            .Select(item => new WatchlistEntry(item.InstrumentId, item.AddedAt))
             .ToListAsync(cancellationToken);
+        if (items.Count == 0)
+        {
+            return [];
+        }
+
+        var instrumentIds = items.Select(item => item.InstrumentId).ToList();
+        var instruments = new Dictionary<string, CatalogInstrument>(StringComparer.Ordinal);
+        foreach (var id in instrumentIds)
+        {
+            var instrument = await catalog.FindInstrumentAsync(id, cancellationToken);
+            if (instrument is not null)
+            {
+                instruments[id] = instrument;
+            }
+        }
+
+        var prices = (await marketData.GetLatestPricesAsync(instrumentIds, cancellationToken))
+            .ToDictionary(price => price.InstrumentId, StringComparer.Ordinal);
+
+        return items.Select(item =>
+        {
+            var instrument = instruments.GetValueOrDefault(item.InstrumentId);
+            var price = prices.GetValueOrDefault(item.InstrumentId);
+            return new WatchlistEntry(
+                item.InstrumentId,
+                instrument?.Symbol ?? item.InstrumentId,
+                instrument?.Name ?? item.InstrumentId,
+                instrument?.Status ?? "unknown",
+                price?.Price,
+                price?.Currency,
+                price?.Label ?? "unavailable",
+                price?.Session,
+                price?.UsableForExecution ?? false,
+                item.AddedAt);
+        }).ToList();
+    }
+
+    public async Task<Result> AddWatchlistItemAsync(
+        Guid userId,
+        string instrumentId,
+        CancellationToken cancellationToken = default)
+    {
+        var ownsScope = !scope.IsActive;
+        if (ownsScope)
+        {
+            await scope.BeginAsync(cancellationToken);
+        }
+
+        try
+        {
+            await PortfolioScope.EnlistAsync(db, scope, cancellationToken);
+            await LockWatchlistAsync(userId, cancellationToken);
+
+            var exists = await db.WatchlistItems.AnyAsync(
+                item => item.UserId == userId && item.InstrumentId == instrumentId, cancellationToken);
+            if (exists)
+            {
+                if (ownsScope)
+                {
+                    await scope.CommitAsync(cancellationToken);
+                }
+
+                return Result.Success();
+            }
+
+            var instrument = await catalog.FindInstrumentAsync(instrumentId, cancellationToken);
+            if (instrument is null || !string.Equals(instrument.Status, "active", StringComparison.Ordinal))
+            {
+                if (ownsScope)
+                {
+                    await scope.RollbackAsync(cancellationToken);
+                }
+
+                return Result.Failure(new Error(
+                    ErrorCodes.ResourceNotFound,
+                    "Instrument not found.",
+                    ErrorType.NotFound));
+            }
+
+            var count = await db.WatchlistItems.CountAsync(item => item.UserId == userId, cancellationToken);
+            if (count >= options.Value.WatchlistMaximum)
+            {
+                if (ownsScope)
+                {
+                    await scope.RollbackAsync(cancellationToken);
+                }
+
+                return Result.Failure(new Error(
+                    ErrorCodes.PortfolioWatchlistFull,
+                    "The watchlist is at its maximum size.",
+                    ErrorType.BusinessRule));
+            }
+
+            db.WatchlistItems.Add(new Persistence.Entities.WatchlistItem
+            {
+                UserId = userId,
+                InstrumentId = instrumentId,
+                AddedAt = timeProvider.GetUtcNow(),
+            });
+            await db.SaveChangesAsync(cancellationToken);
+
+            if (ownsScope)
+            {
+                await scope.CommitAsync(cancellationToken);
+            }
+
+            return Result.Success();
+        }
+        catch
+        {
+            if (ownsScope)
+            {
+                await scope.RollbackAsync(cancellationToken);
+            }
+
+            throw;
+        }
+    }
+
+    public async Task<Result> RemoveWatchlistItemAsync(
+        Guid userId,
+        string instrumentId,
+        CancellationToken cancellationToken = default)
+    {
+        var ownsScope = !scope.IsActive;
+        if (ownsScope)
+        {
+            await scope.BeginAsync(cancellationToken);
+        }
+
+        try
+        {
+            await PortfolioScope.EnlistAsync(db, scope, cancellationToken);
+            await db.WatchlistItems
+                .Where(item => item.UserId == userId && item.InstrumentId == instrumentId)
+                .ExecuteDeleteAsync(cancellationToken);
+
+            if (ownsScope)
+            {
+                await scope.CommitAsync(cancellationToken);
+            }
+
+            return Result.Success();
+        }
+        catch
+        {
+            if (ownsScope)
+            {
+                await scope.RollbackAsync(cancellationToken);
+            }
+
+            throw;
+        }
+    }
+
+    private async Task LockWatchlistAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        // Serializes adds per user so the count and insert stay under the cap.
+        var key = $"portfolio:watchlist:{userId:N}";
+        await db.Database.ExecuteSqlInterpolatedAsync(
+            $"SELECT pg_advisory_xact_lock(hashtext({key}))", cancellationToken);
     }
 
     private async Task<List<LedgerMovement>> LoadMovementsAsync(

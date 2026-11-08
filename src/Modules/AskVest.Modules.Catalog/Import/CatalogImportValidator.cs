@@ -340,6 +340,11 @@ internal sealed partial class CatalogImportValidator(
         {
             result.Problems.Add($"{label}: ledger asset code '{token.LedgerAssetCode}' is not valid");
         }
+        else if (assetCode.StartsWith("P.", StringComparison.Ordinal))
+        {
+            // The P. prefix is reserved for practice ledger assets.
+            result.Problems.Add($"{label}: ledger asset code '{token.LedgerAssetCode}' uses the reserved practice prefix 'P.'");
+        }
 
         if (assetCode.Length > 0 && !fileAssetCodes.Add(assetCode))
         {

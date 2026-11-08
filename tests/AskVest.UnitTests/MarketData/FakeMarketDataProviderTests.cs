@@ -92,6 +92,25 @@ public sealed class FakeMarketDataProviderTests
     }
 
     [Fact]
+    public async Task Drop_Scenario_Lowers_Every_Price_Below_Outlier_Tolerance()
+    {
+        var symbols = new[] { "EX:AAA", "EX:BBB" };
+        var normal = await Create("normal").GetLatestQuotesAsync(symbols, TestContext.Current.CancellationToken);
+        var drop = await Create("drop", new FakeProviderOptions { Scenario = "drop", DropPercent = 20 })
+            .GetLatestQuotesAsync(symbols, TestContext.Current.CancellationToken);
+
+        drop.Outcome.ShouldBe(ProviderOutcome.Succeeded);
+        drop.Quotes.Count.ShouldBe(2);
+        for (var i = 0; i < symbols.Length; i++)
+        {
+            var ratio = drop.Quotes[i].Price / normal.Quotes[i].Price;
+            drop.Quotes[i].Session.ShouldBe("regular");
+            ratio.ShouldBeLessThan(0.85m);
+            ratio.ShouldBeGreaterThan(0.70m);
+        }
+    }
+
+    [Fact]
     public async Task Outage_Scenario_Fails_As_Transient()
     {
         var result = await Create("outage").GetLatestQuotesAsync(["EX:AAA"], TestContext.Current.CancellationToken);

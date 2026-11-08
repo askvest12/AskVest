@@ -19,3 +19,4 @@
 - MarketData: on-chain or issuer reference prices for tokens (premium or discount to the underlying); storage is ready via the subject type seam.
 - MarketData: currency conversion for display (Phase 12).
 - Portfolio: cross-chain aggregation of tokens per instrument (Phase 8).
+- Practice: limit orders, queued orders at market open, spread simulation, multi-currency practice with simulated conversion, leaderboards, profit and loss, watchlists.

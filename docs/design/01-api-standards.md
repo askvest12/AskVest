@@ -75,6 +75,12 @@ Pattern `^[a-z]+(_[a-z]+)*(\.[a-z]+(_[a-z]+)*)+$`.
 | `ledger.already_reversed` | 409 | Journal already has a reversal |
 | `catalog.address_invalid` | 422 | Address fails the chain family's validation or canonicalization |
 | `marketdata.unavailable` | 503 | Market data provider failed and no cached data exists; fail closed |
+| `practice.account_not_started` | 409 | Practice account does not exist yet; call `POST /practice/account` first |
+| `practice.market_unavailable` | 422 | Latest price is not usable for execution; details carry the label and session |
+| `practice.instrument_unavailable` | 422 | Instrument is missing, inactive, delisted, non-USD or has no valid practice asset |
+| `practice.insufficient_position` | 422 | Sell quantity exceeds the available practice position |
+| `practice.order_invalid` | 422 | Order fails validation; details name the reason (too small, too large, stop not below market, too many open stops, quantity rounds to zero) |
+| `practice.reset_not_allowed` | 422 | Reset refused by the cooldown or the rolling 30 day limit |
 | `idempotency.key_missing` | 400 | State-changing call without `Idempotency-Key` |
 | `idempotency.key_invalid` | 400 | Key fails the format rule |
 | `idempotency.key_reused` | 422 | Same key, different request fingerprint |

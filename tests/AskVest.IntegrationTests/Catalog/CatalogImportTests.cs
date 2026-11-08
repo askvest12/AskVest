@@ -131,6 +131,28 @@ public sealed class CatalogImportTests(PostgresFixture fixture, ITestOutputHelpe
         tokens.ShouldBe(0);
     }
 
+    [Fact]
+    public async Task Token_With_Practice_Prefixed_Asset_Code_Is_Rejected()
+    {
+        var suffix = Suffix();
+        var issuerId = $"pfx-issuer-{suffix}";
+        var instrumentId = $"pfx-instr-{suffix}";
+        var folder = await CatalogImportTestData.WriteFolderAsync(
+            [CatalogImportTestData.Chain()],
+            [CatalogImportTestData.Issuer(issuerId)],
+            [CatalogImportTestData.Instrument(instrumentId, [CatalogImportTestData.Token(
+                issuerId: issuerId,
+                address: Address(suffix, 'a'),
+                assetCode: $"P.{AssetCode("PFX", suffix)}")])],
+            TestContext.Current.CancellationToken);
+
+        await using var provider = CatalogImportTestData.CreateProvider(fixture, folder);
+        var result = await ImportAsync(provider);
+
+        result.IsFailure.ShouldBeTrue();
+        result.Error!.Message.ShouldContain("reserved practice prefix 'P.'");
+    }
+
     [Theory]
     [InlineData("claimDescription")]
     [InlineData("backingDescription")]

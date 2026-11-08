@@ -133,6 +133,7 @@ internal sealed class FakeMarketDataProvider : IMarketDataProvider
         "halted" => "halted",
         "closed" => "closed",
         "outlier_spike" => "regular",
+        "drop" => "regular",
         _ => _options.Session,
     };
 
@@ -141,6 +142,12 @@ internal sealed class FakeMarketDataProvider : IMarketDataProvider
         if (scenario == "outlier_spike")
         {
             return BasePrice(symbol) * 6m;
+        }
+
+        if (scenario == "drop")
+        {
+            // Below the outlier tolerance so the drop is accepted as a real move.
+            return BasePrice(symbol) * (100m - _options.DropPercent) / 100m;
         }
 
         var bucket = _timeProvider.GetUtcNow().UtcTicks / TimeSpan.TicksPerMinute / 5;

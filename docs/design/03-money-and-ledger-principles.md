@@ -127,6 +127,14 @@ per asset.
 | Fee | `fee` | debit paying account, credit `system_fees` |
 | Reversal | `reversal` | exact mirror of the reversed journal |
 | Adjustment | `adjustment` | explicit correction pairs, always with a reference |
+| Practice order fill (buy) | `trade_buy` | USD: `user_available` pays cost plus fee, `system_clearing` receives cost, `system_fees` receives fee; asset: `system_clearing` gives quantity to `user_available` |
+| Practice order fill (sell) | `trade_sell` | asset: `user_available` gives quantity to `system_clearing`; USD: `system_clearing` pays proceeds, `user_available` receives proceeds minus fee, `system_fees` receives fee |
+| Practice stop hold | `hold` | asset: `user_available` to `user_held` |
+| Practice stop release | `release` | asset: `user_held` back to `user_available` |
+| Practice stop trigger | `trade_sell` | same lines as a sell fill, but the asset leaves `user_held` |
+| Practice reset | `practice_reset` | every non-zero practice balance of the user back to the system accounts, then a fresh `practice_credit_grant` |
+
+Practice asset codes start with `P.` (for example `P.NVDA`) and are registered lazily on first use with kind `token` and scale 6. The prefix is reserved: the Catalog importer refuses any real token ledger asset code starting with `P.` so practice value can never collide with a real asset.
 
 ## Posting transaction
 

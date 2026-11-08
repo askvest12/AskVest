@@ -96,6 +96,10 @@ The product is multi-chain and provider research is still open, so the catalog a
 
 MarketData keeps the latest reference price of every active catalog instrument in its own schema. A hosted poller is the only caller of the provider for latest prices; request handlers read the database and never call the provider. Candles are fetched on demand only to fill the cache, under single-flight. Every price carries source, `as of`, age, session and a freshness label (`live`, `delayed`, `closed`, `halted`, `stale`, `unavailable`) plus `usableForExecution`. Consumers must honor `usableForExecution` and must never execute on `stale`, `halted` or `unavailable` prices. The module mentions instruments only; tokens and chains are never referenced.
 
+## Practice rules
+
+Practice trades instruments, never tokens, so it stays valid however the multi-chain research ends. Practice cash is USD in the ledger practice book; each traded instrument gets a practice ledger asset coded `P.` plus the instrument symbol in uppercase, scale 6, mapped in `practice_instruments` on first use. The `P.` prefix is reserved: the Catalog importer rejects any real token ledger asset code starting with it. Practice supports only instruments whose catalog quote currency is USD. Orders fill at the latest Market Data price and only when `usableForExecution` is true; a simulated fee (configurable basis points, default 0) goes to the system fees account. Practice reuses the real building blocks on purpose: the ledger practice book, the transaction scope, the outbox and the Market Data and Catalog contracts. Phase 10 extends the same order service for real trading instead of rewriting it.
+
 ## Non-goals and undecided product statuses
 
 Payments, remittances, merchant acceptance. Undecided until later phases: launch countries, issuers, chain, custody provider, fee model.

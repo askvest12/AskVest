@@ -10,5 +10,7 @@ public sealed class FakeProviderOptions
 
     public int RateLimitRetrySeconds { get; set; } = 5;
 
+    public int DropPercent { get; set; } = 20;
+
     public string Currency { get; set; } = "USD";
 }

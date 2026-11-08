@@ -28,6 +28,7 @@ AI-assisted investing in tokenized stocks and ETFs for Africans. Modular monolit
 22. **Ledger integrity.** Only the Ledger module touches ledger tables. Ledger writes happen only inside a transaction scope; the scope commits explicitly or rolls back everything, including outbox messages. Amounts, balances and account ids are never logged; outbox payloads carry ids only.
 23. **Market data honesty.** Consumers must honor `usableForExecution` and must never execute on `stale`, `halted` or `unavailable` prices. Latest-price request handlers never call the provider; only the poller does. Prices and candles serialize as strings and are never rounded silently.
 24. **Catalog integrity.** Only the Catalog module writes catalog tables. Chain-specific logic lives only in a chain family handler. The repository carries no real catalog data; production catalog data stays empty until provider research completes.
+25. **Practice isolation.** Practice code never references the real book; practice value lives only in `Book.Practice`. Practice orders never use a price that is not `usableForExecution`. Practice ledger asset codes start with `P.`, a prefix reserved for practice: the Catalog importer rejects any real token asset code starting with it.
 
 ## Solution layout
 

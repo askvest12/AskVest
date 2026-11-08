@@ -8,7 +8,7 @@ internal static class MarketDataVocabulary
         { "pre", "regular", "post", "closed", "halted", "unknown" };
 
     public static readonly HashSet<string> Scenarios = new(StringComparer.Ordinal)
-        { "normal", "delayed", "halted", "closed", "outlier_spike", "outage", "rate_limited", "unknown_symbol" };
+        { "normal", "delayed", "halted", "closed", "outlier_spike", "outage", "rate_limited", "unknown_symbol", "drop" };
 
     public static readonly HashSet<string> Intervals = new(StringComparer.Ordinal) { "15m", "1h", "1d" };
 }

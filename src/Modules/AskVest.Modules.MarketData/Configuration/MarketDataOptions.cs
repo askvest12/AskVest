@@ -101,6 +101,7 @@ public sealed class MarketDataOptions
                 $"MarketData:Fake:Session '{options.Fake.Session}' is not supported.");
             Check(options.Fake.DelayMinutes >= 0, "MarketData:Fake:DelayMinutes must not be negative.");
             Check(options.Fake.RateLimitRetrySeconds > 0, "MarketData:Fake:RateLimitRetrySeconds must be positive.");
+            Check(options.Fake.DropPercent is > 0 and < 100, "MarketData:Fake:DropPercent must be between 1 and 99.");
             Check(!string.IsNullOrWhiteSpace(options.Fake.Currency), "MarketData:Fake:Currency is required.");
 
             return failures.Count == 0

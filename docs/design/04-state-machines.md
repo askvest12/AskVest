@@ -138,3 +138,27 @@ gateway key exists.
 
 - Issuer status is `approved` or `suspended` (review metadata lives on the row; expiry of the review blocks new listings, not exits).
 - Instrument status is `active` or `delisted`; delisting an instrument hides it from Practice without touching token rows.
+
+## Practice account and order (Practice, Phase 6)
+
+The practice account has two states: `not_started` and `active`. `POST /account` moves `not_started` to `active` and grants the starting credits exactly once; a reset keeps the account `active`, zeroes every practice balance through journals and grants again under the reset policy (cooldown plus a rolling 30 day limit counted from `practice_events`).
+
+```mermaid
+stateDiagram-v2
+    [*] --> not_started
+    not_started --> active: account started, credits granted
+    active --> active: reset under policy
+```
+
+The practice order machine is deliberately simpler than the real one: market orders fill inside the request and never persist an `open` state; stop-loss orders are `open` until triggered or cancelled. Failures are errors, not stored orders.
+
+```mermaid
+stateDiagram-v2
+    [*] --> open: stop_loss created, quantity held
+    open --> filled: evaluator triggers at or below stop
+    open --> cancelled: user cancels, hold released
+    filled --> [*]
+    cancelled --> [*]
+```
+
+Phase 10's real order machine extends this shape with quote, authorization and submission states; the practice states and journal patterns carry over.

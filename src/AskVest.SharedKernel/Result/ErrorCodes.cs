@@ -50,4 +50,10 @@ public static class ErrorCodes
     public const string LedgerAlreadyReversed = "ledger.already_reversed";
     public const string CatalogAddressInvalid = "catalog.address_invalid";
     public const string MarketDataUnavailable = "marketdata.unavailable";
+    public const string PracticeAccountNotStarted = "practice.account_not_started";
+    public const string PracticeMarketUnavailable = "practice.market_unavailable";
+    public const string PracticeInstrumentUnavailable = "practice.instrument_unavailable";
+    public const string PracticeInsufficientPosition = "practice.insufficient_position";
+    public const string PracticeOrderInvalid = "practice.order_invalid";
+    public const string PracticeResetNotAllowed = "practice.reset_not_allowed";
 }

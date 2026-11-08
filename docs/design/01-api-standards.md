@@ -81,6 +81,7 @@ Pattern `^[a-z]+(_[a-z]+)*(\.[a-z]+(_[a-z]+)*)+$`.
 | `practice.insufficient_position` | 422 | Sell quantity exceeds the available practice position |
 | `practice.order_invalid` | 422 | Order fails validation; details name the reason (too small, too large, stop not below market, too many open stops, quantity rounds to zero) |
 | `practice.reset_not_allowed` | 422 | Reset refused by the cooldown or the rolling 30 day limit |
+| `learning.quiz_required` | 422 | Lesson has a quiz; complete it through `quiz-attempts` instead |
 | `idempotency.key_missing` | 400 | State-changing call without `Idempotency-Key` |
 | `idempotency.key_invalid` | 400 | Key fails the format rule |
 | `idempotency.key_reused` | 422 | Same key, different request fingerprint |

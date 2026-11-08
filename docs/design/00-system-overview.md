@@ -100,6 +100,10 @@ MarketData keeps the latest reference price of every active catalog instrument i
 
 Practice trades instruments, never tokens, so it stays valid however the multi-chain research ends. Practice cash is USD in the ledger practice book; each traded instrument gets a practice ledger asset coded `P.` plus the instrument symbol in uppercase, scale 6, mapped in `practice_instruments` on first use. The `P.` prefix is reserved: the Catalog importer rejects any real token ledger asset code starting with it. Practice supports only instruments whose catalog quote currency is USD. Orders fill at the latest Market Data price and only when `usableForExecution` is true; a simulated fee (configurable basis points, default 0) goes to the system fees account. Practice reuses the real building blocks on purpose: the ledger practice book, the transaction scope, the outbox and the Market Data and Catalog contracts. Phase 10 extends the same order service for real trading instead of rewriting it.
 
+## Learning rules
+
+Learning exists to make users understand what they are buying, not to make them trade more. Content is versioned data files in the repository (tracks holding ordered lessons with body blocks and optional quizzes), loaded into an immutable in-memory snapshot at startup and validated with a banned-phrase lint; there are no content tables. Lesson and quiz reads never reveal correct options or explanations; only graded attempts do. Completion records the lesson version, and lessons flagged `requiredForReal` must be completed at their current version before Real eligibility passes (the `learning_required` blocker). Streaks count consecutive UTC days with learning activity only: never orders, logins, deposits or anything that moves money. The module references no ledger, practice, market data, trading, funding or compliance code; nothing in it touches money.
+
 ## Non-goals and undecided product statuses
 
 Payments, remittances, merchant acceptance. Undecided until later phases: launch countries, issuers, chain, custody provider, fee model.

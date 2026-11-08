@@ -56,4 +56,5 @@ public static class ErrorCodes
     public const string PracticeInsufficientPosition = "practice.insufficient_position";
     public const string PracticeOrderInvalid = "practice.order_invalid";
     public const string PracticeResetNotAllowed = "practice.reset_not_allowed";
+    public const string LearningQuizRequired = "learning.quiz_required";
 }

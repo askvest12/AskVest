@@ -29,6 +29,7 @@ AI-assisted investing in tokenized stocks and ETFs for Africans. Modular monolit
 23. **Market data honesty.** Consumers must honor `usableForExecution` and must never execute on `stale`, `halted` or `unavailable` prices. Latest-price request handlers never call the provider; only the poller does. Prices and candles serialize as strings and are never rounded silently.
 24. **Catalog integrity.** Only the Catalog module writes catalog tables. Chain-specific logic lives only in a chain family handler. The repository carries no real catalog data; production catalog data stays empty until provider research completes.
 25. **Practice isolation.** Practice code never references the real book; practice value lives only in `Book.Practice`. Practice orders never use a price that is not `usableForExecution`. Practice ledger asset codes start with `P.`, a prefix reserved for practice: the Catalog importer rejects any real token asset code starting with it.
+26. **Learning stays educational.** Learning never references money, practice or trading code and touches no ledger, market data or funding contracts. Streaks count learning activity only. Lesson content is plain, chain-agnostic, issuer-neutral, carries no advice or promises, and must pass the banned-phrase lint.
 
 ## Solution layout
 

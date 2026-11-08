@@ -10,8 +10,8 @@ Phases 0 to 17. Each phase ends with the Definition of Done in `CLAUDE.md`.
 | 3 | Ledger: double-entry journals, accounts, balances, transaction scope, outbox, Practice and Real books (done) | 2 |
 | 4 | Catalog: chains, issuers, instruments, tokens, mandatory disclosures, availability, chain-agnostic seams (done) | 3 |
 | 5 | Market data: prices, candles, freshness labels, provider-agnostic with deterministic fake (done) | 4 |
-| 6 | Practice: virtual credits, simulated orders (in progress) | 3, 4, 5 |
-| 7 | Learning: lessons, quizzes, streaks | 1 |
+| 6 | Practice: virtual credits, simulated orders (done) | 3, 4, 5 |
+| 7 | Learning: lessons, quizzes, streaks (in progress; deliberately does not consume `PracticeOrderFilled`) | 1, 2 |
 | 8 | Portfolio: holdings, cost basis, watchlist | 3, 4, 6 |
 | 9 | Assistant: AI chat, tool calls, citations, audit | 1, 4, 8 |
 | 10 | Trading: quotes, real orders, order state machine | 2, 3, 4, 5, 8 |

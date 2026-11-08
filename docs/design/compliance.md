@@ -19,6 +19,7 @@ adapter contract.
 | Country | The user declares a country (ISO 3166-1 alpha-2). After KYC approval the provider's verified country is used instead. Rules are configuration: a blocked list (both modes denied) and a real-money-enabled list. Anything not blocked is allowed for Practice. The seed blocked list is KP, IR, SY and CU as a conservative starting point that legal must confirm before launch. The real-money list is empty in the base configuration and filled only in development and test settings. |
 | Mode | Not a stored flag. Real eligibility is derived on demand from country, consents, KYC, screening and the kill switch. |
 | Kill switch | A configuration flag `RealMoneyEnabled`, false by default outside development. While false, Real is blocked for everyone. |
+| Learning gate | Optional and data driven. When any lesson is flagged `requiredForReal`, Real eligibility gains a `learning_required` blocker naming the incomplete lesson ids; Compliance reads them through the Learning contracts namespace only. With no flagged lessons there is no blocker, and Practice eligibility is unaffected. |
 | KYC | One level. The provider hosts the document capture, so documents and ID numbers never touch our servers or database. We store only status, provider reference, verified country, decision time, expiry, rejection code and attempt count. Approval is valid for 24 months, then reads as expired. At most 3 attempts. |
 | Webhook | Signed with HMAC-SHA256 over the timestamp and the raw body using a per-provider secret, constant-time comparison, 5 minute timestamp tolerance, deduplicated by provider event id. |
 | Screening | Runs when KYC approval arrives, using the name and date of birth from the webhook held in memory only. A hit marks the account restricted. If the screening provider fails, the webhook answers 503 and nothing is saved, so the KYC provider retries delivery. |
@@ -33,13 +34,14 @@ as reason codes.
 | Mode | Allowed only when |
 |---|---|
 | Practice | Account active with email verified (asked of Identity through `IUserDirectory`); country declared and not blocked; `terms` and `privacy` accepted at current versions |
-| Real | Practice conditions hold; `RealMoneyEnabled` is true; the country (verified one if present) is on the real-money list; `risk_disclosure` and `token_disclosure` accepted at current versions; KYC approved and not expired; screening clear |
+| Real | Practice conditions hold; `RealMoneyEnabled` is true; the country (verified one if present) is on the real-money list; `risk_disclosure` and `token_disclosure` accepted at current versions; KYC approved and not expired; screening clear; every `requiredForReal` lesson completed at its current version |
 
 Blocker reason codes: `email_not_verified`, `account_not_active`,
 `country_required`, `country_not_supported`, `consent_required` (naming the
 missing document types), `real_money_disabled`, `kyc_required`,
 `kyc_in_review`, `kyc_rejected`, `kyc_expired`, `kyc_attempts_exhausted`,
-`account_restricted`.
+`account_restricted`, `learning_required` (naming incomplete required
+lesson ids; present only when flagged lessons exist).
 
 The effective country is the KYC verified country when present, otherwise the
 declared country.
@@ -166,6 +168,16 @@ sequenceDiagram
     end
 ```
 
+## Content guidelines for learning material
+
+Lessons are written in plain English, chain-agnostic and issuer-neutral:
+no chain names, no provider or issuer names, no investment advice, no
+promises of returns, under five minutes each. The banned-phrase lint in
+the Learning content validator enforces the no-promises rule at startup
+and in CI. Lessons flagged `requiredForReal` are reviewed by compliance
+before merge. Real lesson content stays empty until the team authors and
+reviews it; sample content is clearly marked and refused in Production.
+
 ## Data
 
 Schema `compliance`: `consent_records`, `compliance_profiles`,
@@ -180,4 +192,6 @@ KYC approved, KYC rejected, screening clear, screening hit, webhook rejected.
 `AskVest.Modules.Compliance.Contracts` exposes `GetEligibility(userId)`
 (returning the flags and blockers) and `IsRealMoneyCountry(countryCode)`.
 Phases 6, 10 and 12 consume them. Identity is read only through
-`AskVest.Modules.Identity.Contracts.IUserDirectory`.
+`AskVest.Modules.Identity.Contracts.IUserDirectory`. Compliance reads
+incomplete required lessons only through
+`AskVest.Modules.Learning.Contracts`; it never touches Learning tables.

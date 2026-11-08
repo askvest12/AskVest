@@ -20,3 +20,4 @@
 - MarketData: currency conversion for display (Phase 12).
 - Portfolio: cross-chain aggregation of tokens per instrument (Phase 8).
 - Practice: limit orders, queued orders at market open, spread simulation, multi-currency practice with simulated conversion, leaderboards, profit and loss, watchlists.
+- Learning: translations including Pidgin (the content layout allows a language folder later), admin content editor (Phase 15), practice tasks inside lessons, achievements and badges, streak notifications, user time zones for streak days, question pools, retry cooldowns and streak freezes.

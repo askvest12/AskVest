@@ -20,7 +20,7 @@ public sealed class PracticeOptions
 
     public int StopEvaluationIntervalSeconds { get; set; } = 15;
 
-    public int ResetCooldownHours { get; set; } = 24;
+    public double ResetCooldownHours { get; set; } = 24;
 
     public int MaxResetsPer30Days { get; set; } = 3;
 

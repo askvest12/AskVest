@@ -301,8 +301,8 @@ reset answers `practice.reset_not_allowed`.
 
 All tunables are `Practice__*` environment variables (see
 `docker-compose.yml`). The smoke override sets a 50 basis point fee, a 2
-second stop evaluation interval and a 1 hour reset cooldown so the whole
-journey is observable quickly.
+second stop evaluation interval and a reset cooldown of 0.001 hours (about
+4 seconds) so the whole journey is observable quickly.
 
 ### Practice smoke test
 

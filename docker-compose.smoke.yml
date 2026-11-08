@@ -53,7 +53,7 @@ services:
       MarketData__SymbolOverrides__sample-nvda: "SMOKE-UNKNOWN:NMS"
       Practice__FeeBasisPoints: "50"
       Practice__StopEvaluationIntervalSeconds: "2"
-      Practice__ResetCooldownHours: "1"
+      Practice__ResetCooldownHours: "0.001"
     ports: !override
       - "127.0.0.1:${ASKVEST_SMOKE_API_PORT:-5081}:8080"
 

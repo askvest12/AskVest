@@ -317,6 +317,65 @@ docker compose -f docker-compose.yml -f docker-compose.smoke.yml up -d --build -
 ASKVEST_SMOKE_BASE_URL=http://localhost:5081 dotnet test --project tests/AskVest.SmokeTests
 ```
 
+## Learning and streaks
+
+The Learning module serves reviewed, file-based lessons under
+`/api/v1/learning` (tracks, lesson bodies, graded quizzes, progress and
+streaks). Content is data, not database rows: `data/learning/content.json`
+holds ordered tracks, each with ordered lessons containing body blocks and
+an optional quiz. The API loads and validates the file once at startup into
+an immutable snapshot; a malformed file or a banned phrase stops startup and
+lists every problem. Read responses never include correct options or
+explanations; only graded quiz attempts do. Streaks count consecutive UTC
+days with learning activity only - never logins, orders or money movement.
+
+**Production content is intentionally empty** (`{"tracks":[]}`) until real
+lessons are authored and reviewed. Fictional sample content (two tracks,
+five lessons, quizzes and one `requiredForReal` lesson) lives in
+`data/learning-sample/` and loads only when
+`Learning__LoadSampleContent=true` outside Production; the production API
+image does not even contain the sample files.
+
+Lessons flagged `requiredForReal` gate Real eligibility: while any is
+incomplete at its current version, Real answers `compliance.not_eligible`
+with a `learning_required` blocker naming the lesson ids. Practice
+eligibility is unaffected.
+
+### Add or change a lesson
+
+1. Edit `data/learning/content.json` (or `data/learning-sample/content.json`
+   for fictional content). Each lesson needs a unique slug `id`, title,
+   summary, `estimatedMinutes`, a `version`, ordered `blocks`
+   (`heading`, `paragraph`, `bullets`, `callout`) and an optional `quiz`
+   with a `passMarkPercent` and questions carrying two to five options,
+   exactly one `correctOptionId` and an `explanation`.
+2. Write plainly: under five minutes of reading, no advice, no promises, and
+   no chain, provider or issuer names. The startup validator rejects banned
+   phrases such as "guaranteed", "risk-free", "cannot lose" and "sure
+   profit". Content guidelines live in `docs/design/compliance.md`.
+3. Bump `version` whenever the meaning of a `requiredForReal` lesson
+   changes: users who completed an older version must pass it again before
+   the `learning_required` blocker clears.
+4. Validate locally before committing:
+
+```bash
+dotnet test --project tests/AskVest.UnitTests --filter "FullyQualifiedName~Learning"
+```
+
+### Learning smoke test
+
+The smoke stack loads the sample content (`Learning__LoadSampleContent=true`
+in `docker-compose.smoke.yml`, sample files baked into the image via the
+`INCLUDE_SAMPLE_CONTENT` build arg). The learning journey covers anonymous
+401s, track and lesson reads without answers, quiz grading and replay,
+invalid answers, completion rules, progress, streaks, ownership isolation
+and the `learning_required` Real-eligibility gate:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.smoke.yml up -d --build --wait
+ASKVEST_SMOKE_BASE_URL=http://localhost:5081 dotnet test --project tests/AskVest.SmokeTests
+```
+
 ## Rotating signing keys
 
 Access tokens are signed with ES256. To rotate:

@@ -23,6 +23,11 @@ services:
       Compliance__RealMoneyCountries__3: KE
 
   api:
+    build:
+      context: .
+      dockerfile: docker/api/Dockerfile
+      args:
+        INCLUDE_SAMPLE_CONTENT: "true"
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
@@ -54,6 +59,8 @@ services:
       Practice__FeeBasisPoints: "50"
       Practice__StopEvaluationIntervalSeconds: "2"
       Practice__ResetCooldownHours: "0.001"
+      Learning__LoadSampleContent: "true"
+      Learning__SampleContentPath: "data/learning-sample"
     ports: !override
       - "127.0.0.1:${ASKVEST_SMOKE_API_PORT:-5081}:8080"
 

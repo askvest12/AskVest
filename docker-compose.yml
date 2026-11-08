@@ -97,6 +97,8 @@ services:
       Practice__StopEvaluationIntervalSeconds: "15"
       Practice__ResetCooldownHours: "24"
       Practice__MaxResetsPer30Days: "3"
+      Learning__ContentPath: "data/learning"
+      Learning__LoadSampleContent: "false"
     ports:
       - "127.0.0.1:${ASKVEST_API_PORT:-5080}:8080"
     depends_on:

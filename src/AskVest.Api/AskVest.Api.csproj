@@ -7,6 +7,7 @@
     <ProjectReference Include="..\Modules\AskVest.Modules.Compliance\AskVest.Modules.Compliance.csproj" />
     <ProjectReference Include="..\Modules\AskVest.Modules.Ledger\AskVest.Modules.Ledger.csproj" />
     <ProjectReference Include="..\Modules\AskVest.Modules.Catalog\AskVest.Modules.Catalog.csproj" />
+    <ProjectReference Include="..\Modules\AskVest.Modules.MarketData\AskVest.Modules.MarketData.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

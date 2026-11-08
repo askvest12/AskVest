@@ -2,6 +2,7 @@ using AskVest.Modules.Catalog.Persistence;
 using AskVest.Modules.Compliance.Persistence;
 using AskVest.Modules.Identity.Persistence;
 using AskVest.Modules.Ledger.Persistence;
+using AskVest.Modules.MarketData.Persistence;
 using AskVest.Platform;
 using DotNet.Testcontainers.Configurations;
 using Npgsql;
@@ -55,6 +56,7 @@ public sealed class PostgresFixture : IAsyncLifetime
                 connectionString => new ComplianceDbContext(ComplianceDbContextOptions.Create(connectionString)),
                 connectionString => new LedgerDbContext(LedgerDbContextOptions.Create(connectionString)),
                 connectionString => new CatalogDbContext(CatalogDbContextOptions.Create(connectionString)),
+                connectionString => new MarketDataDbContext(MarketDataDbContextOptions.Create(connectionString)),
             ]);
         if (applied.Count == 0)
         {
@@ -69,12 +71,13 @@ public sealed class PostgresFixture : IAsyncLifetime
                 new RespawnerOptions
                 {
                     DbAdapter = DbAdapter.Postgres,
-                    SchemasToInclude = ["platform", "identity", "compliance", "ledger"],
+                    SchemasToInclude = ["platform", "identity", "compliance", "ledger", "marketdata"],
                     TablesToIgnore = [
                         "platform.__ef_migrations_history",
                         "identity.__ef_migrations_history",
                         "compliance.__ef_migrations_history",
                         "ledger.__ef_migrations_history",
+                        "marketdata.__ef_migrations_history",
                     ],
                 });
         }

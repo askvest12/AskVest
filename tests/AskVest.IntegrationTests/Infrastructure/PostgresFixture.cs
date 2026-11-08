@@ -43,16 +43,23 @@ public sealed class PostgresFixture : IAsyncLifetime
 
     public string AppConnectionString { get; private set; } = string.Empty;
 
+    public string LearningContentDirectory { get; private set; } = string.Empty;
+
     public string AdminConnectionString => BuildRoleConnectionString("askvest_admin", AdminPassword);
 
     public async ValueTask InitializeAsync()
     {
         // API test factories boot the real host, which loads learning content
-        // relative to its content root; point it at the repo's real content
-        // folder so startup validation sees the same file the app ships.
-        Environment.SetEnvironmentVariable(
-            "Learning__ContentPath",
-            Path.Combine(RepositoryRoot(), "data", "learning"));
+        // at startup. Process env vars outrank in-memory test settings in
+        // minimal hosting, so point every factory at one writable folder:
+        // seeded empty here, overwritten per test before its factory builds.
+        LearningContentDirectory = Path.Combine(
+            Path.GetTempPath(), $"learning-it-{Guid.CreateVersion7():N}");
+        Directory.CreateDirectory(LearningContentDirectory);
+        await File.WriteAllTextAsync(
+            Path.Combine(LearningContentDirectory, "content.json"),
+            """{"tracks":[]}""");
+        Environment.SetEnvironmentVariable("Learning__ContentPath", LearningContentDirectory);
         await _container.StartAsync();
         OwnerConnectionString = BuildRoleConnectionString("askvest_owner", OwnerPassword);
         AppConnectionString = BuildRoleConnectionString("askvest_app", AppPassword);

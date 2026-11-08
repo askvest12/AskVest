@@ -150,6 +150,7 @@ if (MarketDataModuleExtensions.IsEnabled(builder.Configuration))
 }
 
 api.MapPracticeEndpoints();
+api.MapLearningEndpoints();
 
 if (docs.Enabled)
 {

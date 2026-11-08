@@ -26,6 +26,7 @@ public static class LearningModuleExtensions
             .Bind(configuration.GetSection(LearningOptions.SectionName))
             .ValidateOnStart();
         services.AddSingleton(snapshot);
+        services.AddScoped<Services.LearningReadService>();
         services.TryAddSingleton(TimeProvider.System);
 
         var connectionString = configuration.GetConnectionString("Learning")

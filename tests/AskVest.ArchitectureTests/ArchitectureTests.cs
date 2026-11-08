@@ -121,7 +121,7 @@ public sealed class ComplianceModuleBoundaryTests
             .Select(a => a.Name!)
             .Where(name => name.StartsWith("AskVest.", StringComparison.Ordinal))
             .ToHashSet(StringComparer.Ordinal);
-        askVestReferences.ShouldBeSubsetOf(["AskVest.SharedKernel", "AskVest.Platform", "AskVest.Modules.Identity"]);
+        askVestReferences.ShouldBeSubsetOf(["AskVest.SharedKernel", "AskVest.Platform", "AskVest.Modules.Identity", "AskVest.Modules.Learning"]);
     }
 
     [Fact]

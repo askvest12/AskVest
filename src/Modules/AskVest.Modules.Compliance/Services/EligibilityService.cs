@@ -4,6 +4,7 @@ using AskVest.Modules.Compliance.Domain;
 using AskVest.Modules.Compliance.Domain.Enums;
 using AskVest.Modules.Compliance.Persistence;
 using AskVest.Modules.Identity.Contracts;
+using AskVest.Modules.Learning.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -12,6 +13,7 @@ namespace AskVest.Modules.Compliance.Services;
 internal sealed class EligibilityService(
     ComplianceDbContext db,
     IUserDirectory userDirectory,
+    ILearningRequirements learningRequirements,
     IOptions<ComplianceOptions> options,
     TimeProvider timeProvider) : IComplianceEligibility
 {
@@ -25,12 +27,16 @@ internal sealed class EligibilityService(
             .Select(c => c.DocumentType + "@" + c.Version)
             .ToListAsync(cancellationToken);
 
+        var incompleteRequired = await learningRequirements
+            .GetIncompleteRequiredLessonsAsync(userId, cancellationToken);
+
         return EligibilityEvaluator.Evaluate(
             account,
             profile,
             acceptedKeys.ToHashSet(StringComparer.Ordinal),
             options.Value,
-            timeProvider.GetUtcNow());
+            timeProvider.GetUtcNow(),
+            incompleteRequired.Select(lesson => lesson.LessonId).ToList());
     }
 
     public async Task<string?> GetEffectiveCountryAsync(Guid userId, CancellationToken cancellationToken = default)

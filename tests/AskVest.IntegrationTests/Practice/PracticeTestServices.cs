@@ -3,6 +3,8 @@ using AskVest.IntegrationTests.MarketData;
 using AskVest.Modules.Catalog;
 using AskVest.Modules.Compliance;
 using AskVest.Modules.Identity;
+using AskVest.Modules.Learning;
+using AskVest.Modules.Learning.Configuration;
 using AskVest.Modules.Ledger;
 using AskVest.Modules.MarketData;
 using AskVest.Modules.Practice;
@@ -49,6 +51,7 @@ internal static class PracticeTestServices
             ["Practice:StopEvaluationIntervalSeconds"] = "15",
             ["Practice:ResetCooldownHours"] = "24",
             ["Practice:MaxResetsPer30Days"] = "3",
+            [$"{LearningOptions.SectionName}:ContentPath"] = Learning.LearningTestContent.WriteEmptyContent(),
         };
         foreach (var pair in marketDataSettings ?? new Dictionary<string, string?>())
         {
@@ -70,6 +73,7 @@ internal static class PracticeTestServices
         services.AddPlatformPersistence(configuration);
         services.AddIdentityModule(configuration);
         services.AddComplianceModule(configuration);
+        services.AddLearningModule(configuration, environment);
         services.AddLedgerModule(configuration);
         services.AddCatalogModule(configuration);
         services.AddMarketDataModule(configuration, environment);

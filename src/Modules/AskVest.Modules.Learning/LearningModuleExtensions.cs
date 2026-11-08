@@ -30,6 +30,7 @@ public static class LearningModuleExtensions
         services.AddScoped<Services.LearningReadService>();
         services.AddScoped<Services.LearningCommandService>();
         services.AddScoped<Services.LearningProgressService>();
+        services.AddScoped<Contracts.ILearningRequirements, Services.LearningRequirements>();
         services.AddValidatorsFromAssembly(typeof(LearningModuleExtensions).Assembly);
         services.TryAddSingleton(TimeProvider.System);
 

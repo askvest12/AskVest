@@ -262,4 +262,55 @@ public sealed class EligibilityEvaluatorTests
         codes.ShouldContain(BlockerCodes.RealMoneyDisabled);
         codes.ShouldContain(BlockerCodes.KycRequired);
     }
+
+    [Fact]
+    public void Incomplete_Required_Lessons_Block_Only_Real()
+    {
+        var result = EligibilityEvaluator.Evaluate(
+            VerifiedAccount,
+            ApprovedProfile(),
+            AllConsents(),
+            Options(),
+            Now,
+            ["risk-basics", "fees-101"]);
+
+        result.PracticeAllowed.ShouldBeTrue();
+        result.RealAllowed.ShouldBeFalse();
+        var blocker = result.RealBlockers.Single(b => b.Code == BlockerCodes.LearningRequired);
+        blocker.Message.ShouldContain("risk-basics");
+        blocker.Message.ShouldContain("fees-101");
+    }
+
+    [Fact]
+    public void Empty_Required_Lesson_List_Adds_No_Blocker()
+    {
+        var result = EligibilityEvaluator.Evaluate(
+            VerifiedAccount,
+            ApprovedProfile(),
+            AllConsents(),
+            Options(),
+            Now,
+            []);
+
+        result.RealAllowed.ShouldBeTrue();
+        Codes(result.RealBlockers).ShouldNotContain(BlockerCodes.LearningRequired);
+    }
+
+    [Fact]
+    public void Learning_Blocker_Combines_With_Other_Real_Blockers()
+    {
+        var result = EligibilityEvaluator.Evaluate(
+            VerifiedAccount,
+            null,
+            new HashSet<string>(),
+            Options(realMoneyEnabled: false),
+            Now,
+            ["risk-basics"]);
+
+        var codes = Codes(result.RealBlockers);
+        codes.ShouldContain(BlockerCodes.LearningRequired);
+        codes.ShouldContain(BlockerCodes.ConsentRequired);
+        codes.ShouldContain(BlockerCodes.RealMoneyDisabled);
+        codes.ShouldContain(BlockerCodes.KycRequired);
+    }
 }

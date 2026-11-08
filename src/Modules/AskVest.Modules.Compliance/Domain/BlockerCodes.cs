@@ -18,4 +18,5 @@ public static class BlockerCodes
     public const string KycExpired = "kyc_expired";
     public const string KycAttemptsExhausted = "kyc_attempts_exhausted";
     public const string AccountRestricted = "account_restricted";
+    public const string LearningRequired = "learning_required";
 }

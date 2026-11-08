@@ -18,7 +18,8 @@ public static class EligibilityEvaluator
         ComplianceProfile? profile,
         IReadOnlySet<string> acceptedConsentKeys,
         ComplianceOptions options,
-        DateTimeOffset now)
+        DateTimeOffset now,
+        IReadOnlyList<string>? incompleteRequiredLessons = null)
     {
         var practiceBlockers = new List<EligibilityBlocker>();
         if (account is null || !account.IsActive)
@@ -77,6 +78,13 @@ public static class EligibilityEvaluator
         if (profile?.ScreeningStatus == ScreeningStatus.Hit)
         {
             realBlockers.Add(Blocker(BlockerCodes.AccountRestricted, "The account is restricted."));
+        }
+
+        if (incompleteRequiredLessons is { Count: > 0 })
+        {
+            realBlockers.Add(Blocker(
+                BlockerCodes.LearningRequired,
+                $"Complete the required lessons: {string.Join(", ", incompleteRequiredLessons)}."));
         }
 
         return new EligibilityResult(

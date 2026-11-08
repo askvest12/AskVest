@@ -5,6 +5,8 @@ using AskVest.Modules.Catalog.Import;
 using AskVest.Modules.Catalog.Import.Data;
 using AskVest.Modules.Compliance;
 using AskVest.Modules.Identity;
+using AskVest.Modules.Learning;
+using AskVest.Modules.Learning.Configuration;
 using AskVest.Modules.Ledger;
 using AskVest.Platform;
 using AskVest.SharedKernel;
@@ -209,6 +211,7 @@ internal static class CatalogImportTestData
                 ["Compliance:Kyc:WebhookSecret"] = "test-webhook-secret-0123456789abcdef0123456789",
                 ["Compliance:RealMoneyCountries:0"] = "US",
                 ["Compliance:RealMoneyCountries:1"] = "NG",
+                [$"{LearningOptions.SectionName}:ContentPath"] = Learning.LearningTestContent.WriteEmptyContent(),
             })
             .Build();
         var services = new ServiceCollection();
@@ -217,6 +220,7 @@ internal static class CatalogImportTestData
         services.AddPlatformPersistence(configuration);
         services.AddIdentityModule(configuration);
         services.AddComplianceModule(configuration);
+        services.AddLearningModule(configuration, new TestHostEnvironment(environmentName));
         services.AddLedgerModule(configuration);
         services.AddCatalogModule(configuration);
         services.AddSingleton(timeProvider ?? TimeProvider.System);

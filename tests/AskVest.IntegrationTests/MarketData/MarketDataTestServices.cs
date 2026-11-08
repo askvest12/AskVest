@@ -2,6 +2,8 @@ using AskVest.IntegrationTests.Infrastructure;
 using AskVest.Modules.Catalog;
 using AskVest.Modules.Compliance;
 using AskVest.Modules.Identity;
+using AskVest.Modules.Learning;
+using AskVest.Modules.Learning.Configuration;
 using AskVest.Modules.Ledger;
 using AskVest.Modules.MarketData;
 using AskVest.Modules.MarketData.Services;
@@ -39,6 +41,7 @@ internal static class MarketDataTestServices
             ["MarketData:Fake:DelayMinutes"] = "15",
             ["MarketData:Fake:RateLimitRetrySeconds"] = "1",
             ["MarketData:Fake:Currency"] = "USD",
+            [$"{LearningOptions.SectionName}:ContentPath"] = Learning.LearningTestContent.WriteEmptyContent(),
         };
         if (marketDataSettings is not null)
         {
@@ -58,6 +61,7 @@ internal static class MarketDataTestServices
         services.AddPlatformPersistence(configuration);
         services.AddIdentityModule(configuration);
         services.AddComplianceModule(configuration);
+        services.AddLearningModule(configuration, environment);
         services.AddLedgerModule(configuration);
         services.AddCatalogModule(configuration);
         services.AddMarketDataModule(configuration, environment);

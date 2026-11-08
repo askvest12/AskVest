@@ -14,6 +14,14 @@ internal static class LearningTestContent
         return path;
     }
 
+    public static string WriteEmptyContent()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), $"learning-empty-{Guid.CreateVersion7():N}");
+        Directory.CreateDirectory(directory);
+        File.WriteAllText(Path.Combine(directory, "content.json"), """{"tracks":[]}""");
+        return directory;
+    }
+
     public static void WriteContent(string directory, string json)
     {
         Directory.CreateDirectory(directory);

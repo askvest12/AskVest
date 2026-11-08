@@ -1,6 +1,7 @@
 using AskVest.Modules.Catalog.Persistence;
 using AskVest.Modules.Compliance.Persistence;
 using AskVest.Modules.Identity.Persistence;
+using AskVest.Modules.Learning.Persistence;
 using AskVest.Modules.Ledger.Persistence;
 using AskVest.Modules.MarketData.Persistence;
 using AskVest.Modules.Practice.Persistence;
@@ -46,6 +47,12 @@ public sealed class PostgresFixture : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
+        // API test factories boot the real host, which loads learning content
+        // relative to its content root; point it at the repo's real content
+        // folder so startup validation sees the same file the app ships.
+        Environment.SetEnvironmentVariable(
+            "Learning__ContentPath",
+            Path.Combine(RepositoryRoot(), "data", "learning"));
         await _container.StartAsync();
         OwnerConnectionString = BuildRoleConnectionString("askvest_owner", OwnerPassword);
         AppConnectionString = BuildRoleConnectionString("askvest_app", AppPassword);
@@ -59,6 +66,7 @@ public sealed class PostgresFixture : IAsyncLifetime
                 connectionString => new CatalogDbContext(CatalogDbContextOptions.Create(connectionString)),
                 connectionString => new MarketDataDbContext(MarketDataDbContextOptions.Create(connectionString)),
                 connectionString => new PracticeDbContext(PracticeDbContextOptions.Create(connectionString)),
+                connectionString => new LearningDbContext(LearningDbContextOptions.Create(connectionString)),
             ]);
         if (applied.Count == 0)
         {
@@ -95,8 +103,8 @@ public sealed class PostgresFixture : IAsyncLifetime
                 new RespawnerOptions
                 {
                     DbAdapter = DbAdapter.Postgres,
-                    SchemasToInclude = ["catalog", "practice"],
-                    TablesToIgnore = ["catalog.__ef_migrations_history", "practice.__ef_migrations_history"],
+                    SchemasToInclude = ["catalog", "practice", "learning"],
+                    TablesToIgnore = ["catalog.__ef_migrations_history", "practice.__ef_migrations_history", "learning.__ef_migrations_history"],
                 });
         }
     }

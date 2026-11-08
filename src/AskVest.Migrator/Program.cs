@@ -5,6 +5,8 @@ using AskVest.Modules.Compliance;
 using AskVest.Modules.Compliance.Persistence;
 using AskVest.Modules.Identity;
 using AskVest.Modules.Identity.Persistence;
+using AskVest.Modules.Learning;
+using AskVest.Modules.Learning.Persistence;
 using AskVest.Modules.Ledger;
 using AskVest.Modules.Ledger.Persistence;
 using AskVest.Modules.MarketData;
@@ -32,6 +34,7 @@ builder.Services.AddLedgerModule(builder.Configuration);
 builder.Services.AddCatalogModule(builder.Configuration);
 builder.Services.AddMarketDataModule(builder.Configuration);
 builder.Services.AddPracticeModule(builder.Configuration);
+builder.Services.AddLearningModule(builder.Configuration, builder.Environment);
 
 var host = builder.Build();
 var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("AskVest.Migrator");
@@ -55,6 +58,7 @@ try
             connectionString => new CatalogDbContext(CatalogDbContextOptions.Create(connectionString)),
             connectionString => new MarketDataDbContext(MarketDataDbContextOptions.Create(connectionString)),
             connectionString => new PracticeDbContext(PracticeDbContextOptions.Create(connectionString)),
+            connectionString => new LearningDbContext(LearningDbContextOptions.Create(connectionString)),
         ],
         cancellation.Token);
     if (logger.IsEnabled(LogLevel.Information))

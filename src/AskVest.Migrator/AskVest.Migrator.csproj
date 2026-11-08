@@ -8,6 +8,7 @@
     <ProjectReference Include="..\Modules\AskVest.Modules.Catalog\AskVest.Modules.Catalog.csproj" />
     <ProjectReference Include="..\Modules\AskVest.Modules.MarketData\AskVest.Modules.MarketData.csproj" />
     <ProjectReference Include="..\Modules\AskVest.Modules.Practice\AskVest.Modules.Practice.csproj" />
+    <ProjectReference Include="..\Modules\AskVest.Modules.Learning\AskVest.Modules.Learning.csproj" />
   </ItemGroup>
 
   <ItemGroup>

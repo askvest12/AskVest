@@ -1,0 +1,261 @@
+{
+  "tracks": [
+    {
+      "id": "investing-basics",
+      "title": "Investing basics",
+      "summary": "Sample lessons that explain what you are actually buying.",
+      "lessons": [
+        {
+          "id": "what-is-a-stock",
+          "title": "What is a stock?",
+          "summary": "A plain explanation of what a share of a company represents.",
+          "estimatedMinutes": 4,
+          "version": 1,
+          "requiredForReal": false,
+          "blocks": [
+            { "type": "heading", "text": "A small piece of a company" },
+            { "type": "paragraph", "text": "A stock is a share of ownership in a company. When you buy a stock you buy a small piece of that business, and its price moves with how the market values the company." },
+            { "type": "bullets", "items": [
+              "Share prices change every day as buyers and sellers trade.",
+              "You can lose part or all of the money you put in.",
+              "Some companies also pay dividends, a share of their profits."
+            ] },
+            { "type": "callout", "kind": "info", "text": "Sample lesson. Real lessons are written and reviewed by the AskVest team before launch." }
+          ],
+          "quiz": {
+            "passMarkPercent": 80,
+            "questions": [
+              {
+                "id": "q1",
+                "prompt": "What does buying a stock give you?",
+                "options": [
+                  { "id": "a", "text": "A loan to the company" },
+                  { "id": "b", "text": "A small share of ownership in the company" },
+                  { "id": "c", "text": "A promise of future profits" }
+                ],
+                "correctOptionId": "b",
+                "explanation": "A stock is a share of ownership. It is not a loan and it does not promise any return."
+              },
+              {
+                "id": "q2",
+                "prompt": "Can the value of a stock go down after you buy it?",
+                "options": [
+                  { "id": "a", "text": "Yes, prices move both ways" },
+                  { "id": "b", "text": "No, the price only rises over time" },
+                  { "id": "c", "text": "Only during the first week" }
+                ],
+                "correctOptionId": "a",
+                "explanation": "Share prices change constantly and can fall as well as rise."
+              },
+              {
+                "id": "q3",
+                "prompt": "What are dividends?",
+                "options": [
+                  { "id": "a", "text": "A tax on share sales" },
+                  { "id": "b", "text": "A share of company profits paid to shareholders" },
+                  { "id": "c", "text": "A fee charged by the exchange" }
+                ],
+                "correctOptionId": "b",
+                "explanation": "Some companies share part of their profits with shareholders as dividends."
+              }
+            ]
+          }
+        },
+        {
+          "id": "what-is-an-etf",
+          "title": "What is an ETF?",
+          "summary": "How exchange traded funds bundle many investments together.",
+          "estimatedMinutes": 4,
+          "version": 1,
+          "requiredForReal": false,
+          "blocks": [
+            { "type": "heading", "text": "Many investments in one" },
+            { "type": "paragraph", "text": "An ETF, or exchange traded fund, holds a basket of many stocks or other assets. Buying one ETF gives you a small piece of everything in that basket." },
+            { "type": "bullets", "items": [
+              "ETFs often track an index, a sector or a theme.",
+              "They spread your money across many holdings at once.",
+              "They still lose value when their holdings fall."
+            ] },
+            { "type": "callout", "kind": "warning", "text": "Spreading money lowers single-company risk but does not remove market risk." }
+          ],
+          "quiz": {
+            "passMarkPercent": 80,
+            "questions": [
+              {
+                "id": "q1",
+                "prompt": "What does an ETF typically hold?",
+                "options": [
+                  { "id": "a", "text": "A single company share" },
+                  { "id": "b", "text": "A basket of many investments" },
+                  { "id": "c", "text": "Only cash deposits" }
+                ],
+                "correctOptionId": "b",
+                "explanation": "An ETF bundles many holdings into one tradable fund."
+              },
+              {
+                "id": "q2",
+                "prompt": "Does buying an ETF remove the risk of losing money?",
+                "options": [
+                  { "id": "a", "text": "Yes, diversification removes all risk" },
+                  { "id": "b", "text": "No, it spreads risk but losses are still possible" },
+                  { "id": "c", "text": "Only for large investors" }
+                ],
+                "correctOptionId": "b",
+                "explanation": "Diversification lowers exposure to any single holding but markets can still fall."
+              },
+              {
+                "id": "q3",
+                "prompt": "What does it mean that an ETF tracks an index?",
+                "options": [
+                  { "id": "a", "text": "Its value follows a published basket of assets" },
+                  { "id": "b", "text": "It is managed by the government" },
+                  { "id": "c", "text": "It never changes holdings" }
+                ],
+                "correctOptionId": "a",
+                "explanation": "Index-tracking ETFs aim to mirror the performance of a defined basket."
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "investing-safely",
+      "title": "Investing safely",
+      "summary": "Sample lessons on risk, ownership and costs.",
+      "lessons": [
+        {
+          "id": "risk-and-diversification",
+          "title": "Risk and diversification",
+          "summary": "Why spreading money matters and what risk really means.",
+          "estimatedMinutes": 4,
+          "version": 1,
+          "requiredForReal": false,
+          "blocks": [
+            { "type": "heading", "text": "Every investment can lose value" },
+            { "type": "paragraph", "text": "Risk means the chance that an investment loses money. Prices move for many reasons, and past gains do not predict future results." },
+            { "type": "bullets", "items": [
+              "Putting all money in one company concentrates your risk.",
+              "Spreading across many holdings lowers, but never removes, risk.",
+              "Only invest money you can afford to leave invested for a long time."
+            ] },
+            { "type": "callout", "kind": "info", "text": "This lesson has no quiz. Marking it complete counts as learning activity." }
+          ],
+          "quiz": null
+        },
+        {
+          "id": "what-you-own",
+          "title": "What you actually own",
+          "summary": "Holding a token is not the same as owning the share.",
+          "estimatedMinutes": 5,
+          "version": 1,
+          "requiredForReal": true,
+          "blocks": [
+            { "type": "heading", "text": "Tokenized does not mean identical" },
+            { "type": "paragraph", "text": "A token that tracks a stock is a digital record managed by an issuer. Holding it is not the same as holding the share itself: the rights, backing and exit options depend on the issuer's terms." },
+            { "type": "bullets", "items": [
+              "Read the issuer's disclosures before you buy.",
+              "Check who holds the backing and how redemption works.",
+              "A price can track the share while your rights differ."
+            ] },
+            { "type": "callout", "kind": "warning", "text": "Always read the token disclosure carefully. It explains exactly what you hold." }
+          ],
+          "quiz": {
+            "passMarkPercent": 80,
+            "questions": [
+              {
+                "id": "q1",
+                "prompt": "Is holding a token that tracks a stock the same as owning the share?",
+                "options": [
+                  { "id": "a", "text": "Yes, they are identical in every way" },
+                  { "id": "b", "text": "No, rights and backing depend on the issuer's terms" },
+                  { "id": "c", "text": "Only for large holders" }
+                ],
+                "correctOptionId": "b",
+                "explanation": "A tracking token is a claim managed by an issuer, not the share itself."
+              },
+              {
+                "id": "q2",
+                "prompt": "Where should you check what a token actually gives you?",
+                "options": [
+                  { "id": "a", "text": "In the issuer's disclosures" },
+                  { "id": "b", "text": "In the price chart" },
+                  { "id": "c", "text": "In social media posts" }
+                ],
+                "correctOptionId": "a",
+                "explanation": "Disclosures state backing, rights, fees and exit options in writing."
+              },
+              {
+                "id": "q3",
+                "prompt": "Why does a token's price sometimes differ from the share's price?",
+                "options": [
+                  { "id": "a", "text": "Because demand, fees and settlement differ" },
+                  { "id": "b", "text": "Because the share has stopped trading" },
+                  { "id": "c", "text": "Tokens never differ in price" }
+                ],
+                "correctOptionId": "a",
+                "explanation": "Supply, demand, fees and market hours can push a token away from its reference price."
+              }
+            ]
+          }
+        },
+        {
+          "id": "fees-and-costs",
+          "title": "Fees and costs",
+          "summary": "Small costs add up and change what you keep.",
+          "estimatedMinutes": 3,
+          "version": 1,
+          "requiredForReal": false,
+          "blocks": [
+            { "type": "heading", "text": "Costs are part of every trade" },
+            { "type": "paragraph", "text": "Buying and selling usually costs money: trading fees, spreads and fund expenses. These costs repeat and reduce what you keep over time." },
+            { "type": "bullets", "items": [
+              "Fees are often a percentage of the amount traded.",
+              "A fund's ongoing expenses come out of its return.",
+              "Compare the total cost, not just the headline price."
+            ] },
+            { "type": "callout", "kind": "info", "text": "AskVest practice mode shows a simulated fee so you can see how costs work." }
+          ],
+          "quiz": {
+            "passMarkPercent": 80,
+            "questions": [
+              {
+                "id": "q1",
+                "prompt": "Why do small fees matter over time?",
+                "options": [
+                  { "id": "a", "text": "They repeat on every trade and reduce returns" },
+                  { "id": "b", "text": "They only apply once" },
+                  { "id": "c", "text": "They increase your gains" }
+                ],
+                "correctOptionId": "a",
+                "explanation": "Repeated costs compound and leave less money invested."
+              },
+              {
+                "id": "q2",
+                "prompt": "What is the spread?",
+                "options": [
+                  { "id": "a", "text": "The difference between buy and sell prices" },
+                  { "id": "b", "text": "A government tax" },
+                  { "id": "c", "text": "The fund manager's salary" }
+                ],
+                "correctOptionId": "a",
+                "explanation": "The spread is the gap between what buyers pay and sellers receive."
+              },
+              {
+                "id": "q3",
+                "prompt": "What should you compare when choosing between similar funds?",
+                "options": [
+                  { "id": "a", "text": "Total costs including ongoing expenses" },
+                  { "id": "b", "text": "Only the past one-year return" },
+                  { "id": "c", "text": "Only the name" }
+                ],
+                "correctOptionId": "a",
+                "explanation": "Ongoing expenses and trading costs determine what you actually keep."
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

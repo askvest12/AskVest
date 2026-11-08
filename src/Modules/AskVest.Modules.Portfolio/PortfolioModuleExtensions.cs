@@ -18,6 +18,9 @@ public static class PortfolioModuleExtensions
             .Bind(configuration.GetSection(PortfolioOptions.SectionName))
             .ValidateOnStart();
 
+        services.AddScoped<Services.PortfolioService>();
+        services.AddScoped<Contracts.IPortfolio>(provider => provider.GetRequiredService<Services.PortfolioService>());
+
         var connectionString = configuration.GetConnectionString("Portfolio")
             ?? configuration.GetConnectionString("Platform")
             ?? throw new InvalidOperationException("ConnectionStrings:Portfolio or ConnectionStrings:Platform is required.");

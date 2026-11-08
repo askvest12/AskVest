@@ -238,8 +238,8 @@ internal static class PortfolioReplay
     }
 
     private static bool IsPosition(LedgerMovement movement, IReadOnlyDictionary<string, AssetKind> kinds)
-        => kinds.GetValueOrDefault(movement.AssetCode) is not (AssetKind.Fiat or AssetKind.Stablecoin);
+        => !kinds.TryGetValue(movement.AssetCode, out var kind) || kind == AssetKind.Token;
 
     private static bool IsCash(LedgerMovement movement, IReadOnlyDictionary<string, AssetKind> kinds)
-        => kinds.GetValueOrDefault(movement.AssetCode) is AssetKind.Fiat or AssetKind.Stablecoin;
+        => kinds.TryGetValue(movement.AssetCode, out var kind) && kind is AssetKind.Fiat or AssetKind.Stablecoin;
 }

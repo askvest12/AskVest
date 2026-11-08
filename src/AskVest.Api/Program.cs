@@ -6,6 +6,7 @@ using AskVest.Modules.Identity;
 using AskVest.Modules.Learning;
 using AskVest.Modules.Ledger;
 using AskVest.Modules.MarketData;
+using AskVest.Modules.Portfolio;
 using AskVest.Modules.Practice;
 using AskVest.Platform;
 using FluentValidation;
@@ -35,6 +36,7 @@ builder.Services.AddCatalogModule(builder.Configuration);
 builder.Services.AddMarketDataModule(builder.Configuration, builder.Environment);
 builder.Services.AddPracticeModule(builder.Configuration);
 builder.Services.AddLearningModule(builder.Configuration, builder.Environment);
+builder.Services.AddPortfolioModule(builder.Configuration);
 builder.Services.AddScoped<IIdempotencyStore, EfIdempotencyStore>();
 builder.Services.AddSingleton<IIdempotencyScopeResolver, AuthenticatedIdempotencyScopeResolver>();
 builder.Services.AddHostedService<IdempotencyCleanupService>();
@@ -151,6 +153,7 @@ if (MarketDataModuleExtensions.IsEnabled(builder.Configuration))
 
 api.MapPracticeEndpoints();
 api.MapLearningEndpoints();
+api.MapPortfolioEndpoints();
 
 if (docs.Enabled)
 {

@@ -213,6 +213,8 @@ public sealed class PracticeSmokeTests
         webhook.Headers.Add("X-Webhook-Signature", signature);
         using var webhookResponse = await client.SendAsync(webhook, TestContext.Current.CancellationToken);
         webhookResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+        await SmokeLearning.CompleteRequiredLessonsAsync(client, token, TestContext.Current.CancellationToken);
     }
 
     private static async Task<JsonElement> AccountAsync(HttpClient client, string token)

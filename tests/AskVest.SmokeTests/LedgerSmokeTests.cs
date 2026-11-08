@@ -215,6 +215,8 @@ public sealed class LedgerSmokeTests
         webhook.Headers.Add("X-Webhook-Signature", signature);
         using var webhookResponse = await client.SendAsync(webhook, TestContext.Current.CancellationToken);
         webhookResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+        await SmokeLearning.CompleteRequiredLessonsAsync(client, token, TestContext.Current.CancellationToken);
     }
 
     private static HttpRequestMessage Probe(string book, string kind, string amount, string? key = null, string? token = null)

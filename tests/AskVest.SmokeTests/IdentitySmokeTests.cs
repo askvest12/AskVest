@@ -8,6 +8,7 @@ using Xunit;
 
 namespace AskVest.SmokeTests;
 
+[Collection("SmokeStack")]
 public sealed class IdentitySmokeTests
 {
     private static readonly string? BaseUrl = Environment.GetEnvironmentVariable("ASKVEST_SMOKE_BASE_URL");

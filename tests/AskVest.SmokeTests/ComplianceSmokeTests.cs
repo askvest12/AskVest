@@ -124,6 +124,14 @@ public sealed class ComplianceSmokeTests
     private static async Task<JsonElement> SendJsonWithStatusAsync(HttpClient client, HttpRequestMessage request, HttpStatusCode expected)
     {
         using var response = await client.SendAsync(request, TestContext.Current.CancellationToken);
+        if (response.StatusCode == HttpStatusCode.TooManyRequests && expected != HttpStatusCode.TooManyRequests)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(11), TestContext.Current.CancellationToken);
+            using var retry = await client.SendAsync(await CloneAsync(request), TestContext.Current.CancellationToken);
+            retry.StatusCode.ShouldBe(expected);
+            return await retry.Content.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken);
+        }
+
         response.StatusCode.ShouldBe(expected);
         return await response.Content.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken);
     }
@@ -343,6 +351,12 @@ public sealed class ComplianceSmokeTests
         var approved = await SendJsonWithStatusAsync(
             client, WebhookRequest(approvedBody, secret: WebhookSecret!), HttpStatusCode.OK);
         approved.GetProperty("success").GetBoolean().ShouldBeTrue();
+
+        var gated = await EligibilityAsync(client, token);
+        gated.GetProperty("realAllowed").GetBoolean().ShouldBeFalse();
+        BlockerCodes(gated, "real").ShouldContain("learning_required");
+
+        await SmokeLearning.CompleteRequiredLessonsAsync(client, token, TestContext.Current.CancellationToken);
 
         var realReady = await EligibilityAsync(client, token);
         realReady.GetProperty("realAllowed").GetBoolean().ShouldBeTrue();

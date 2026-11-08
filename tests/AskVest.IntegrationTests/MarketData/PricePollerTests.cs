@@ -333,6 +333,51 @@ public sealed class PricePollerTests(PostgresFixture fixture)
     }
 
     [Fact]
+    public async Task Scheduled_Cycle_Skips_Until_The_Poll_Interval_Elapses()
+    {
+        await ImportInstrumentsAsync(1, "sch");
+        var clock = new FakeTimeProvider(Start);
+        await using var provider = MarketDataTestServices.CreateProvider(fixture, clock);
+        var poller = provider.GetRequiredService<PricePoller>();
+        var fake = provider.GetRequiredService<FakeMarketDataProvider>();
+
+        await ResetHeartbeatAsync();
+        (await poller.RunScheduledCycleAsync(TestContext.Current.CancellationToken)).ShouldBeTrue();
+        fake.QuotesCallCount.ShouldBe(1);
+
+        clock.Advance(TimeSpan.FromSeconds(30));
+        (await poller.RunScheduledCycleAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
+        fake.QuotesCallCount.ShouldBe(1);
+
+        clock.Advance(TimeSpan.FromMinutes(1));
+        (await poller.RunScheduledCycleAsync(TestContext.Current.CancellationToken)).ShouldBeTrue();
+        fake.QuotesCallCount.ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task Manual_Cycle_Ignores_The_Heartbeat()
+    {
+        await ImportInstrumentsAsync(1, "man");
+        var clock = new FakeTimeProvider(Start);
+        await using var provider = MarketDataTestServices.CreateProvider(fixture, clock);
+        var poller = provider.GetRequiredService<PricePoller>();
+
+        await ResetHeartbeatAsync();
+        (await poller.RunScheduledCycleAsync(TestContext.Current.CancellationToken)).ShouldBeTrue();
+        (await poller.RunCycleAsync(TestContext.Current.CancellationToken)).ShouldBeTrue();
+    }
+
+    private async Task ResetHeartbeatAsync()
+    {
+        await using var connection = new NpgsqlConnection(fixture.OwnerConnectionString);
+        await connection.OpenAsync(TestContext.Current.CancellationToken);
+        await using var command = new NpgsqlCommand(
+            "UPDATE marketdata.poll_state SET last_poll_completed_at = '1970-01-01T00:00:00Z' WHERE id = 1",
+            connection);
+        (await command.ExecuteNonQueryAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
+    }
+
+    [Fact]
     public async Task Poller_Skips_Cycle_While_Another_Session_Holds_The_Lock()
     {
         await ImportInstrumentsAsync(1, "loc");

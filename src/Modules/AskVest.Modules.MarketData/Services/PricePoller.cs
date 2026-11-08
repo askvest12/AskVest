@@ -38,7 +38,7 @@ internal sealed class PricePoller(
         {
             try
             {
-                await RunCycleAsync(stoppingToken);
+                await RunScheduledCycleAsync(stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -61,6 +61,12 @@ internal sealed class PricePoller(
     }
 
     internal async Task<bool> RunCycleAsync(CancellationToken cancellationToken)
+        => await RunLockedCycleAsync(skipIfRecent: false, cancellationToken);
+
+    internal async Task<bool> RunScheduledCycleAsync(CancellationToken cancellationToken)
+        => await RunLockedCycleAsync(skipIfRecent: true, cancellationToken);
+
+    private async Task<bool> RunLockedCycleAsync(bool skipIfRecent, CancellationToken cancellationToken)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using (var lockCommand = new NpgsqlCommand("SELECT pg_try_advisory_lock(@key)", connection))
@@ -75,7 +81,14 @@ internal sealed class PricePoller(
 
         try
         {
+            var interval = TimeSpan.FromSeconds(options.Value.PollIntervalSeconds);
+            if (skipIfRecent && await PollIsRecentAsync(connection, interval, cancellationToken))
+            {
+                return false;
+            }
+
             await PollAsync(cancellationToken);
+            await StampPollAsync(connection, cancellationToken);
             return true;
         }
         finally
@@ -84,6 +97,37 @@ internal sealed class PricePoller(
             unlockCommand.Parameters.AddWithValue("key", AdvisoryLockKey);
             await unlockCommand.ExecuteNonQueryAsync(CancellationToken.None);
         }
+    }
+
+    private async Task<bool> PollIsRecentAsync(
+        NpgsqlConnection connection,
+        TimeSpan interval,
+        CancellationToken cancellationToken)
+    {
+        await using var command = new NpgsqlCommand(
+            "SELECT last_poll_completed_at FROM marketdata.poll_state WHERE id = 1",
+            connection);
+        var value = await command.ExecuteScalarAsync(cancellationToken);
+        if (value is not DateTime lastCompleted)
+        {
+            return false;
+        }
+
+        var completedAt = new DateTimeOffset(DateTime.SpecifyKind(lastCompleted, DateTimeKind.Utc));
+        return timeProvider.GetUtcNow() - completedAt < interval;
+    }
+
+    private async Task StampPollAsync(NpgsqlConnection connection, CancellationToken cancellationToken)
+    {
+        await using var command = new NpgsqlCommand(
+            """
+            INSERT INTO marketdata.poll_state (id, last_poll_completed_at)
+            VALUES (1, @now)
+            ON CONFLICT (id) DO UPDATE SET last_poll_completed_at = @now
+            """,
+            connection);
+        command.Parameters.AddWithValue("now", timeProvider.GetUtcNow());
+        await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
     private async Task PollAsync(CancellationToken cancellationToken)

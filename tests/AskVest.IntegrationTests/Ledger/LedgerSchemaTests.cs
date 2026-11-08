@@ -147,6 +147,8 @@ public sealed class LedgerSchemaTests
             VALUES ('{Guid.CreateVersion7()}', 'real', 'test', 'test', 'dupkey-1', '{Hash()}', now());
             """,
             "ix_journals_idempotency_key");
+
+        await DeleteJournalAsync(journal1);
     }
 
     [Fact]
@@ -170,6 +172,8 @@ public sealed class LedgerSchemaTests
                    ('{Guid.CreateVersion7()}', 'real', 'reversal', 'test', 'rev-2', '{Hash()}', '{journal}', now());
             """,
             "ix_journals_reverses_journal_id");
+
+        await DeleteJournalAsync(journal);
     }
 
     [Fact]
@@ -233,6 +237,8 @@ public sealed class LedgerSchemaTests
             $"SELECT count(*) AS n FROM ledger.journals WHERE id = '{journal}'",
             TestContext.Current.CancellationToken);
         Convert.ToInt64(rows[0]["n"]).ShouldBe(1L);
+
+        await DeleteJournalAsync(journal);
     }
 
     [Fact]
@@ -254,6 +260,19 @@ public sealed class LedgerSchemaTests
             $"SELECT count(*) AS n FROM ledger.journal_entries WHERE journal_id = '{journal}'",
             TestContext.Current.CancellationToken);
         Convert.ToInt64(rows[0]["n"]).ShouldBe(2L);
+
+        // The raw inserts bypass balance maintenance, so the rows must go or
+        // every later reconciliation cycle reports a phantom mismatch.
+        await DeleteJournalAsync(journal);
+    }
+
+    private async Task DeleteJournalAsync(Guid journal)
+    {
+        await Database.ExecuteAsync(
+            _fixture.OwnerConnectionString,
+            $"DELETE FROM ledger.journal_entries WHERE journal_id = '{journal}'; " +
+            $"DELETE FROM ledger.journals WHERE id = '{journal}';",
+            TestContext.Current.CancellationToken);
     }
 
     private async Task<(Guid Journal, Guid Debit, Guid Credit)> NewJournalWithAccountsAsync()

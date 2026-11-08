@@ -57,7 +57,8 @@ public sealed class LedgerOperationsTests(PostgresFixture fixture) : IAsyncLifet
         var service = NewReconciliation(logger);
         await service.RunCycleAsync(TestContext.Current.CancellationToken);
 
-        logger.Messages.ShouldContain(m => m.Contains("zero mismatches"));
+        logger.Messages.ShouldContain(m => m.Contains("zero mismatches"),
+            customMessage: string.Join(" | ", logger.Messages));
         logger.Messages.ShouldNotContain(m => m.StartsWith("Error", StringComparison.Ordinal));
     }
 

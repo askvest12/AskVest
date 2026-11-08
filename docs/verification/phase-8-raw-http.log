@@ -1,0 +1,143 @@
+# Phase 8 portfolio and watchlist raw HTTP evidence
+# base=http://localhost:5081 date=2026-11-08T16:21:48Z
+
+
+$ curl -X POST http://localhost:5081/api/v1/auth/sign-up  --data '{"email":"smoke-raw-65261965@example.com","password":"CorrectHorseSmoke9"}'
+{"success":true,"message":"If this email can be verified, a verification code has been sent.","data":null,"error":null,"correlationId":"01a1bbf74ce975f2b1efa0a7939c6f89"}
+# HTTP 200
+# verify code for smoke-raw-65261965@example.com: 612753
+
+$ curl -X POST http://localhost:5081/api/v1/auth/verify-email  --data '{"email":"smoke-raw-65261965@example.com","code":"612753"}'
+{"success":true,"message":"Email verified.","data":null,"error":null,"correlationId":"01a1bbf7563578639a7537160a914326"}
+# HTTP 200
+
+{"success": true, "message": "Signed in.", "data": {"result": "authenticated", "accessToken": "<token>", "refreshToken": "ePH8E35XEkTQKA1zFukT5sctcuEGzs5WKplz7kHKIgo", "accessTokenExpiresAt": "2026-11-08T16:31:51.4835018Z", "refreshIdleExpiresAt": "2026-12-08T16:21:51.4820622Z", "sessionId": "01a1bbf7-56fb-7e24-a642-33865812b0a1"}, "error": null, "correlationId": "01a1bbf7566f720599e5c7d254db800a"}
+
+# 1. practice eligibility
+
+$ curl -X GET http://localhost:5081/api/v1/compliance/documents -H 'Authorization: Bearer <token>' 
+{"success":true,"message":"Documents retrieved.","data":{"documents":[{"type":"terms","version":"dev-1","url":"https://askvest.example/legal/terms","sha256":"3cd4ce09a1de6487158536c2633bcdaca51c58a9a3f17dab2343de11c3d69a5a","requiredFor":"practice","accepted":false},{"type":"privacy","version":"dev-1","url":"https://askvest.example/legal/privacy","sha256":"7f391c05d905e1c1d21ae43ab91215b6762ef83266eccb81972d2ef6b9296115","requiredFor":"practice","accepted":false},{"type":"risk_disclosure","version":"dev-1","url":"https://askvest.example/legal/risk-disclosure","sha256":"1fe38db50174c30ad107c1a86ec8d19e9cf3f12d8a1b8e481d582a29dc0e39f6","requiredFor":"real","accepted":false},{"type":"token_disclosure","version":"dev-1","url":"https://askvest.example/legal/token-disclosure","sha256":"54439deda9b18fc787732ee6b2332cf92e9889ecd83b07166b036df81688a419","requiredFor":"real","accepted":false}]},"error":null,"correlationId":"01a1bbf75801721a98f08bb10ba1f85c"}
+# HTTP 200
+
+$ curl -X POST http://localhost:5081/api/v1/compliance/consents -H 'Authorization: Bearer <token>' --data '{"documents": [{"type": "terms", "version": "dev-1", "sha256": "3cd4ce09a1de6487158536c2633bcdaca51c58a9a3f17dab2343de11c3d69a5a"}, {"type": "privacy", "version": "dev-1", "sha256": "7f391c05d905e1c1d21ae43ab91215b6762ef83266eccb81972d2ef6b9296115"}]}'
+{"success":true,"message":"Consents recorded.","data":null,"error":null,"correlationId":"01a1bbf7586c745a9f425a9b683c0823"}
+# HTTP 200
+
+$ curl -X PUT http://localhost:5081/api/v1/compliance/country -H 'Authorization: Bearer <token>' --data '{"country":"NG"}'
+{"success":true,"message":"Country recorded.","data":{"country":"NG"},"error":null,"correlationId":"01a1bbf7589878ebabdfc276233faba4"}
+# HTTP 200
+
+$ curl -X GET http://localhost:5081/api/v1/practice/portfolio -H 'Authorization: Bearer <token>' 
+{"success":true,"message":"Portfolio loaded.","data":{"book":"practice","asOf":"2026-11-08T16:21:51.9515389Z","valuationCurrency":"USD","partial":false,"cash":[],"holdings":[],"totals":{"cash":"0","holdingsValue":"0","costBasis":"0","unrealized":"0","realized":"0","income":"0","totalValue":"0"}},"error":null,"correlationId":"01a1bbf758bd70769ad7b92d27156258"}
+# HTTP 200
+
+# 2. anonymous portfolio and watchlist calls are refused
+
+$ curl -X GET http://localhost:5081/api/v1/practice/portfolio  
+{"success":false,"message":"Authentication is required.","data":null,"error":{"code":"auth.unauthenticated","details":null},"correlationId":"0HNPTM8DE9F1L:00000001"}
+# HTTP 401
+
+$ curl -X GET http://localhost:5081/api/v1/real/portfolio  
+{"success":false,"message":"Authentication is required.","data":null,"error":{"code":"auth.unauthenticated","details":null},"correlationId":"0HNPTM8DE9F1M:00000001"}
+# HTTP 401
+
+$ curl -X GET http://localhost:5081/api/v1/watchlist  
+{"success":false,"message":"Authentication is required.","data":null,"error":{"code":"auth.unauthenticated","details":null},"correlationId":"0HNPTM8DE9F1N:00000001"}
+# HTTP 401
+
+# 3. practice account, price probe, buy, portfolio replay
+
+$ curl -X POST http://localhost:5081/api/v1/practice/account -H 'Authorization: Bearer <token>' --data '{}'
+{"success":true,"message":"Practice account ready.","data":{"started":true,"cash":"10000","resetCount":0,"resetsLeftInWindow":3,"nextResetAt":"2026-11-08T16:21:55.6578930Z"},"error":null,"correlationId":"01a1bbf7590d71babfa504516d3f3d5e"}
+# HTTP 200
+probe normal polled: True
+
+$ curl -X POST http://localhost:5081/api/v1/practice/orders -H 'Authorization: Bearer <token>' --data '{"instrumentId":"sample-nvda","side":"buy","type":"market","amount":"1000"}'
+{"success":true,"message":"Practice order placed.","data":{"id":"01a1bbf7-5a18-7955-a0f3-05462b036e4d","instrumentId":"sample-nvda","side":"buy","type":"market","state":"filled","requestedAmount":"1000","requestedQuantity":null,"sellAll":false,"stopPrice":null,"filledQuantity":"31.545741","fillPrice":"31.7","cashAmount":"1004.99999","fee":"5","priceAsOf":"2026-11-08T16:21:52.1497300Z","priceLabel":"live","priceSession":"regular","cancelReason":null,"createdAt":"2026-11-08T16:21:52.3182122Z","filledAt":"2026-11-08T16:21:52.3182122Z","cancelledAt":null},"error":null,"correlationId":"01a1bbf759f07d0cafbe82b1e8c6ff6b"}
+# HTTP 200
+
+$ curl -X GET http://localhost:5081/api/v1/practice/portfolio -H 'Authorization: Bearer <token>' 
+{"success":true,"message":"Portfolio loaded.","data":{"book":"practice","asOf":"2026-11-08T16:21:53.3750517Z","valuationCurrency":"USD","partial":false,"cash":[{"asset":"USD","kind":"fiat","available":"8995.00","held":"0","includedInTotal":true}],"holdings":[{"instrumentId":"sample-nvda","symbol":"SNVDA","name":"SampleNvda Corporation (fictional)","quantity":"31.545741000000000000","costBasis":"1005.00","averageCostPerUnit":"31.858500011142550114768266182","latestPrice":"31.700000000000000000","priceCurrency":"USD","priceLabel":"live","session":"regular","usableForExecution":true,"marketValue":"1000.00","unrealizedProfit":"-5.00","unrealizedProfitPercent":"-0.50","realizedProfit":"0","income":"0","flags":[],"tokens":[{"assetCode":"P.SNVDA","chainId":null,"symbol":null,"quantityAvailable":"31.545741000000000000","quantityHeld":"0","costBasis":"1005.00"}]}],"totals":{"cash":"8995.00","holdingsValue":"1000.00","costBasis":"1005.00","unrealized":"-5.00","realized":"0","income":"0","totalValue":"9995.00"}},"error":null,"correlationId":"01a1bbf75e4b7f26879de8231ad04ed5"}
+# HTTP 200
+
+# 4. watchlist add, re-add, list, remove (no Idempotency-Key needed)
+
+$ curl -X PUT http://localhost:5081/api/v1/watchlist/sample-nvda -H 'Authorization: Bearer <token>' 
+{"success":true,"message":"Watchlist item added.","data":{"instrumentId":"sample-nvda"},"error":null,"correlationId":"01a1bbf75e6e7468afe531203f106a60"}
+# HTTP 200
+
+$ curl -X PUT http://localhost:5081/api/v1/watchlist/sample-aapl -H 'Authorization: Bearer <token>' 
+{"success":true,"message":"Watchlist item added.","data":{"instrumentId":"sample-aapl"},"error":null,"correlationId":"01a1bbf75e8d789a843b522ce2c7723b"}
+# HTTP 200
+
+$ curl -X PUT http://localhost:5081/api/v1/watchlist/sample-nvda -H 'Authorization: Bearer <token>' 
+{"success":true,"message":"Watchlist item added.","data":{"instrumentId":"sample-nvda"},"error":null,"correlationId":"01a1bbf75ea479718c49774b40c13daa"}
+# HTTP 200
+
+$ curl -X GET http://localhost:5081/api/v1/watchlist -H 'Authorization: Bearer <token>' 
+{"success":true,"message":"Watchlist loaded.","data":{"items":[{"instrumentId":"sample-nvda","symbol":"SNVDA","name":"SampleNvda Corporation (fictional)","status":"active","price":"31.700000000000000000","currency":"USD","label":"live","session":"regular","usableForExecution":true,"addedAt":"2026-11-08T16:21:53.3995930Z"},{"instrumentId":"sample-aapl","symbol":"SAPL","name":"SampleApple Incorporated (fictional)","status":"active","price":"79.460000000000000000","currency":"USD","label":"live","session":"regular","usableForExecution":true,"addedAt":"2026-11-08T16:21:53.4289160Z"}]},"error":null,"correlationId":"01a1bbf75ebf7558b49d3f90375abd7d"}
+# HTTP 200
+
+$ curl -X DELETE http://localhost:5081/api/v1/watchlist/sample-aapl -H 'Authorization: Bearer <token>' 
+{"success":true,"message":"Watchlist item removed.","data":{"instrumentId":"sample-aapl"},"error":null,"correlationId":"01a1bbf75ed275ffb33b59969e5ce8bf"}
+# HTTP 200
+
+$ curl -X GET http://localhost:5081/api/v1/watchlist -H 'Authorization: Bearer <token>' 
+{"success":true,"message":"Watchlist loaded.","data":{"items":[{"instrumentId":"sample-nvda","symbol":"SNVDA","name":"SampleNvda Corporation (fictional)","status":"active","price":"31.700000000000000000","currency":"USD","label":"live","session":"regular","usableForExecution":true,"addedAt":"2026-11-08T16:21:53.3995930Z"}]},"error":null,"correlationId":"01a1bbf75ee9754785b6c94b1354c506"}
+# HTTP 200
+
+# 5. real eligibility: consents, kyc webhook, learning
+
+$ curl -X POST http://localhost:5081/api/v1/compliance/consents -H 'Authorization: Bearer <token>' --data '{"documents": [{"type": "risk_disclosure", "version": "dev-1", "sha256": "1fe38db50174c30ad107c1a86ec8d19e9cf3f12d8a1b8e481d582a29dc0e39f6"}, {"type": "token_disclosure", "version": "dev-1", "sha256": "54439deda9b18fc787732ee6b2332cf92e9889ecd83b07166b036df81688a419"}]}'
+{"success":true,"message":"Consents recorded.","data":null,"error":null,"correlationId":"01a1bbf75f3a7e20b81bc6b1b58725cb"}
+# HTTP 200
+{"success": true, "message": "Verification session ready.", "data": {"providerReference": "<reference>", "sessionUrl": "https://kyc.example.test/session/fake-01a1bbf75f6d7dfc933c3bb80d29fc32", "kycStatus": "InReview"}, "error": null, "correlationId": "01a1bbf75f6572129440df3a9963cefe"}
+# POST /api/v1/webhooks/kyc/fake (signed approval for fake-01a1bbf75f6d7dfc933c3bb80d29fc32)
+{"success":true,"message":"Webhook received.","data":null,"error":null,"correlationId":"01a1bbf7600c79b4a74c071eb5fb9d36"}
+# HTTP 200
+completed lesson what-you-own
+
+$ curl -X GET http://localhost:5081/api/v1/compliance/eligibility -H 'Authorization: Bearer <token>' 
+{"success":true,"message":"Eligibility retrieved.","data":{"practiceAllowed":true,"realAllowed":true,"kycStatus":"Approved","blockers":{"practice":[],"real":[]}},"error":null,"correlationId":"01a1bbf76171726fa30c8b25535d4b69"}
+# HTTP 200
+
+# 6. real book credits on two chains and aggregated portfolio
+
+$ curl -X POST http://localhost:5081/api/v1/real/diagnostics/ledger-post -H 'Authorization: Bearer <token>' --data '{"kind":"credit","asset":"USD","amount":"100"}'
+{"success":true,"message":"Probe journal posted.","data":{"journalId":"01a1bbf7-61b1-7291-a1fe-74e5edf843e4","book":"real","reasonCode":"deposit","postedAt":"2026-11-08T16:21:54.2251818Z"},"error":null,"correlationId":"01a1bbf7618a79a6b641a56d006bb7be"}
+# HTTP 200
+
+$ curl -X POST http://localhost:5081/api/v1/real/diagnostics/ledger-post -H 'Authorization: Bearer <token>' --data '{"kind":"credit","asset":"SMPSAPL2","amount":"10"}'
+{"success":true,"message":"Probe journal posted.","data":{"journalId":"01a1bbf7-6237-7b44-b83b-70975b24c346","book":"real","reasonCode":"deposit","postedAt":"2026-11-08T16:21:54.3593300Z"},"error":null,"correlationId":"01a1bbf7620f71cf8b9ee8863bb7de24"}
+# HTTP 200
+
+$ curl -X POST http://localhost:5081/api/v1/real/diagnostics/ledger-post -H 'Authorization: Bearer <token>' --data '{"kind":"credit","asset":"SMPSAPL3","amount":"5"}'
+{"success":true,"message":"Probe journal posted.","data":{"journalId":"01a1bbf7-629e-755f-ab78-abd89b3c7e42","book":"real","reasonCode":"deposit","postedAt":"2026-11-08T16:21:54.4627711Z"},"error":null,"correlationId":"01a1bbf7627a760dbe6805ebc4e002f1"}
+# HTTP 200
+
+$ curl -X GET http://localhost:5081/api/v1/real/portfolio -H 'Authorization: Bearer <token>' 
+{"success":true,"message":"Portfolio loaded.","data":{"book":"real","asOf":"2026-11-08T16:21:54.5526478Z","valuationCurrency":"USD","partial":false,"cash":[{"asset":"USD","kind":"fiat","available":"100.00","held":"0","includedInTotal":true}],"holdings":[{"instrumentId":"sample-aapl","symbol":"SAPL","name":"SampleApple Incorporated (fictional)","quantity":"15.000000000000000000","costBasis":"0","averageCostPerUnit":"0","latestPrice":"79.460000000000000000","priceCurrency":"USD","priceLabel":"live","session":"regular","usableForExecution":true,"marketValue":"1191.90","unrealizedProfit":"1191.90","unrealizedProfitPercent":null,"realizedProfit":"0","income":"0","flags":["has_unclassified_movements"],"tokens":[{"assetCode":"SMPSAPL2","chainId":"eip155:11155111","symbol":"SAPL-E","quantityAvailable":"10.000000000000000000","quantityHeld":"0","costBasis":"0"},{"assetCode":"SMPSAPL3","chainId":"eip155:17000","symbol":"SAPL-H","quantityAvailable":"5.000000000000000000","quantityHeld":"0","costBasis":"0"}]}],"totals":{"cash":"100.00","holdingsValue":"1191.90","costBasis":"0","unrealized":"1191.90","realized":"0","income":"0","totalValue":"1291.90"}},"error":null,"correlationId":"01a1bbf762e476f9a6b00b9359034806"}
+# HTTP 200
+
+$ curl -X GET http://localhost:5081/api/v1/practice/portfolio -H 'Authorization: Bearer <token>' 
+{"success":true,"message":"Portfolio loaded.","data":{"book":"practice","asOf":"2026-11-08T16:21:54.5856139Z","valuationCurrency":"USD","partial":false,"cash":[{"asset":"USD","kind":"fiat","available":"8995.00","held":"0","includedInTotal":true}],"holdings":[{"instrumentId":"sample-nvda","symbol":"SNVDA","name":"SampleNvda Corporation (fictional)","quantity":"31.545741000000000000","costBasis":"1005.00","averageCostPerUnit":"31.858500011142550114768266182","latestPrice":"31.700000000000000000","priceCurrency":"USD","priceLabel":"live","session":"regular","usableForExecution":true,"marketValue":"1000.00","unrealizedProfit":"-5.00","unrealizedProfitPercent":"-0.50","realizedProfit":"0","income":"0","flags":[],"tokens":[{"assetCode":"P.SNVDA","chainId":null,"symbol":null,"quantityAvailable":"31.545741000000000000","quantityHeld":"0","costBasis":"1005.00"}]}],"totals":{"cash":"8995.00","holdingsValue":"1000.00","costBasis":"1005.00","unrealized":"-5.00","realized":"0","income":"0","totalValue":"9995.00"}},"error":null,"correlationId":"01a1bbf76305767c8aea2212a63faa74"}
+# HTTP 200
+
+# 7. a second practice-only user is refused on real
+
+$ curl -X POST http://localhost:5081/api/v1/auth/sign-up  --data '{"email":"smoke-raw2-93455086@example.com","password":"CorrectHorseSmoke9"}'
+{"success":true,"message":"If this email can be verified, a verification code has been sent.","data":null,"error":null,"correlationId":"01a1bbf7633578c3905084b64824fd43"}
+# HTTP 200
+# user2 (practice only) requests the real portfolio
+
+$ curl -X GET http://localhost:5081/api/v1/real/portfolio -H 'Authorization: Bearer <token>' 
+{"success":false,"message":"The account is not eligible for this mode.","data":null,"error":{"code":"compliance.not_eligible","details":[{"field":"consent_required","message":"Accept the current documents: risk_disclosure, token_disclosure."},{"field":"kyc_required","message":"Identity verification has not been started."},{"field":"learning_required","message":"Complete the required lessons: what-you-own."}]},"correlationId":"0HNPTM8DE9F2L:00000001"}
+# HTTP 403
+
+# user2 watchlist is empty: no visibility into user1 data
+
+$ curl -X GET http://localhost:5081/api/v1/watchlist -H 'Authorization: Bearer <token>' 
+{"success":true,"message":"Watchlist loaded.","data":{"items":[]},"error":null,"correlationId":"01a1bbf76d967a0f856f60544b26c821"}
+# HTTP 200
+
+# done

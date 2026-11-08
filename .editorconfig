@@ -214,6 +214,10 @@ dotnet_diagnostic.CA1031.severity = none
 [tests/AskVest.SmokeTests/PracticeSmokeTests.cs]
 dotnet_diagnostic.CA1031.severity = none
 
+# Scenario restore in finally must not mask the journey's own failure.
+[tests/AskVest.SmokeTests/PortfolioSmokeTests.cs]
+dotnet_diagnostic.CA1031.severity = none
+
 # The parallel buy burst intentionally overlaps requests on the shared client; all tasks complete before disposal.
 [tests/AskVest.SmokeTests/PracticeSmokeTests.cs]
 dotnet_diagnostic.CA2025.severity = none

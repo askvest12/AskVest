@@ -1,5 +1,6 @@
 using System.Globalization;
 using AskVest.Modules.Compliance.Contracts;
+using AskVest.Modules.Practice.Persistence.Entities;
 using AskVest.Modules.Practice.Services;
 using AskVest.SharedKernel;
 using Microsoft.AspNetCore.Builder;
@@ -37,6 +38,28 @@ public static class PracticeEndpoints
             .WithName("GetPracticePositions")
             .WithSummary("Practice positions with quantities, held amounts and display values.")
             .WithTags("Practice");
+
+        group.MapPost("/orders", PlaceOrderAsync)
+            .WithName("PlacePracticeOrder")
+            .WithSummary("Place a practice market or stop-loss order.")
+            .WithTags("Practice")
+            .WithMetadata(new RequiresIdempotencyAttribute());
+
+        group.MapGet("/orders", ListOrdersAsync)
+            .WithName("ListPracticeOrders")
+            .WithSummary("The caller's practice orders, newest first.")
+            .WithTags("Practice");
+
+        group.MapGet("/orders/{orderId:guid}", GetOrderAsync)
+            .WithName("GetPracticeOrder")
+            .WithSummary("One of the caller's practice orders.")
+            .WithTags("Practice");
+
+        group.MapPost("/orders/{orderId:guid}/cancel", CancelOrderAsync)
+            .WithName("CancelPracticeOrder")
+            .WithSummary("Cancel an open practice stop-loss order.")
+            .WithTags("Practice")
+            .WithMetadata(new RequiresIdempotencyAttribute());
     }
 
     private static async Task<IResult> StartAsync(
@@ -126,6 +149,125 @@ public static class PracticeEndpoints
         };
         return PracticeResults.Ok(data, "Practice positions loaded.", httpContext);
     }
+
+    private static async Task<IResult> PlaceOrderAsync(
+        HttpContext httpContext,
+        PracticeOrderRequest request,
+        PracticeOrderService orders,
+        CancellationToken cancellationToken)
+    {
+        var result = await orders.PlaceAsync(
+            CurrentUserId(httpContext),
+            request,
+            httpContext.Request.Headers["Idempotency-Key"].FirstOrDefault() ?? string.Empty,
+            PracticeResults.CorrelationId(httpContext),
+            cancellationToken);
+        return OrderResult(result, httpContext, "Practice order placed.");
+    }
+
+    private static async Task<IResult> ListOrdersAsync(
+        HttpContext httpContext,
+        PracticeOrderService orders,
+        string? state,
+        string? cursor,
+        int? limit,
+        CancellationToken cancellationToken)
+    {
+        var page = await orders.ListAsync(
+            CurrentUserId(httpContext),
+            state,
+            Math.Clamp(limit ?? PageRequest.DefaultLimit, 1, PageRequest.MaxLimit),
+            cursor,
+            cancellationToken);
+        if (page.IsFailure)
+        {
+            return PracticeResults.Error(page.Error!, httpContext);
+        }
+
+        return PracticeResults.Ok(
+            new
+            {
+                items = page.Value.Items.Select(OrderData),
+                nextCursor = page.Value.NextCursor,
+                hasMore = page.Value.HasMore,
+                limit = page.Value.Limit,
+            },
+            "Practice orders loaded.",
+            httpContext);
+    }
+
+    private static async Task<IResult> GetOrderAsync(
+        HttpContext httpContext,
+        PracticeOrderService orders,
+        Guid orderId,
+        CancellationToken cancellationToken)
+    {
+        var result = await orders.GetAsync(CurrentUserId(httpContext), orderId, cancellationToken);
+        return OrderResult(result, httpContext, "Practice order loaded.");
+    }
+
+    private static async Task<IResult> CancelOrderAsync(
+        HttpContext httpContext,
+        PracticeOrderService orders,
+        Guid orderId,
+        CancellationToken cancellationToken)
+    {
+        var result = await orders.CancelAsync(
+            CurrentUserId(httpContext), orderId, PracticeResults.CorrelationId(httpContext), cancellationToken);
+        return OrderResult(result, httpContext, "Practice order cancelled.");
+    }
+
+    private static IResult OrderResult(
+        Result<PracticeOrderItem> result,
+        HttpContext httpContext,
+        string message)
+    {
+        if (result.IsFailure)
+        {
+            return PracticeResults.Error(result.Error!, httpContext);
+        }
+
+        return PracticeResults.Ok(OrderData(result.Value), message, httpContext);
+    }
+
+    private static IResult OrderResult(
+        Result<PracticeOrder> result,
+        HttpContext httpContext,
+        string message)
+    {
+        if (result.IsFailure)
+        {
+            return PracticeResults.Error(result.Error!, httpContext);
+        }
+
+        return PracticeResults.Ok(
+            OrderData(PracticeOrderService.ToItem(result.Value)), message, httpContext);
+    }
+
+    private static object OrderData(PracticeOrderItem item)
+        => new
+        {
+            id = item.Id,
+            instrumentId = item.InstrumentId,
+            side = item.Side,
+            type = item.Type,
+            state = item.State,
+            requestedAmount = item.RequestedAmount is { } amount ? Money(amount) : null,
+            requestedQuantity = item.RequestedQuantity is { } quantity ? Quantity(quantity) : null,
+            sellAll = item.SellAll,
+            stopPrice = item.StopPrice is { } stop ? Money(stop) : null,
+            filledQuantity = item.FilledQuantity is { } filled ? Quantity(filled) : null,
+            fillPrice = item.FillPrice is { } fill ? Money(fill) : null,
+            cashAmount = item.CashAmount is { } cash ? Money(cash) : null,
+            fee = item.Fee is { } fee ? Money(fee) : null,
+            priceAsOf = item.PriceAsOf,
+            priceLabel = item.PriceLabel,
+            priceSession = item.PriceSession,
+            cancelReason = item.CancelReason,
+            createdAt = item.CreatedAt,
+            filledAt = item.FilledAt,
+            cancelledAt = item.CancelledAt,
+        };
 
     internal static string Money(decimal value)
         => value.ToString("0.############################", Invariant);

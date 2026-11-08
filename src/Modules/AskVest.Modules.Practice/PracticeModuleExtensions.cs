@@ -1,5 +1,6 @@
 using AskVest.Modules.Practice.Configuration;
 using AskVest.Modules.Practice.Persistence;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,6 +29,11 @@ public static class PracticeModuleExtensions
         services.AddScoped<Services.PracticePositionService>();
         services.AddScoped<Services.PracticeAssetResolver>();
         services.AddScoped<Services.PracticeEventWriter>();
+        services.AddScoped<Services.PracticeOrderService>();
+        services.AddScoped<Services.PracticeContractService>();
+        services.AddScoped<Contracts.IPractice>(provider =>
+            provider.GetRequiredService<Services.PracticeContractService>());
+        services.AddValidatorsFromAssembly(typeof(PracticeModuleExtensions).Assembly);
 
         services.AddDbContext<PracticeDbContext>((IServiceProvider provider, DbContextOptionsBuilder options) =>
         {

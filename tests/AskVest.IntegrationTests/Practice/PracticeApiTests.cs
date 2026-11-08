@@ -14,8 +14,9 @@ namespace AskVest.IntegrationTests.Practice;
 public sealed class PracticeApiTests(PostgresFixture fixture) : IAsyncLifetime
 {
     private AuthApiFactory _factory = null!;
+    private string _instrumentId = null!;
 
-    public ValueTask InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         var settings = new Dictionary<string, string?>(ComplianceTestUsers.Settings())
         {
@@ -29,7 +30,20 @@ public sealed class PracticeApiTests(PostgresFixture fixture) : IAsyncLifetime
         };
         _factory = ComplianceTestUsers.CreateFactory(fixture, settings);
         _factory.CreateClient();
-        return ValueTask.CompletedTask;
+
+        var suffix = CatalogImportTestData.Suffix();
+        _instrumentId = $"instr-poapi-{suffix}";
+        var imported = await CatalogImportTestData.ImportFolderAsync(
+            fixture,
+            [],
+            [],
+            [CatalogImportTestData.Instrument(_instrumentId, null) with
+            {
+                Symbol = $"POA{suffix[..4]}",
+                ListingExchange = "NMS",
+            }],
+            TestContext.Current.CancellationToken);
+        imported.IsSuccess.ShouldBeTrue(imported.Error?.Message);
     }
 
     public async ValueTask DisposeAsync() => await _factory.DisposeAsync();
@@ -64,6 +78,10 @@ public sealed class PracticeApiTests(PostgresFixture fixture) : IAsyncLifetime
             (HttpMethod.Get, "/api/v1/practice/positions"),
             (HttpMethod.Post, "/api/v1/practice/account"),
             (HttpMethod.Post, "/api/v1/practice/account/reset"),
+            (HttpMethod.Get, "/api/v1/practice/orders"),
+            (HttpMethod.Get, $"/api/v1/practice/orders/{Guid.CreateVersion7()}"),
+            (HttpMethod.Post, "/api/v1/practice/orders"),
+            (HttpMethod.Post, $"/api/v1/practice/orders/{Guid.CreateVersion7()}/cancel"),
         })
         {
             using var request = new HttpRequestMessage(method, new Uri(path, UriKind.Relative));
@@ -174,6 +192,133 @@ public sealed class PracticeApiTests(PostgresFixture fixture) : IAsyncLifetime
         var data = await DataAsync(reset);
         data.GetProperty("resetCount").GetInt32().ShouldBe(1);
         data.GetProperty("cash").GetString().ShouldBe("10000");
+    }
+
+    [Fact]
+    public async Task Market_Buy_Fills_And_Order_Reads_Are_Owned()
+    {
+        var client = Client();
+        var token = await EligibleUserAsync();
+        using var start = await client.SendAsync(
+            ComplianceTestUsers.Post("/api/v1/practice/account", new { }).Auth(token),
+            TestContext.Current.CancellationToken);
+        start.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+        // Seed a usable price through the diagnostics probe.
+        using var probe = await client.SendAsync(
+            ComplianceTestUsers.Post("/api/v1/diagnostics/marketdata-scenario", new { scenario = "normal" })
+                .Auth(token),
+            TestContext.Current.CancellationToken);
+        probe.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+        var orderBody = new
+        {
+            instrumentId = _instrumentId,
+            side = "buy",
+            type = "market",
+            amount = "100",
+        };
+        using var placed = await client.SendAsync(
+            ComplianceTestUsers.Post("/api/v1/practice/orders", orderBody, "order-key-1").Auth(token),
+            TestContext.Current.CancellationToken);
+        placed.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var orderData = await DataAsync(placed);
+        orderData.GetProperty("state").GetString().ShouldBe("filled");
+        orderData.GetProperty("side").GetString().ShouldBe("buy");
+        orderData.GetProperty("type").GetString().ShouldBe("market");
+        orderData.GetProperty("requestedAmount").ValueKind.ShouldBe(JsonValueKind.String);
+        orderData.GetProperty("filledQuantity").ValueKind.ShouldBe(JsonValueKind.String);
+        orderData.GetProperty("fillPrice").ValueKind.ShouldBe(JsonValueKind.String);
+        orderData.GetProperty("cashAmount").ValueKind.ShouldBe(JsonValueKind.String);
+        var orderId = orderData.GetProperty("id").GetString()!;
+
+        using var replay = await client.SendAsync(
+            ComplianceTestUsers.Post("/api/v1/practice/orders", orderBody, "order-key-1").Auth(token),
+            TestContext.Current.CancellationToken);
+        replay.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var replayBody = await replay.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        var placedBody = await placed.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        replayBody.ShouldBe(placedBody);
+
+        using var reused = await client.SendAsync(
+            ComplianceTestUsers.Post(
+                "/api/v1/practice/orders",
+                new { instrumentId = _instrumentId, side = "buy", type = "market", amount = "200" },
+                "order-key-1").Auth(token),
+            TestContext.Current.CancellationToken);
+        reused.StatusCode.ShouldBe(HttpStatusCode.UnprocessableEntity);
+        ComplianceTestUsers.ErrorCode(await ComplianceTestUsers.EnvelopeAsync(reused))
+            .ShouldBe("idempotency.key_reused");
+
+        using var list = await client.SendAsync(
+            ComplianceTestUsers.Get("/api/v1/practice/orders?state=filled&limit=10").Auth(token),
+            TestContext.Current.CancellationToken);
+        list.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var listData = await DataAsync(list);
+        var items = listData.GetProperty("items");
+        items.GetArrayLength().ShouldBe(1);
+        items[0].GetProperty("id").GetString().ShouldBe(orderId);
+
+        using var detail = await client.SendAsync(
+            ComplianceTestUsers.Get($"/api/v1/practice/orders/{orderId}").Auth(token),
+            TestContext.Current.CancellationToken);
+        detail.StatusCode.ShouldBe(HttpStatusCode.OK);
+        (await DataAsync(detail)).GetProperty("id").GetString().ShouldBe(orderId);
+
+        var otherToken = await EligibleUserAsync();
+        using var stolen = await client.SendAsync(
+            ComplianceTestUsers.Get($"/api/v1/practice/orders/{orderId}").Auth(otherToken),
+            TestContext.Current.CancellationToken);
+        stolen.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        ComplianceTestUsers.ErrorCode(await ComplianceTestUsers.EnvelopeAsync(stolen))
+            .ShouldBe("resource.not_found");
+    }
+
+    [Fact]
+    public async Task Order_Placement_Requires_Idempotency_Key()
+    {
+        var client = Client();
+        var token = await EligibleUserAsync();
+        using var response = await client.SendAsync(
+            new HttpRequestMessage(HttpMethod.Post, new Uri("/api/v1/practice/orders", UriKind.Relative))
+            {
+                Content = JsonContent.Create(new
+                {
+                    instrumentId = _instrumentId,
+                    side = "buy",
+                    type = "market",
+                    amount = "10",
+                }),
+            }.Auth(token),
+            TestContext.Current.CancellationToken);
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task Sell_Without_Position_Returns_Insufficient_Position()
+    {
+        var client = Client();
+        var token = await EligibleUserAsync();
+        using var start = await client.SendAsync(
+            ComplianceTestUsers.Post("/api/v1/practice/account", new { }).Auth(token),
+            TestContext.Current.CancellationToken);
+        start.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+        using var probe = await client.SendAsync(
+            ComplianceTestUsers.Post("/api/v1/diagnostics/marketdata-scenario", new { scenario = "normal" })
+                .Auth(token),
+            TestContext.Current.CancellationToken);
+        probe.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+        using var sell = await client.SendAsync(
+            ComplianceTestUsers.Post(
+                "/api/v1/practice/orders",
+                new { instrumentId = _instrumentId, side = "sell", type = "market", sellAll = true },
+                "sell-key-1").Auth(token),
+            TestContext.Current.CancellationToken);
+        sell.StatusCode.ShouldBe(HttpStatusCode.UnprocessableEntity);
+        ComplianceTestUsers.ErrorCode(await ComplianceTestUsers.EnvelopeAsync(sell))
+            .ShouldBe("practice.insufficient_position");
     }
 
     [Fact]

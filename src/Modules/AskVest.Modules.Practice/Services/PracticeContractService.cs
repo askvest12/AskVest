@@ -61,4 +61,20 @@ internal sealed class PracticeContractService(PracticeDbContext db) : IPractice
             order.FilledAt,
             order.CancelledAt)).ToList();
     }
+
+    public async Task<IReadOnlyDictionary<string, string>> GetInstrumentIdsForAssetCodesAsync(
+        IReadOnlyList<string> assetCodes,
+        CancellationToken cancellationToken = default)
+    {
+        if (assetCodes.Count == 0)
+        {
+            return new Dictionary<string, string>(StringComparer.Ordinal);
+        }
+
+        var rows = await db.PracticeInstruments.AsNoTracking()
+            .Where(row => assetCodes.Contains(row.AssetCode))
+            .Select(row => new { row.AssetCode, row.InstrumentId })
+            .ToListAsync(cancellationToken);
+        return rows.ToDictionary(row => row.AssetCode, row => row.InstrumentId, StringComparer.Ordinal);
+    }
 }

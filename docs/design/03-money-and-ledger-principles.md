@@ -133,6 +133,29 @@ per asset.
 | Practice stop release | `release` | asset: `user_held` back to `user_available` |
 | Practice stop trigger | `trade_sell` | same lines as a sell fill, but the asset leaves `user_held` |
 | Practice reset | `practice_reset` | every non-zero practice balance of the user back to the system accounts, then a fresh `practice_credit_grant` |
+| Corporate action split | `corporate_action_split` | position quantity changes with no cost change |
+| Dividend | `dividend` | cash received counts as income for the instrument named by the journal reference; no cost change |
+
+## Portfolio replay
+
+The portfolio stores no money facts. It asks the Ledger contract for the
+user's net movements per journal and asset, summed across the user's
+available and held accounts (holds and releases net to zero), in posted
+order (posted at, then journal id), paged. The replay starts after the
+latest `practice_reset` journal of the user, so a reset starts a new epoch.
+
+Asset kind decides cash versus positions: `fiat` and `stablecoin` are cash,
+`token` assets (including `P.` practice assets) are positions. Cost basis is
+weighted average cost per asset; fees are part of cost, read from the user's
+own cash leg. `trade_buy` adds quantity and cost, `trade_sell` removes both
+in proportion (removed cost rounds half up at 6 decimals) and realizes
+proceeds minus removed cost, clearing rounding dust into realized profit when
+the quantity reaches zero. `corporate_action_split` changes quantity with no
+cost change. `dividend` counts as income for the instrument named by the
+journal reference. Cash-only reasons never touch positions. Any other
+movement of a position asset changes quantity with no cost change and sets
+`hasUnclassifiedMovements`; an inconsistent oversell applies only what is
+held and sets `hasInconsistency` with an error log carrying ids only.
 
 Practice asset codes start with `P.` (for example `P.NVDA`) and are registered lazily on first use with kind `token` and scale 6. The prefix is reserved: the Catalog importer refuses any real token ledger asset code starting with `P.` so practice value can never collide with a real asset.
 

@@ -12,4 +12,8 @@ public interface IPractice
         Guid userId,
         DateTimeOffset since,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyDictionary<string, string>> GetInstrumentIdsForAssetCodesAsync(
+        IReadOnlyList<string> assetCodes,
+        CancellationToken cancellationToken = default);
 }

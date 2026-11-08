@@ -32,7 +32,7 @@ flowchart LR
 | MarketData | 5 | prices, candles, freshness labels |
 | Practice | 6 | virtual credits, simulated orders |
 | Learning | 7 | lessons, quizzes, streaks |
-| Portfolio | 8 | holdings, cost basis, watchlist |
+| Portfolio | 8 | holdings, cost basis, watchlist (read-only replay over the ledger) |
 | Assistant | 9 | AI chat, tool calls, citations, audit |
 | Trading | 10 | quotes, real orders, order state machine |
 | Wallets | 11 | custody abstraction, addresses, signing requests |

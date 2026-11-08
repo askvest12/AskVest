@@ -10,5 +10,14 @@ public interface ILedger
 
     Task<Result<IReadOnlyList<LedgerBalance>>> GetBalancesAsync(Guid userId, Book book, CancellationToken cancellationToken = default);
 
+    Task<PageResult<LedgerMovement>> GetMovementsAsync(
+        Guid userId,
+        Book book,
+        int limit,
+        string? cursor,
+        CancellationToken cancellationToken = default);
+
+    Task<AssetKind?> GetAssetKindAsync(string assetCode, CancellationToken cancellationToken = default);
+
     Task<Result> RegisterAssetAsync(string code, AssetKind kind, int scale, CancellationToken cancellationToken = default);
 }

@@ -1,3 +1,5 @@
+using System.Data;
+using System.Globalization;
 using AskVest.Modules.Ledger.Contracts;
 using AskVest.Modules.Ledger.Persistence;
 using AskVest.Modules.Ledger.Persistence.Entities;
@@ -93,6 +95,87 @@ internal sealed class LedgerService(
                 group.Where(row => row.Kind == AccountKind.UserHeld).Sum(row => row.Balance)))
             .ToList();
         return Result.Success<IReadOnlyList<LedgerBalance>>(balances);
+    }
+
+    public async Task<PageResult<LedgerMovement>> GetMovementsAsync(
+        Guid userId,
+        Book book,
+        int limit,
+        string? cursor,
+        CancellationToken cancellationToken = default)
+    {
+        var hasCursor = TryDecodeMovementCursor(cursor, out var cursorAt, out var cursorJournalId);
+        var connection = db.Database.GetDbConnection();
+        var closeConnection = connection.State != ConnectionState.Open;
+        if (closeConnection)
+        {
+            await connection.OpenAsync(cancellationToken);
+        }
+
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT j.id, j.posted_at, j.reason_code, j.reference_type, j.reference_id,
+                   e.asset_code, SUM(e.amount) AS net
+            FROM ledger.journal_entries e
+            JOIN ledger.journals j ON j.id = e.journal_id AND j.book = e.book
+            JOIN ledger.accounts a ON a.id = e.account_id AND a.book = e.book
+            WHERE a.owner_type = 'user' AND a.owner_id = @userId AND e.book = @book
+              AND (@hasCursor = FALSE
+                   OR j.posted_at > @cursorAt
+                   OR (j.posted_at = @cursorAt AND j.id > @cursorJournalId::uuid))
+            GROUP BY j.id, j.posted_at, j.reason_code, j.reference_type, j.reference_id, e.asset_code
+            ORDER BY j.posted_at ASC, j.id ASC, e.asset_code ASC
+            LIMIT @limit
+            """;
+        AddParameter(command, "userId", userId);
+        AddParameter(command, "book", LedgerText.ToDb(book));
+        AddParameter(command, "hasCursor", hasCursor);
+        AddParameter(command, "cursorAt", hasCursor ? cursorAt : (object)DBNull.Value);
+        AddParameter(command, "cursorJournalId", hasCursor ? cursorJournalId : (object)DBNull.Value);
+        AddParameter(command, "limit", limit + 1);
+
+        var rows = new List<LedgerMovement>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            var postedValue = await reader.GetFieldValueAsync<object>(1, cancellationToken);
+            rows.Add(new LedgerMovement(
+                await reader.GetFieldValueAsync<Guid>(0, cancellationToken),
+                postedValue is DateTime posted
+                    ? new DateTimeOffset(DateTime.SpecifyKind(posted, DateTimeKind.Utc))
+                    : (DateTimeOffset)postedValue,
+                await reader.GetFieldValueAsync<string>(2, cancellationToken),
+                await reader.GetFieldValueAsync<string>(3, cancellationToken),
+                await reader.IsDBNullAsync(4, cancellationToken) ? null : await reader.GetFieldValueAsync<Guid>(4, cancellationToken),
+                await reader.GetFieldValueAsync<string>(5, cancellationToken),
+                await reader.GetFieldValueAsync<decimal>(6, cancellationToken)));
+        }
+
+        await reader.DisposeAsync();
+        if (closeConnection)
+        {
+            await connection.CloseAsync();
+        }
+
+        var hasMore = rows.Count > limit;
+        var page = rows.Take(limit).ToList();
+        var last = page.Count > 0 ? page[^1] : null;
+        var nextCursor = hasMore && last is not null
+            ? CursorCodec.Encode($"{last.PostedAt:O}|{last.JournalId}")
+            : null;
+        return new PageResult<LedgerMovement>(page, nextCursor, hasMore, limit);
+    }
+
+    public async Task<AssetKind?> GetAssetKindAsync(
+        string assetCode,
+        CancellationToken cancellationToken = default)
+    {
+        var normalized = assetCode.Trim().ToUpperInvariant();
+        var kind = await db.Assets.AsNoTracking()
+            .Where(asset => asset.Code == normalized)
+            .Select(asset => (AssetKind?)asset.Kind)
+            .FirstOrDefaultAsync(cancellationToken);
+        return kind;
     }
 
     public async Task<Result> RegisterAssetAsync(
@@ -298,6 +381,29 @@ internal sealed class LedgerService(
             existing.ReferenceType,
             existing.ReferenceId,
             existing.PostedAt));
+    }
+
+    private static void AddParameter(System.Data.Common.DbCommand command, string name, object value)
+    {
+        var parameter = command.CreateParameter();
+        parameter.ParameterName = name;
+        parameter.Value = value;
+        command.Parameters.Add(parameter);
+    }
+
+    private static bool TryDecodeMovementCursor(string? cursor, out DateTimeOffset postedAt, out Guid journalId)
+    {
+        postedAt = default;
+        journalId = Guid.Empty;
+        if (cursor is null || !CursorCodec.TryDecode(cursor, out var payload) || payload is null)
+        {
+            return false;
+        }
+
+        var separator = payload.IndexOf('|', StringComparison.Ordinal);
+        return separator > 0
+            && DateTimeOffset.TryParse(payload[..separator], CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out postedAt)
+            && Guid.TryParse(payload[(separator + 1)..], out journalId);
     }
 
     private async Task<Dictionary<AccountKey, Guid>> EnsureAccountsAsync(

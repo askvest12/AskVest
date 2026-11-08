@@ -18,6 +18,8 @@
 - MarketData: websocket or streaming push for prices, multi-provider failover, and a read rate limit policy.
 - MarketData: on-chain or issuer reference prices for tokens (premium or discount to the underlying); storage is ready via the subject type seam.
 - MarketData: currency conversion for display (Phase 12).
-- Portfolio: cross-chain aggregation of tokens per instrument (Phase 8).
+- Portfolio: materialized positions or snapshots if replay exceeds the journal cap (Phase 8 measures first).
+- Portfolio: tax lots, FIFO and tax reports; display currency and FX valuation (Phase 12).
+- Portfolio: value history charts and benchmarks.
 - Practice: limit orders, queued orders at market open, spread simulation, multi-currency practice with simulated conversion, leaderboards, profit and loss, watchlists.
 - Learning: translations including Pidgin (the content layout allows a language folder later), admin content editor (Phase 15), practice tasks inside lessons, achievements and badges, streak notifications, user time zones for streak days, question pools, retry cooldowns and streak freezes.

@@ -6,5 +6,6 @@ public static class CatalogEndpointsExtensions
 {
     public static void MapCatalogEndpoints(this RouteGroupBuilder api)
     {
+        Endpoints.CatalogEndpoints.Map(api);
     }
 }

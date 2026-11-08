@@ -28,6 +28,9 @@ public static class CatalogModuleExtensions
         services.AddSingleton<ChainFamilyRegistry>();
         services.AddScoped<Import.CatalogImportValidator>();
         services.AddScoped<Import.CatalogImportService>();
+        services.AddScoped<Services.CatalogAvailabilityService>();
+        services.AddScoped<Services.CatalogReadService>();
+        services.AddScoped<Contracts.ICatalog, Services.CatalogService>();
 
         services.AddDbContext<CatalogDbContext>((IServiceProvider provider, DbContextOptionsBuilder options) =>
         {

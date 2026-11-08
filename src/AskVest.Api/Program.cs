@@ -1,5 +1,6 @@
 using AskVest.Api;
 using AskVest.Api.Endpoints;
+using AskVest.Modules.Catalog;
 using AskVest.Modules.Compliance;
 using AskVest.Modules.Identity;
 using AskVest.Modules.Ledger;
@@ -27,6 +28,7 @@ builder.Services.AddPlatformPersistence(builder.Configuration);
 builder.Services.AddIdentityModule(builder.Configuration, builder.Environment);
 builder.Services.AddComplianceModule(builder.Configuration, builder.Environment);
 builder.Services.AddLedgerModule(builder.Configuration, builder.Environment);
+builder.Services.AddCatalogModule(builder.Configuration);
 builder.Services.AddScoped<IIdempotencyStore, EfIdempotencyStore>();
 builder.Services.AddSingleton<IIdempotencyScopeResolver, AuthenticatedIdempotencyScopeResolver>();
 builder.Services.AddHostedService<IdempotencyCleanupService>();
@@ -135,6 +137,7 @@ api.MapIdentityEndpoints(
     builder.Configuration.GetValue<bool>("Identity:PhoneVerificationEnabled"));
 api.MapComplianceEndpoints(diagnostics.EnableProbes);
 api.MapLedgerEndpoints(diagnostics.EnableProbes);
+api.MapCatalogEndpoints();
 
 if (docs.Enabled)
 {

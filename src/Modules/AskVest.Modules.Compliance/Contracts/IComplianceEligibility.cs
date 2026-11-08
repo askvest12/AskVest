@@ -8,5 +8,7 @@ public interface IComplianceEligibility
 {
     Task<EligibilityResult> GetEligibilityAsync(Guid userId, CancellationToken cancellationToken = default);
 
+    Task<string?> GetEffectiveCountryAsync(Guid userId, CancellationToken cancellationToken = default);
+
     bool IsRealMoneyCountry(string countryCode);
 }

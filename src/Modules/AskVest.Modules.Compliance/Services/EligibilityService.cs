@@ -33,6 +33,15 @@ internal sealed class EligibilityService(
             timeProvider.GetUtcNow());
     }
 
+    public async Task<string?> GetEffectiveCountryAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var profile = await db.ComplianceProfiles.AsNoTracking()
+            .Where(p => p.UserId == userId)
+            .Select(p => new { p.VerifiedCountry, p.DeclaredCountry })
+            .FirstOrDefaultAsync(cancellationToken);
+        return profile?.VerifiedCountry ?? profile?.DeclaredCountry;
+    }
+
     public bool IsRealMoneyCountry(string countryCode)
         => options.Value.RealMoneyCountries.Contains(countryCode, StringComparer.Ordinal);
 }

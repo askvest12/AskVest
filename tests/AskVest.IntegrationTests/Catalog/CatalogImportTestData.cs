@@ -1,16 +1,19 @@
 using System.Text.Json;
 using AskVest.Modules.Catalog;
 using AskVest.Modules.Catalog.Configuration;
+using AskVest.Modules.Catalog.Import;
 using AskVest.Modules.Catalog.Import.Data;
 using AskVest.Modules.Compliance;
 using AskVest.Modules.Identity;
 using AskVest.Modules.Ledger;
 using AskVest.Platform;
+using AskVest.SharedKernel;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Time.Testing;
+using Shouldly;
 
 namespace AskVest.IntegrationTests.Catalog;
 
@@ -146,6 +149,47 @@ internal static class CatalogImportTestData
             ReviewExpiresAt = reviewExpiresAt ?? DateTimeOffset.Parse(ValidReviewEnd),
             ReviewerLabel = "sample-reviewer",
         };
+
+    public static string Suffix() => Guid.CreateVersion7().ToString("N")[^8..];
+
+    public static string AssetCode(string prefix, string suffix)
+        => $"{prefix}{suffix.ToUpperInvariant()[..6]}";
+
+    public static string Address(string suffix, char fill)
+        => $"0x{suffix}{new string(fill, 32)}";
+
+    public static async Task<Guid> TokenIdByAssetCodeAsync(
+        Infrastructure.PostgresFixture fixture,
+        string assetCode,
+        CancellationToken cancellationToken)
+    {
+        await using var connection = new Npgsql.NpgsqlConnection(fixture.OwnerConnectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var command = new Npgsql.NpgsqlCommand(
+            "SELECT id FROM catalog.tokens WHERE ledger_asset_code = @code", connection);
+        command.Parameters.AddWithValue("code", assetCode);
+        var value = await command.ExecuteScalarAsync(cancellationToken);
+        value.ShouldNotBeNull($"no catalog token with asset code '{assetCode}'");
+        return (Guid)value!;
+    }
+
+    public static async Task<Result<CatalogImportReport>> ImportFolderAsync(
+        Infrastructure.PostgresFixture fixture,
+        IReadOnlyList<ChainData> chains,
+        IReadOnlyList<IssuerData> issuers,
+        IReadOnlyList<InstrumentData> instruments,
+        CancellationToken cancellationToken,
+        TimeProvider? timeProvider = null)
+    {
+        var folder = await WriteFolderAsync(chains, issuers, instruments, cancellationToken);
+        await using var provider = CreateProvider(fixture, folder, timeProvider: timeProvider);
+        var scope = provider.CreateAsyncScope();
+        var result = await scope.ServiceProvider
+            .GetRequiredService<CatalogImportService>()
+            .ImportAsync(cancellationToken);
+        await scope.DisposeAsync();
+        return result;
+    }
 
     public static ServiceProvider CreateProvider(
         Infrastructure.PostgresFixture fixture,

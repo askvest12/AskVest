@@ -99,6 +99,11 @@ services:
       Practice__MaxResetsPer30Days: "3"
       Learning__ContentPath: "data/learning"
       Learning__LoadSampleContent: "false"
+      Portfolio__CashEquivalentAssets__0: "USD"
+      Portfolio__CashEquivalentAssets__1: "USDC"
+      Portfolio__WatchlistMaximum: "50"
+      Portfolio__MaxJournalsPerReplay: "20000"
+      Portfolio__DisplayDecimals: "2"
     ports:
       - "127.0.0.1:${ASKVEST_API_PORT:-5080}:8080"
     depends_on:

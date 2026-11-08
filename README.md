@@ -376,6 +376,58 @@ docker compose -f docker-compose.yml -f docker-compose.smoke.yml up -d --build -
 ASKVEST_SMOKE_BASE_URL=http://localhost:5081 dotnet test --project tests/AskVest.SmokeTests
 ```
 
+## Portfolio and watchlist
+
+`GET /api/v1/practice/portfolio` and `GET /api/v1/real/portfolio` return the
+caller's portfolio for that book. The portfolio stores no money facts: on
+every request it replays the user's ledger movements (net per journal and
+asset, in posted order) through a weighted-average-cost engine, so holdings
+always equal ledger balances. Practice assets (`P.` prefix) resolve to
+instruments through the Practice contract; real token assets resolve through
+the Catalog contract, and one instrument aggregates across tokens and chains
+with a per-token breakdown carrying the opaque chain id.
+
+The response carries cash lines (fiat and stablecoin assets; only assets in
+`Portfolio__CashEquivalentAssets`, USD and USDC by default, count toward the
+total at one to one), holdings (quantity, cost basis, average cost, latest
+price with its market data label and session, market value, unrealized and
+realized profit, income, flags, token breakdown) and totals. Only display
+figures are rounded, half up, to `Portfolio__DisplayDecimals` (2); quantities
+and prices are exact. A replay is capped at `Portfolio__MaxJournalsPerReplay`
+(20000 journals); beyond that the endpoint answers `service.unavailable`,
+which is the signal to materialize positions later.
+
+Flags mean: `has_unclassified_movements` (a position asset moved by a
+non-trade reason such as a token deposit, so its cost basis is unknown),
+`has_inconsistency` (replay tried to sell more than is held, or replay
+quantity disagrees with the ledger balance), `price_unavailable` (no usable
+latest price), `valuation_unsupported_currency` (instrument not quoted in
+USD; value and unrealized profit are null until FX exists). Stale, halted
+and closed prices still value the holding but carry their label. When any
+holding cannot be valued, totals carry `partial: true`.
+
+`GET /api/v1/watchlist` lists the caller's instruments in added order with
+catalog fields and the latest labelled price (delisted or unpriced entries
+show label `unavailable`). `PUT /api/v1/watchlist/{instrumentId}` adds and
+`DELETE /api/v1/watchlist/{instrumentId}` removes; both are naturally
+idempotent set operations and need no `Idempotency-Key`. Adds require an
+active instrument (`resource.not_found` otherwise) and are capped at
+`Portfolio__WatchlistMaximum` (50) enforced under a per-user lock
+(`portfolio.watchlist_full`, 422).
+
+### Portfolio smoke test
+
+The smoke journey buys a sample stock at two prices, sells part, checks the
+weighted average cost and realized profit, places a stop, resets the
+practice account and confirms the portfolio empties, exercises the
+watchlist including the halted-price label change, and verifies real-book
+two-chain aggregation plus the eligibility gates:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.smoke.yml up -d --build --wait
+ASKVEST_SMOKE_BASE_URL=http://localhost:5081 dotnet test --project tests/AskVest.SmokeTests
+```
+
 ## Rotating signing keys
 
 Access tokens are signed with ES256. To rotate:

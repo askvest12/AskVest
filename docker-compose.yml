@@ -87,6 +87,7 @@ services:
       Ledger__Outbox__MaxAttempts: "8"
       Ledger__Outbox__BackoffCapMinutes: "15"
       Ledger__Outbox__ProcessedRetentionDays: "7"
+      MarketData__Enabled: "false"
     ports:
       - "127.0.0.1:${ASKVEST_API_PORT:-5080}:8080"
     depends_on:

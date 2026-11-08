@@ -126,6 +126,23 @@ public sealed class MarketDataOptionsTests
     }
 
     [Fact]
+    public void Disabled_Module_Registers_Nothing_And_Skips_Production_Guard()
+    {
+        var services = new ServiceCollection();
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["ConnectionStrings:Platform"] = "Host=localhost;Database=x",
+            ["MarketData:Enabled"] = "false",
+        }).Build();
+
+        services.AddMarketDataModule(configuration, new StubEnvironment("Production"));
+
+        services.Any(descriptor =>
+                descriptor.ServiceType == typeof(AskVest.Modules.MarketData.Providers.IMarketDataProvider))
+            .ShouldBeFalse();
+    }
+
+    [Fact]
     public void Fake_Provider_In_Development_Does_Not_Throw()
     {
         var services = new ServiceCollection();

@@ -44,6 +44,12 @@ services:
       Compliance__Kyc__Provider: "fake"
       Compliance__Screening__Provider: "fake"
       Compliance__Screening__HitNameMarker: "SMOKE-SANCTIONED"
+      MarketData__Enabled: "true"
+      MarketData__Provider: "fake"
+      MarketData__Fake__Session: "regular"
+      MarketData__LiveThresholdSeconds: "5"
+      MarketData__StaleThresholdSeconds: "15"
+      MarketData__PollIntervalSeconds: "5"
     ports: !override
       - "127.0.0.1:${ASKVEST_SMOKE_API_PORT:-5081}:8080"
 

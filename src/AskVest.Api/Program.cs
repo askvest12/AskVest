@@ -140,7 +140,10 @@ api.MapIdentityEndpoints(
 api.MapComplianceEndpoints(diagnostics.EnableProbes);
 api.MapLedgerEndpoints(diagnostics.EnableProbes);
 api.MapCatalogEndpoints();
-api.MapMarketDataEndpoints(diagnostics.EnableProbes);
+if (MarketDataModuleExtensions.IsEnabled(builder.Configuration))
+{
+    api.MapMarketDataEndpoints(diagnostics.EnableProbes);
+}
 
 if (docs.Enabled)
 {

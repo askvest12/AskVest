@@ -12,11 +12,22 @@ namespace AskVest.Modules.MarketData;
 
 public static class MarketDataModuleExtensions
 {
+    public static bool IsEnabled(IConfiguration configuration)
+        => !string.Equals(
+            configuration[$"{MarketDataOptions.SectionName}:Enabled"],
+            "false",
+            StringComparison.OrdinalIgnoreCase);
+
     public static IServiceCollection AddMarketDataModule(
         this IServiceCollection services,
         IConfiguration configuration,
         IHostEnvironment? environment = null)
     {
+        if (!IsEnabled(configuration))
+        {
+            return services;
+        }
+
         GuardProductionProviders(configuration, environment);
         var connectionString = configuration.GetConnectionString("MarketData")
             ?? configuration.GetConnectionString("Platform")

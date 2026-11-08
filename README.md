@@ -203,6 +203,75 @@ ASKVEST_SMOKE_BASE_URL=http://localhost:5081 dotnet test --project tests/AskVest
 The catalog journey browses instruments, searches and pages, opens token
 disclosures, and checks buy/sell availability blockers per user country.
 
+## Market data
+
+The MarketData module keeps a latest price per active catalog instrument and
+serves read-only prices and candles. It is off by default
+(`MarketData__Enabled=false` in `docker-compose.yml`) because the only
+provider shipped so far is the deterministic fake, which is forbidden when
+`ASPNETCORE_ENVIRONMENT=Production` - startup fails fast if it is selected
+there. The smoke stack enables it with the fake provider.
+
+### How prices and labels work
+
+A hosted poller (`PricePoller`) asks the configured `IMarketDataProvider` for
+quotes in batches every `MarketData__PollIntervalSeconds`, validates them
+(positive price, quote currency, sane timestamp, digit limit), guards against
+outlier jumps, and upserts `marketdata.latest_prices`. A single PostgreSQL
+advisory lock makes sure only one API instance polls per cycle, and a
+per-cycle request budget derived from `MarketData__RequestsPerMinute` keeps
+the provider under its rate limit. Bad ticks never overwrite a trusted price:
+they are stored as suspects and only confirmed by a repeated tick.
+
+`GET /api/v1/marketdata/prices?instrumentIds=a,b,c` reads only the stored
+rows - it never calls the provider - and returns one item per requested id in
+request order. Each item carries the price as a string, currency, `asOf`,
+`ageSeconds`, session, a freshness `label`, `usableForExecution`, the source
+display name and optional `previousClose`. Unknown, delisted or unpriced ids
+answer `unavailable` instead of failing the batch.
+
+Freshness is computed at read time. Effective age is
+`now - asOf - providerDelay` (never below zero) and the first matching rule
+wins: no price or unmapped instrument `unavailable`, session `halted`
+`halted`, session `closed` `closed`, effective age above
+`MarketData__StaleThresholdSeconds` `stale`, real-time feed within
+`MarketData__LiveThresholdSeconds` `live`, otherwise `delayed`.
+`usableForExecution` is true only for `live` or `delayed` in a `regular`
+session; Phase 10 order placement must refuse everything else.
+
+`GET /api/v1/marketdata/instruments/{id}/candles?interval=&from=&to=` serves
+ascending OHLCV candles (decimals as strings) with `adjusted` and a `partial`
+marker on the still-forming last candle. Closed candles are cached
+permanently in `marketdata.candles`; the open candle refreshes only after its
+interval's `OpenCacheSeconds`. Identical concurrent requests share one
+provider call through a single-flight gate. On provider failure the endpoint
+serves cached rows with `stale=true`, or answers 503 `marketdata.unavailable`
+when nothing is cached.
+
+### Market data smoke test
+
+The smoke stack runs the fake provider in `regular` session with a 5 second
+poll interval, 5 second live and 15 second stale thresholds, and the
+diagnostics probe enabled. The smoke journey fetches sample prices, drives
+the fake through delayed, halted, closed, outlier, outage and unknown-symbol
+scenarios, and exercises the candle cache and error paths over real HTTP:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.smoke.yml up -d --build --wait
+ASKVEST_SMOKE_BASE_URL=http://localhost:5081 dotnet test --project tests/AskVest.SmokeTests
+```
+
+### Adding a real provider later
+
+Implement `IMarketDataProvider` (`ProviderKey`, `MarketDataCapabilities`,
+`GetLatestQuotesAsync`, `GetCandlesAsync`) in a new adapter inside the module,
+register it in `ProviderRegistry`, and set `MarketData__Provider` plus its
+credentials through the secret store. The research inputs and licensing
+questions live in `docs/design/06-provider-abstractions.md`; quotes must
+arrive as decimal text, timestamps in UTC, and prices already expressed in
+the instrument's quote currency (sub-unit amounts are normalized by the
+adapter, not the module).
+
 ## Rotating signing keys
 
 Access tokens are signed with ES256. To rotate:
@@ -227,6 +296,7 @@ reset their password. Plan this as a maintenance event.
 - `src/AskVest.Modules.Compliance` - compliance module: documents, consents, country, eligibility, KYC webhook, screening
 - `src/AskVest.Modules.Ledger` - ledger module: double-entry posting, balances, history, probes, reconciliation
 - `src/AskVest.Modules.Catalog` - catalog module: chains, issuers, instruments, tokens, disclosures, availability, read API
+- `src/AskVest.Modules.MarketData` - market data module: provider seam, fake provider, price poller, freshness labels, prices and candles API
 - `src/AskVest.Api` - HTTP host: envelope, middleware, health, OpenAPI
 - `src/AskVest.Migrator` - forward-only migration runner
 - `tests/` - unit, architecture, integration (Testcontainers), smoke

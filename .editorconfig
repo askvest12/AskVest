@@ -226,6 +226,10 @@ dotnet_diagnostic.CA1031.severity = none
 [tests/AskVest.IntegrationTests/Assistant/AssistantEvaluationTests.cs]
 dotnet_diagnostic.CA1031.severity = none
 
+# Each evaluation check failure is collected so one run reports every broken case.
+[tests/AskVest.SmokeTests/AssistantEvaluationSmokeTests.cs]
+dotnet_diagnostic.CA1031.severity = none
+
 # The parallel buy burst intentionally overlaps requests on the shared client; all tasks complete before disposal.
 [tests/AskVest.SmokeTests/PracticeSmokeTests.cs]
 dotnet_diagnostic.CA2025.severity = none

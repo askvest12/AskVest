@@ -65,6 +65,7 @@ services:
       Assistant__Provider: "fake"
       Assistant__MessagesPerHour: "10"
       Assistant__MessagesPerDay: "50"
+      Assistant__MessageTimeBudgetSeconds: "10"
     ports: !override
       - "127.0.0.1:${ASKVEST_SMOKE_API_PORT:-5081}:8080"
 

@@ -53,8 +53,14 @@ public static class ComplianceModuleExtensions
             options.AddPolicy(Contracts.CompliancePolicyNames.RealEligible, policy => policy
                 .RequireAuthenticatedUser()
                 .AddRequirements(new Authorization.EligibilityRequirement(Contracts.CompliancePolicyNames.RealEligible)));
+            options.AddPolicy(Contracts.CompliancePolicyNames.Assistant, policy => policy
+                .RequireAuthenticatedUser()
+                .AddRequirements(
+                    new Authorization.EligibilityRequirement(Contracts.CompliancePolicyNames.Assistant),
+                    new Authorization.AssistantConsentRequirement()));
         });
         services.AddScoped<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, Authorization.EligibilityAuthorizationHandler>();
+        services.AddScoped<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, Authorization.AssistantConsentAuthorizationHandler>();
         services.AddSingleton<Microsoft.AspNetCore.Authorization.IAuthorizationMiddlewareResultHandler, Authorization.ComplianceAuthorizationResultHandler>();
 
         return services;

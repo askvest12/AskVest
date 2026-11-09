@@ -69,3 +69,7 @@
 | T38 | Misstated portfolio from stale or wrong prices | market value carries the freshness label and session; unvaluable or unclassified figures set flags and `partial` totals instead of guessing; unsupported currencies return null value with a flag | 8 |
 | T39 | Cost basis drift from the ledger | the portfolio stores no money facts; it replays ledger movements on demand so it cannot diverge; weighted average cost with fees in cost; consistency check proves holdings equal ledger balances; replay cap fails closed at 20000 journals | 8 |
 
+| T40 | Hallucinated numbers or unsupported factual claims in chat | numeric grounding requires every figure to trace to tool data or the user's own message; citations must reference results from the current exchange; policy layer and corrective retry, then a safe fallback | 9 |
+| T41 | Personal data sent to the model provider | only consented users reach the model; the prompt carries the user's own messages and tool-scoped reads, never credentials, documents or ledger internals; provider research records data-processing and retention terms before selection | 9 |
+| T42 | Cost abuse through unbounded model or tool calls | bounded history, tool-call and model-call caps, per-user rate limit, a time budget per request, token usage recorded in audit events | 9 |
+| T43 | Conversation retention beyond policy | conversations and messages stored server-side with ids only in audit events; retention job removes expired conversations and deletes conversations of anonymized users; no cross-conversation memory | 9 |

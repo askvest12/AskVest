@@ -4,7 +4,7 @@ namespace AskVest.Modules.Identity.Contracts;
 /// Read-only view of an account's standing for other modules. Exposes no
 /// credentials or personal data.
 /// </summary>
-public sealed record UserAccountSnapshot(bool IsActive, bool EmailVerified);
+public sealed record UserAccountSnapshot(bool IsActive, bool EmailVerified, bool IsAnonymized = false);
 
 /// <summary>
 /// Confirms whether a user id exists and reports its active and verified

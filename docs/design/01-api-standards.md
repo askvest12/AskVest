@@ -83,6 +83,7 @@ Pattern `^[a-z]+(_[a-z]+)*(\.[a-z]+(_[a-z]+)*)+$`.
 | `practice.reset_not_allowed` | 422 | Reset refused by the cooldown or the rolling 30 day limit |
 | `learning.quiz_required` | 422 | Lesson has a quiz; complete it through `quiz-attempts` instead |
 | `portfolio.watchlist_full` | 422 | Watchlist is at its maximum size |
+| `assistant.unavailable` | 503 | Assistant disabled, provider error, timeout or malformed model output after retry; fail closed |
 | `idempotency.key_missing` | 400 | State-changing call without `Idempotency-Key` |
 | `idempotency.key_invalid` | 400 | Key fails the format rule |
 | `idempotency.key_reused` | 422 | Same key, different request fingerprint |
@@ -138,6 +139,10 @@ Header `Idempotency-Key` (8 to 128 chars of `[A-Za-z0-9_.:-]`). Opt in with `.Re
 - `X-Correlation-Id`: accepted inbound only if it matches `^[A-Za-z0-9._-]{8,64}$`, echoed outbound always.
 - `Idempotency-Key`: inbound on state-changing endpoints.
 - `Idempotency-Replayed: true`: outbound on replays.
+
+## Assistant endpoints
+
+All under `/api/v1/assistant` and behind the `Assistant` policy, which requires practice eligibility plus acceptance of the `ai_processing` consent document; a missing consent answers 403 `compliance.not_eligible` naming `ai_processing`. `POST /messages` requires an `Idempotency-Key` so a retry never repeats a model call; the platform idempotency store briefly holds the response body (citations, fact cards, actions) for its retention window, the same as any other response. `GET /conversations`, `GET /conversations/{id}` and `DELETE /conversations/{id}` are naturally read or idempotent operations; delete is exempt with its reason on the endpoint. `POST /api/v1/diagnostics/assistant-scenario` is a probe: it exists only when the Phase 0 probe flag is on, never in Production, and does nothing unless the configured model is the deterministic fake. Content policy failures are not errors: they return 200 with the safe message and `policy.blocked` true.
 
 ## OpenAPI and Scalar
 

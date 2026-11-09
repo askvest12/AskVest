@@ -9,4 +9,10 @@ public static class CompliancePolicyNames
 {
     public const string PracticeEligible = "PracticeEligible";
     public const string RealEligible = "RealEligible";
+
+    /// <summary>
+    /// Practice eligibility plus acceptance of every document whose
+    /// RequiredFor category is "assistant" (the ai_processing consent).
+    /// </summary>
+    public const string Assistant = "Assistant";
 }

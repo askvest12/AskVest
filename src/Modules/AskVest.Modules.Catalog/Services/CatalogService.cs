@@ -33,6 +33,47 @@ internal sealed class CatalogService(
         return token is null ? null : ToContract(token);
     }
 
+    public async Task<IReadOnlyList<CatalogToken>> ListTokensForInstrumentAsync(
+        string instrumentId,
+        CancellationToken cancellationToken = default)
+    {
+        var tokens = await db.Tokens.AsNoTracking()
+            .Where(t => t.InstrumentId == instrumentId)
+            .OrderBy(t => t.Symbol)
+            .ToListAsync(cancellationToken);
+        return tokens.Select(ToContract).ToList();
+    }
+
+    public async Task<CatalogTokenDisclosure?> FindTokenDisclosureAsync(
+        Guid tokenId,
+        CancellationToken cancellationToken = default)
+    {
+        var token = await db.Tokens.AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Id == tokenId, cancellationToken);
+        return token is null ? null : new CatalogTokenDisclosure(
+            token.Id,
+            token.InstrumentId,
+            token.Symbol,
+            token.ChainId,
+            CatalogText.ToDb(token.Status),
+            CatalogText.ToDb(token.ClaimType),
+            token.ClaimDescription,
+            token.BackingDescription,
+            token.CustodianDescription,
+            token.RedemptionDescription,
+            CatalogText.ToDb(token.DividendPolicy),
+            token.DividendNote,
+            token.VotingRights,
+            token.VotingNote,
+            token.TransferRestrictions,
+            token.IssuerFees,
+            token.NoIssuerFees,
+            token.RiskStatements,
+            token.DisclosureDocumentLink,
+            token.ReviewedAt,
+            token.ReviewExpiresAt);
+    }
+
     public async Task<CatalogInstrument?> FindInstrumentAsync(string instrumentId, CancellationToken cancellationToken = default)
     {
         var instrument = await db.Instruments.AsNoTracking()
@@ -125,7 +166,8 @@ internal sealed class CatalogService(
         instrument.CountryOfListing,
         instrument.QuoteCurrency,
         instrument.Sector,
-        CatalogText.ToDb(instrument.Status));
+        CatalogText.ToDb(instrument.Status),
+        instrument.ShortDescription);
 
     internal static CatalogChain ToContract(Chain chain) => new(
         chain.Id,

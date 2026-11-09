@@ -31,6 +31,7 @@ AI-assisted investing in tokenized stocks and ETFs for Africans. Modular monolit
 25. **Portfolio is read-only.** The portfolio stores no money facts; it replays ledger movements on demand for cost basis and profit. Holdings must equal ledger balances. Watchlist is the only table it owns.
 26. **Practice isolation.** Practice code never references the real book; practice value lives only in `Book.Practice`. Practice orders never use a price that is not `usableForExecution`. Practice ledger asset codes start with `P.`, a prefix reserved for practice: the Catalog importer rejects any real token asset code starting with it.
 27. **Learning stays educational.** Learning never references money, practice or trading code and touches no ledger, market data or funding contracts. Streaks count learning activity only. Lesson content is plain, chain-agnostic, issuer-neutral, carries no advice or promises, and must pass the banned-phrase lint.
+28. **Assistant never advises, trades or moves money.** It has no write tools at all. Tools never take a user id; the authenticated session scopes every read. Never log message text, tool results, amounts or portfolio data. Every model output passes the server-side citation, numeric-grounding, policy and sanitization checks before a user sees it.
 
 ## Solution layout
 

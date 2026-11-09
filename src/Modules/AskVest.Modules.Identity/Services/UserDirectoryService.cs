@@ -15,6 +15,9 @@ public sealed class UserDirectoryService(IdentityDbContext db) : IUserDirectory
             .FirstOrDefaultAsync(cancellationToken);
         return account is null
             ? null
-            : new UserAccountSnapshot(account.Status == UserStatus.Active, account.EmailVerifiedAt is not null);
+            : new UserAccountSnapshot(
+                account.Status == UserStatus.Active,
+                account.EmailVerifiedAt is not null,
+                account.Status == UserStatus.Anonymized);
     }
 }

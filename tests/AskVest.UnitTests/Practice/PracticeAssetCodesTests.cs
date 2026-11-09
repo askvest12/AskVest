@@ -8,7 +8,7 @@ namespace AskVest.UnitTests.Practice;
 public sealed class PracticeAssetCodesTests
 {
     private static CatalogInstrument Instrument(string symbol)
-        => new("instr-1", "stock", "Name", symbol, null, null, "US", "USD", null, "active");
+        => new("instr-1", "stock", "Name", symbol, null, null, "US", "USD", null, "active", null);
 
     [Theory]
     [InlineData("NVDA", "P.NVDA")]

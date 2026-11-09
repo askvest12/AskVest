@@ -39,6 +39,24 @@ internal sealed class EligibilityService(
             incompleteRequired.Select(lesson => lesson.LessonId).ToList());
     }
 
+    public async Task<IReadOnlyList<string>> GetMissingDocumentTypesAsync(
+        Guid userId,
+        string requiredFor,
+        CancellationToken cancellationToken = default)
+    {
+        var acceptedKeys = await db.ConsentRecords.AsNoTracking()
+            .Where(c => c.UserId == userId)
+            .Select(c => c.DocumentType + "@" + c.Version)
+            .ToListAsync(cancellationToken);
+        var accepted = acceptedKeys.ToHashSet(StringComparer.Ordinal);
+
+        return options.Value.Documents
+            .Where(document => document.RequiredFor == requiredFor)
+            .Where(document => !accepted.Contains(EligibilityEvaluator.ConsentKey(document.Type, document.Version)))
+            .Select(document => document.Type)
+            .ToList();
+    }
+
     public async Task<string?> GetEffectiveCountryAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var profile = await db.ComplianceProfiles.AsNoTracking()

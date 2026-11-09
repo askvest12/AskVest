@@ -85,10 +85,10 @@ public sealed class ComplianceApiTests(PostgresFixture fixture) : IAsyncLifetime
 
         var documents = await DocumentListAsync(client, token);
         var items = documents.GetProperty("documents").EnumerateArray().ToList();
-        items.Count.ShouldBe(4);
+        items.Count.ShouldBe(5);
         items.ShouldAllBe(d => d.GetProperty("accepted").GetBoolean() == false);
         items.Select(d => d.GetProperty("type").GetString()).ShouldBe(
-            ["terms", "privacy", "risk_disclosure", "token_disclosure"], ignoreOrder: true);
+            ["terms", "privacy", "risk_disclosure", "token_disclosure", "ai_processing"], ignoreOrder: true);
 
         var terms = items.Single(d => d.GetProperty("type").GetString() == "terms");
         using var accept = await client.SendAsync(

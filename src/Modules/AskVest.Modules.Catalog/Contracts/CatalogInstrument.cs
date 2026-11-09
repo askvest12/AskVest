@@ -13,4 +13,5 @@ public sealed record CatalogInstrument(
     string CountryOfListing,
     string QuoteCurrency,
     string? Sector,
-    string Status);
+    string Status,
+    string? ShortDescription);

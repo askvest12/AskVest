@@ -603,6 +603,7 @@
       "askvest.api": {
         "type": "Project",
         "dependencies": {
+          "AskVest.Modules.Assistant": "[1.0.0, )",
           "AskVest.Modules.Catalog": "[1.0.0, )",
           "AskVest.Modules.Compliance": "[1.0.0, )",
           "AskVest.Modules.Identity": "[1.0.0, )",
@@ -624,6 +625,7 @@
       "askvest.migrator": {
         "type": "Project",
         "dependencies": {
+          "AskVest.Modules.Assistant": "[1.0.0, )",
           "AskVest.Modules.Catalog": "[1.0.0, )",
           "AskVest.Modules.Compliance": "[1.0.0, )",
           "AskVest.Modules.Identity": "[1.0.0, )",
@@ -638,6 +640,24 @@
           "Serilog.Formatting.Compact": "[3.0.0, )",
           "Serilog.Settings.Configuration": "[10.0.1, )",
           "Serilog.Sinks.Console": "[6.1.1, )"
+        }
+      },
+      "askvest.modules.assistant": {
+        "type": "Project",
+        "dependencies": {
+          "AskVest.Modules.Catalog": "[1.0.0, )",
+          "AskVest.Modules.Compliance": "[1.0.0, )",
+          "AskVest.Modules.Identity": "[1.0.0, )",
+          "AskVest.Modules.Learning": "[1.0.0, )",
+          "AskVest.Modules.Ledger": "[1.0.0, )",
+          "AskVest.Modules.MarketData": "[1.0.0, )",
+          "AskVest.Modules.Portfolio": "[1.0.0, )",
+          "AskVest.Platform": "[1.0.0, )",
+          "AskVest.SharedKernel": "[1.0.0, )",
+          "EFCore.NamingConventions": "[10.0.1, )",
+          "FluentValidation": "[12.2.0, )",
+          "FluentValidation.DependencyInjectionExtensions": "[12.2.0, )",
+          "Npgsql.EntityFrameworkCore.PostgreSQL": "[10.0.3, )"
         }
       },
       "askvest.modules.catalog": {

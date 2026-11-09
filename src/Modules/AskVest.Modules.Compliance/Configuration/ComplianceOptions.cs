@@ -38,8 +38,8 @@ public sealed class ComplianceOptions
                 Check(!string.IsNullOrWhiteSpace(document.Version), $"Compliance document '{document.Type}' needs a version.");
                 Check(document.Url is not null, $"Compliance document '{document.Type}' needs a link.");
                 Check(IsSha256(document.Sha256), $"Compliance document '{document.Type}' needs a SHA-256 content hash.");
-                Check(document.RequiredFor is "practice" or "real",
-                    $"Compliance document '{document.Type}' must declare RequiredFor 'practice' or 'real'.");
+                Check(document.RequiredFor is "practice" or "real" or "assistant",
+                    $"Compliance document '{document.Type}' must declare RequiredFor 'practice', 'real' or 'assistant'.");
             }
 
             foreach (var country in options.BlockedCountries.Concat(options.RealMoneyCountries))

@@ -5,6 +5,7 @@ using AskVest.Modules.MarketData.Domain;
 using AskVest.Modules.MarketData.Domain.Enums;
 using AskVest.Modules.MarketData.Persistence;
 using AskVest.Modules.MarketData.Persistence.Entities;
+using AskVest.SharedKernel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -13,6 +14,7 @@ namespace AskVest.Modules.MarketData.Services;
 internal sealed class MarketDataQueryService(
     MarketDataDbContext db,
     ICatalog catalog,
+    CandleService candles,
     IOptions<MarketDataOptions> options,
     TimeProvider timeProvider) : IMarketData
 {
@@ -71,6 +73,36 @@ internal sealed class MarketDataQueryService(
             assessment.UsableForExecution,
             source,
             row.PreviousClose);
+    }
+
+    public async Task<Result<MarketDataCandleSet>> GetCandlesAsync(
+        string instrumentId,
+        string interval,
+        DateTimeOffset from,
+        DateTimeOffset to,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await candles.GetCandlesAsync(
+            instrumentId, interval, from, to, cancellationToken);
+        if (result.IsFailure)
+        {
+            return Result.Failure<MarketDataCandleSet>(result.Error!);
+        }
+
+        var response = result.Value!;
+        return Result.Success(new MarketDataCandleSet(
+            response.Stale,
+            response.Candles
+                .Select(candle => new MarketDataCandle(
+                    candle.OpenTime,
+                    candle.Open,
+                    candle.High,
+                    candle.Low,
+                    candle.Close,
+                    candle.Volume,
+                    candle.Adjusted,
+                    candle.Partial))
+                .ToList()));
     }
 
     private static string LabelText(FreshnessLabel label) => label switch

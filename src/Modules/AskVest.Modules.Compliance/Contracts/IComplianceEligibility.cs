@@ -8,6 +8,11 @@ public interface IComplianceEligibility
 {
     Task<EligibilityResult> GetEligibilityAsync(Guid userId, CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<string>> GetMissingDocumentTypesAsync(
+        Guid userId,
+        string requiredFor,
+        CancellationToken cancellationToken = default);
+
     Task<string?> GetEffectiveCountryAsync(Guid userId, CancellationToken cancellationToken = default);
 
     bool IsRealMoneyCountry(string countryCode);

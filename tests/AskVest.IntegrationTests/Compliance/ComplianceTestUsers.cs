@@ -16,6 +16,7 @@ internal static class ComplianceTestUsers
     private const string PrivacyHash = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
     private const string RiskHash = "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc";
     private const string TokenHash = "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
+    private const string AiHash = "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
 
     public static IReadOnlyDictionary<string, string?> Settings(
         bool probesEnabled = true,
@@ -47,6 +48,11 @@ internal static class ComplianceTestUsers
             ["Compliance:Documents:3:Url"] = "https://askvest.example/token",
             ["Compliance:Documents:3:Sha256"] = TokenHash,
             ["Compliance:Documents:3:RequiredFor"] = "real",
+            ["Compliance:Documents:4:Type"] = "ai_processing",
+            ["Compliance:Documents:4:Version"] = documentVersion,
+            ["Compliance:Documents:4:Url"] = "https://askvest.example/ai-processing",
+            ["Compliance:Documents:4:Sha256"] = AiHash,
+            ["Compliance:Documents:4:RequiredFor"] = "assistant",
         };
         return settings;
     }
@@ -169,6 +175,7 @@ internal static class ComplianceTestUsers
         ("privacy", "v1", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"),
         ("risk_disclosure", "v1", "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"),
         ("token_disclosure", "v1", "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"),
+        ("ai_processing", "v1", "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"),
     ];
 
     public static async Task<JsonElement> EnvelopeAsync(HttpResponseMessage response)

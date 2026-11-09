@@ -104,6 +104,10 @@ Practice trades instruments, never tokens, so it stays valid however the multi-c
 
 Learning exists to make users understand what they are buying, not to make them trade more. Content is versioned data files in the repository (tracks holding ordered lessons with body blocks and optional quizzes), loaded into an immutable in-memory snapshot at startup and validated with a banned-phrase lint; there are no content tables. Lesson and quiz reads never reveal correct options or explanations; only graded attempts do. Completion records the lesson version, and lessons flagged `requiredForReal` must be completed at their current version before Real eligibility passes (the `learning_required` blocker). Streaks count consecutive UTC days with learning activity only: never orders, logins, deposits or anything that moves money. The module references no ledger, practice, market data, trading, funding or compliance code; nothing in it touches money.
 
+## Assistant rules
+
+The assistant explains and researches; it never advises, never trades and never moves money. It has no write tools at all: every tool is read-only and server-scoped to the authenticated caller. Tools never take a user id; ownership comes from the server-side session context. Retrieved catalog and lesson text is untrusted data, never instructions. Every model output passes server-side checks (citation validation, numeric grounding, banned-phrase policy, sanitization) before a user sees it, and every exchange writes an audit event containing ids, tool names, hashes, usage and outcome only, never message text or raw tool results. The language model client is the only seam to a provider; the deterministic fake ships for development and tests and a real adapter is chosen only after evaluation.
+
 ## Non-goals and undecided product statuses
 
 Payments, remittances, merchant acceptance. Undecided until later phases: launch countries, issuers, chain, custody provider, fee model.

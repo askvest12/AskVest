@@ -85,6 +85,34 @@ Any real adapter added later must satisfy, in addition to the general adapter ru
 | Support and uptime commitments | | | |
 | On-chain or issuer reference prices for tokens | | | |
 
+## Assistant language model contract (Phase 9)
+
+`ILanguageModelClient` is the only seam to a language model. It sends a system prompt, a bounded message history, tool definitions and returns either final text or tool calls plus token usage. The Assistant module never references a provider SDK; the deterministic fake ships for development and tests, and a real adapter is chosen only after evaluation.
+
+Hard rules for every adapter and for the module:
+
+- The model client performs the single outbound network call the module makes; nothing else in Assistant opens a socket.
+- Tool definitions are fixed server-side; the model cannot invent tools.
+- The model may be wrong, hallucinate or be prompt-injected; every output passes server-side citation, numeric-grounding and policy checks before a user sees it.
+- Evaluation against the checked-in evaluation set is mandatory before a real provider may serve production traffic.
+
+## Language model provider research (fill one column per provider)
+
+No provider is confirmed. Record findings before selecting one.
+
+| Question | Provider A | Provider B | Provider C |
+|---|---|---|---|
+| Tool calling support and limits | | | |
+| Data processing and retention terms | | | |
+| Regions where prompts may be processed | | | |
+| Token pricing and cost controls | | | |
+| Rate limits and quotas | | | |
+| Context size versus our bounded history | | | |
+| Streaming support (deferred; Phase 9 ships non-streaming) | | | |
+| Content moderation or safety filters | | | |
+| Whether prompts are used for provider training | | | |
+| Determinism or seed controls for evaluation | | | |
+
 ## Provider fact sheet (fill one column per provider during research)
 
 | Question | Provider A | Provider B | Provider C |

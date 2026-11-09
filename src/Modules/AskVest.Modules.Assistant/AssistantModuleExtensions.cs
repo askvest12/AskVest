@@ -2,9 +2,11 @@ using AskVest.Modules.Assistant.Configuration;
 using AskVest.Modules.Assistant.Contracts;
 using AskVest.Modules.Assistant.Domain;
 using AskVest.Modules.Assistant.Persistence;
+using AskVest.Modules.Assistant.Tools;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
@@ -39,6 +41,18 @@ public static class AssistantModuleExtensions
         services.AddSingleton<FakeLanguageModelClient>();
         services.AddSingleton<ILanguageModelClient>(provider => provider.GetRequiredService<FakeLanguageModelClient>());
         services.AddHostedService<AssistantStartupCheck>();
+        services.TryAddSingleton(TimeProvider.System);
+
+        services.AddScoped<AssistantTool, SearchInstrumentsTool>();
+        services.AddScoped<AssistantTool, GetInstrumentTool>();
+        services.AddScoped<AssistantTool, GetTokenDisclosureTool>();
+        services.AddScoped<AssistantTool, GetPricesTool>();
+        services.AddScoped<AssistantTool, GetPriceHistorySummaryTool>();
+        services.AddScoped<AssistantTool, GetPortfolioTool>();
+        services.AddScoped<AssistantTool, GetWatchlistTool>();
+        services.AddScoped<AssistantTool, SearchLessonsTool>();
+        services.AddScoped<AssistantTool, ProposeActionTool>();
+        services.AddScoped<AssistantToolSet>();
 
         var connectionString = configuration.GetConnectionString("Assistant")
             ?? configuration.GetConnectionString("Platform")

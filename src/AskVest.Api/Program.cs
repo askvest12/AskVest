@@ -1,5 +1,6 @@
 using AskVest.Api;
 using AskVest.Api.Endpoints;
+using AskVest.Modules.Assistant;
 using AskVest.Modules.Catalog;
 using AskVest.Modules.Compliance;
 using AskVest.Modules.Identity;
@@ -37,6 +38,7 @@ builder.Services.AddMarketDataModule(builder.Configuration, builder.Environment)
 builder.Services.AddPracticeModule(builder.Configuration);
 builder.Services.AddLearningModule(builder.Configuration, builder.Environment);
 builder.Services.AddPortfolioModule(builder.Configuration);
+builder.Services.AddAssistantModule(builder.Configuration, builder.Environment);
 builder.Services.AddScoped<IIdempotencyStore, EfIdempotencyStore>();
 builder.Services.AddSingleton<IIdempotencyScopeResolver, AuthenticatedIdempotencyScopeResolver>();
 builder.Services.AddHostedService<IdempotencyCleanupService>();

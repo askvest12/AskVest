@@ -31,6 +31,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="Content\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="AskVest.UnitTests" />
     <InternalsVisibleTo Include="AskVest.IntegrationTests" />
     <InternalsVisibleTo Include="AskVest.ArchitectureTests" />

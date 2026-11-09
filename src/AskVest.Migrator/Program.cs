@@ -1,3 +1,4 @@
+using AskVest.Modules.Assistant.Persistence;
 using AskVest.Modules.Catalog;
 using AskVest.Modules.Catalog.Import;
 using AskVest.Modules.Catalog.Persistence;
@@ -38,6 +39,7 @@ builder.Services.AddMarketDataModule(builder.Configuration);
 builder.Services.AddPracticeModule(builder.Configuration);
 builder.Services.AddLearningModule(builder.Configuration, builder.Environment);
 builder.Services.AddPortfolioModule(builder.Configuration);
+// The assistant runtime is API-only: its fake model is refused under the migrator's Production environment.
 
 var host = builder.Build();
 var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("AskVest.Migrator");
@@ -63,6 +65,7 @@ try
             connectionString => new PracticeDbContext(PracticeDbContextOptions.Create(connectionString)),
             connectionString => new LearningDbContext(LearningDbContextOptions.Create(connectionString)),
             connectionString => new PortfolioDbContext(PortfolioDbContextOptions.Create(connectionString)),
+            connectionString => new AssistantDbContext(AssistantDbContextOptions.Create(connectionString)),
         ],
         cancellation.Token);
     if (logger.IsEnabled(LogLevel.Information))

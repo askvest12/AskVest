@@ -1,3 +1,4 @@
+using AskVest.Modules.Assistant.Persistence;
 using AskVest.Modules.Catalog.Persistence;
 using AskVest.Modules.Compliance.Persistence;
 using AskVest.Modules.Identity.Persistence;
@@ -76,6 +77,7 @@ public sealed class PostgresFixture : IAsyncLifetime
                 connectionString => new PracticeDbContext(PracticeDbContextOptions.Create(connectionString)),
                 connectionString => new LearningDbContext(LearningDbContextOptions.Create(connectionString)),
                 connectionString => new PortfolioDbContext(PortfolioDbContextOptions.Create(connectionString)),
+                connectionString => new AssistantDbContext(AssistantDbContextOptions.Create(connectionString)),
             ]);
         if (applied.Count == 0)
         {
@@ -112,8 +114,10 @@ public sealed class PostgresFixture : IAsyncLifetime
                 new RespawnerOptions
                 {
                     DbAdapter = DbAdapter.Postgres,
-                    SchemasToInclude = ["catalog", "practice", "learning"],
-                    TablesToIgnore = ["catalog.__ef_migrations_history", "practice.__ef_migrations_history", "learning.__ef_migrations_history"],
+                    // audit_events is append-only for the app role, so the whole
+                    // assistant schema resets as the owner like catalog and practice.
+                    SchemasToInclude = ["catalog", "practice", "learning", "assistant"],
+                    TablesToIgnore = ["catalog.__ef_migrations_history", "practice.__ef_migrations_history", "learning.__ef_migrations_history", "assistant.__ef_migrations_history"],
                 });
         }
     }

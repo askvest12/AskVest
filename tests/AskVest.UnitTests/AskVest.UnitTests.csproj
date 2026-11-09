@@ -11,6 +11,7 @@
     <ProjectReference Include="..\..\src\Modules\AskVest.Modules.Practice\AskVest.Modules.Practice.csproj" />
     <ProjectReference Include="..\..\src\Modules\AskVest.Modules.Learning\AskVest.Modules.Learning.csproj" />
     <ProjectReference Include="..\..\src\Modules\AskVest.Modules.Portfolio\AskVest.Modules.Portfolio.csproj" />
+    <ProjectReference Include="..\..\src\Modules\AskVest.Modules.Assistant\AskVest.Modules.Assistant.csproj" />
     <ProjectReference Include="..\..\src\AskVest.Platform\AskVest.Platform.csproj" />
     <ProjectReference Include="..\..\src\AskVest.Api\AskVest.Api.csproj" />
   </ItemGroup>

@@ -61,4 +61,10 @@ public sealed class AssistantOptions
 
     /// <summary>Deterministic fake model scenario; ignored by real providers.</summary>
     public string FakeScenario { get; set; } = "normal";
+
+    /// <summary>Path to the versioned system prompt file, relative to the app base directory.</summary>
+    public string PromptPath { get; set; } = "Content/system-prompt.md";
+
+    /// <summary>Path to the evaluation set JSON, relative to the app base directory.</summary>
+    public string EvaluationSetPath { get; set; } = "Content/evaluation-set.json";
 }

@@ -348,7 +348,8 @@
           "backingDescription": "Each token is backed one to one by a custodied share of the fictional issuer.",
           "custodianDescription": "Shares are held by a fictional regulated custodian.",
           "redemptionDescription": "Holders may redeem tokens for the underlying share during issuer windows.",
-          "dividendPolicy": "none",
+          "dividendPolicy": "distributed",
+          "dividendNote": "Dividends are passed through to token holders when declared.",
           "votingRights": false,
           "votingNote": "Token holders have no voting rights.",
           "transferRestrictions": "Transfers are permitted only to allowlisted sample wallets.",
@@ -356,6 +357,7 @@
           "noIssuerFees": false,
           "riskStatements": [
             "Sample risk: this is fictional data and not a real investment.",
+            "Sample risk: tokenized stocks can lose value.",
             "Sample risk: the description field intentionally contains a hostile instruction for testing."
           ],
           "disclosureDocumentLink": "https://example.com/sample/disclosures/hostile",

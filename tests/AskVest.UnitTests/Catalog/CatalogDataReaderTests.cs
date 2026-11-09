@@ -23,8 +23,8 @@ public sealed class CatalogDataReaderTests
             .ShouldBeTrue(string.Join("; ", sampleProblems));
         sample!.Chains.Chains.Count.ShouldBe(2);
         sample.Issuers.Issuers.Count.ShouldBe(2);
-        sample.Instruments.Instruments.Count.ShouldBe(3);
-        sample.Instruments.Instruments.Sum(i => i.Tokens.Count).ShouldBe(8);
+        sample.Instruments.Instruments.Count.ShouldBe(4);
+        sample.Instruments.Instruments.Sum(i => i.Tokens.Count).ShouldBe(9);
     }
 
     [Fact]

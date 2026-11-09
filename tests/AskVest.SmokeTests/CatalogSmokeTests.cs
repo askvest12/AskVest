@@ -183,12 +183,12 @@ public sealed class CatalogSmokeTests
             new { country = "NG" }, token));
         country.GetProperty("success").GetBoolean().ShouldBeTrue();
 
-        // Browse: three active sample instruments, kind filter and search.
+        // Browse: four active sample instruments, kind filter and search.
         var all = await SendJsonAsync(client, Request(HttpMethod.Get, "/api/v1/catalog/instruments", null, token));
         var items = RequireData(all).GetProperty("items").EnumerateArray().ToList();
-        items.Count.ShouldBe(3);
+        items.Count.ShouldBe(4);
         items.Select(i => i.GetProperty("symbol").GetString())
-            .ShouldBe(["SAPL", "SGETF", "SNVDA"], ignoreOrder: true);
+            .ShouldBe(["SAPL", "SGETF", "SNVDA", "SHFX"], ignoreOrder: true);
 
         var stocks = await SendJsonAsync(client,
             Request(HttpMethod.Get, "/api/v1/catalog/instruments?kind=stock", null, token));
@@ -199,7 +199,7 @@ public sealed class CatalogSmokeTests
             Request(HttpMethod.Get, "/api/v1/catalog/instruments?search=apple", null, token));
         RequireData(searched).GetProperty("items").EnumerateArray().Count().ShouldBe(1);
 
-        // Pagination: page size 2 walks all three instruments exactly once.
+        // Pagination: page size 2 walks all four instruments exactly once.
         var seen = new HashSet<string>(StringComparer.Ordinal);
         string? cursor = null;
         do
@@ -220,7 +220,7 @@ public sealed class CatalogSmokeTests
         }
         while (cursor is not null);
 
-        seen.Count.ShouldBe(3);
+        seen.Count.ShouldBe(4);
 
         // Instrument detail: every token carries availability for the NG user.
         var nvdaDetail = await SendJsonAsync(client,

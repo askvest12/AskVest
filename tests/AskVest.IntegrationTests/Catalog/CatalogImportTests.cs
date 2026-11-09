@@ -369,7 +369,7 @@ public sealed class CatalogImportTests(PostgresFixture fixture, ITestOutputHelpe
             fixture, realPath, samplePath, loadSampleData: true, environmentName: "Development");
         var loaded = await ImportAsync(development);
         loaded.IsSuccess.ShouldBeTrue(loaded.Error?.Message);
-        loaded.Value.Tokens.ShouldBe(8);
+        loaded.Value.Tokens.ShouldBe(9);
     }
 
     [Fact]

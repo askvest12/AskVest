@@ -29,6 +29,13 @@ internal static partial class CitationValidator
                 return " ";
             }
 
+            // A result with no sources has nothing to cite, so the marker is
+            // dropped quietly rather than reported as a fabricated citation.
+            if (result.Sources.Count == 0)
+            {
+                return " ";
+            }
+
             if (!cited.Contains(id, StringComparer.Ordinal))
             {
                 cited.Add(id);

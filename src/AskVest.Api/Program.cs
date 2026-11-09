@@ -156,6 +156,7 @@ if (MarketDataModuleExtensions.IsEnabled(builder.Configuration))
 api.MapPracticeEndpoints();
 api.MapLearningEndpoints();
 api.MapPortfolioEndpoints();
+api.MapAssistantEndpoints(diagnostics.EnableProbes && !app.Environment.IsProduction());
 
 if (docs.Enabled)
 {

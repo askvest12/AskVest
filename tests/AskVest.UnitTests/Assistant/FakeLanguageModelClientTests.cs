@@ -30,7 +30,7 @@ public sealed class FakeLanguageModelClientTests
         var searchCall = first.Value.ToolCalls.ShouldHaveSingleItem();
         searchCall.Name.ShouldBe("search_instruments");
         JsonDocument.Parse(searchCall.ArgumentsJson).RootElement.GetProperty("query").GetString()
-            .ShouldBe("what is sample-appl?");
+            .ShouldBe("sample-appl");
 
         var second = await client.CompleteAsync(
             Request(
@@ -50,6 +50,18 @@ public sealed class FakeLanguageModelClientTests
             TestContext.Current.CancellationToken);
         third.Value.Text!.ShouldContain("123.45");
         third.Value.Text!.ShouldContain("[r1]");
+    }
+
+    [Fact]
+    public async Task Lesson_Question_Searches_Lessons()
+    {
+        var client = Create("normal");
+        var first = await client.CompleteAsync(
+            Request(User("What is a tokenized stock?")), TestContext.Current.CancellationToken);
+        var call = first.Value.ToolCalls.ShouldHaveSingleItem();
+        call.Name.ShouldBe("search_lessons");
+        JsonDocument.Parse(call.ArgumentsJson).RootElement.GetProperty("query").GetString()
+            .ShouldBe("tokenized");
     }
 
     [Fact]
@@ -143,7 +155,7 @@ public sealed class FakeLanguageModelClientTests
     public async Task Responses_Are_Deterministic()
     {
         var client = Create("normal");
-        var request = Request(User("repeat me"));
+        var request = Request(User("what is the SNVDA price?"));
         var first = await client.CompleteAsync(request, TestContext.Current.CancellationToken);
         var second = await client.CompleteAsync(request, TestContext.Current.CancellationToken);
         first.Value.ToolCalls.Single().ArgumentsJson.ShouldBe(second.Value.ToolCalls.Single().ArgumentsJson);

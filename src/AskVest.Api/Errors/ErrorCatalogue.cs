@@ -55,6 +55,7 @@ internal static class ErrorCatalogue
             [ErrorCodes.LedgerAlreadyReversed] = (409, ErrorType.Conflict, "The journal was already reversed."),
             [ErrorCodes.CatalogAddressInvalid] = (422, ErrorType.BusinessRule, "The address is not valid for this chain."),
             [ErrorCodes.MarketDataUnavailable] = (503, ErrorType.Unavailable, "Market data is temporarily unavailable."),
+            [ErrorCodes.AssistantUnavailable] = (503, ErrorType.Unavailable, "The assistant is unavailable."),
         };
 
     public static bool TryGet(string code, out int status, out ErrorType type, out string message)

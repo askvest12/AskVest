@@ -7,26 +7,12 @@ internal sealed class AssistantOptionsValidator : IValidateOptions<AssistantOpti
 {
     public static readonly AssistantOptionsValidator Instance = new();
 
-    private static readonly HashSet<string> Scenarios = new(StringComparer.Ordinal)
-    {
-        "normal",
-        "injection_obey",
-        "fabricated_citation",
-        "ungrounded_number",
-        "advice_phrase",
-        "markup_output",
-        "malformed_output",
-        "loop_tools",
-        "slow",
-        "error",
-    };
-
     public ValidateOptionsResult Validate(string? name, AssistantOptions options)
     {
         var results = new List<ValidationResult>();
         Validator.TryValidateObject(options, new ValidationContext(options), results, validateAllProperties: true);
 
-        if (!Scenarios.Contains(options.FakeScenario))
+        if (!Domain.AssistantScenarios.All.Contains(options.FakeScenario))
         {
             results.Add(new ValidationResult(
                 $"Assistant:FakeScenario '{options.FakeScenario}' is not supported."));

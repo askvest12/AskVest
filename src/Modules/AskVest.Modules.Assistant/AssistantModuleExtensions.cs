@@ -42,6 +42,9 @@ public static class AssistantModuleExtensions
         services.AddSingleton<ILanguageModelClient>(provider => provider.GetRequiredService<FakeLanguageModelClient>());
         services.AddSingleton<AssistantContent>();
         services.AddScoped<Agent.AssistantAgent>();
+        services.AddScoped<Services.AssistantChatService>();
+        services.AddScoped<Services.AssistantRetention>();
+        services.AddHostedService<Services.AssistantRetentionService>();
         services.AddHostedService<AssistantStartupCheck>();
         services.TryAddSingleton(TimeProvider.System);
 

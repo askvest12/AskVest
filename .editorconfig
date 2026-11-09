@@ -206,6 +206,10 @@ dotnet_diagnostic.CA1031.severity = none
 [src/Modules/AskVest.Modules.Practice/Services/PracticeStopEvaluator.cs]
 dotnet_diagnostic.CA1031.severity = none
 
+# The retention job must survive any database failure and retry on the next tick.
+[src/Modules/AskVest.Modules.Assistant/Services/AssistantRetentionService.cs]
+dotnet_diagnostic.CA1031.severity = none
+
 # Scenario restore in finally must not mask the journey's own failure.
 [tests/AskVest.SmokeTests/MarketDataSmokeTests.cs]
 dotnet_diagnostic.CA1031.severity = none
@@ -216,6 +220,10 @@ dotnet_diagnostic.CA1031.severity = none
 
 # Scenario restore in finally must not mask the journey's own failure.
 [tests/AskVest.SmokeTests/PortfolioSmokeTests.cs]
+dotnet_diagnostic.CA1031.severity = none
+
+# Each evaluation check failure is collected so one run reports every broken case.
+[tests/AskVest.IntegrationTests/Assistant/AssistantEvaluationTests.cs]
 dotnet_diagnostic.CA1031.severity = none
 
 # The parallel buy burst intentionally overlaps requests on the shared client; all tasks complete before disposal.

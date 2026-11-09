@@ -26,9 +26,14 @@ internal sealed class StubCatalog : ICatalog
     public Task<CatalogTokenDisclosure?> FindTokenDisclosureAsync(Guid tokenId, CancellationToken cancellationToken = default)
         => Task.FromResult(Disclosure is not null && Disclosure.TokenId == tokenId ? Disclosure : null);
 
+    public int ListCalls { get; private set; }
+
     public Task<IReadOnlyList<CatalogInstrument>> ListActiveInstrumentsAsync(CancellationToken cancellationToken = default)
-        => Task.FromResult<IReadOnlyList<CatalogInstrument>>(
+    {
+        ListCalls++;
+        return Task.FromResult<IReadOnlyList<CatalogInstrument>>(
             Instruments.Where(instrument => instrument.Status == "active").ToList());
+    }
 
     public Task<IReadOnlyList<CatalogToken>> ListListedTokensForChainAsync(
         string chainId, CancellationToken cancellationToken = default)

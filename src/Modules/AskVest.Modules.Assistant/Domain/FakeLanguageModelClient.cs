@@ -168,7 +168,7 @@ internal sealed partial class FakeLanguageModelClient(IOptions<AssistantOptions>
 
     private static string ModelId() => "fake-1";
 
-    [GeneratedRegex("\"instrumentId\"\\s*:\\s*\"([^\"]+)\"")]
+    [GeneratedRegex("\"(?:instrumentId|id)\"\\s*:\\s*\"([^\"]+)\"")]
     private static partial Regex InstrumentIdRegex();
 
     [GeneratedRegex("\"price\"\\s*:\\s*\"([^\"]+)\"\\s*,\\s*\"currency\"\\s*:\\s*\"([^\"]+)\"")]

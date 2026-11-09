@@ -40,6 +40,8 @@ public static class AssistantModuleExtensions
 
         services.AddSingleton<FakeLanguageModelClient>();
         services.AddSingleton<ILanguageModelClient>(provider => provider.GetRequiredService<FakeLanguageModelClient>());
+        services.AddSingleton<AssistantContent>();
+        services.AddScoped<Agent.AssistantAgent>();
         services.AddHostedService<AssistantStartupCheck>();
         services.TryAddSingleton(TimeProvider.System);
 

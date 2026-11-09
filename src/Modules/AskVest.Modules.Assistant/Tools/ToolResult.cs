@@ -18,6 +18,9 @@ internal sealed record ToolResult
 
     public bool IsError { get; init; }
 
+    /// <summary>True when the call itself was refused (bad arguments, unknown tool, timeout, over budget), as opposed to a domain miss like not_found.</summary>
+    public bool Rejected { get; init; }
+
     public string? ErrorCode { get; init; }
 
     public required string PayloadJson { get; init; }
@@ -36,6 +39,8 @@ internal sealed record ToolResult
         {
             ToolName = string.Empty,
             IsError = true,
+            Rejected = errorCode is "invalid_arguments" or "unknown_tool"
+                or ToolArguments.ForbiddenUserIdProperty or "tool_timeout",
             ErrorCode = errorCode,
             PayloadJson = JsonSerializer.Serialize(new { error = message }),
         };

@@ -32,7 +32,9 @@ public static class AssistantModuleExtensions
                 $"Assistant:Provider '{settings.Provider}' has no adapter yet; only 'fake' is implemented.");
         }
 
-        if (environment.IsProduction())
+        // A disabled assistant still registers so the kill switch can answer
+        // assistant.unavailable; only an enabled fake model is forbidden.
+        if (settings.Enabled && environment.IsProduction())
         {
             throw new InvalidOperationException(
                 "The fake assistant model cannot run in Production; a real provider adapter and evaluation are required first.");

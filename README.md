@@ -428,6 +428,56 @@ docker compose -f docker-compose.yml -f docker-compose.smoke.yml up -d --build -
 ASKVEST_SMOKE_BASE_URL=http://localhost:5081 dotnet test --project tests/AskVest.SmokeTests
 ```
 
+## AI research assistant
+
+`POST /api/v1/assistant/messages` answers research and education questions
+about the catalog, latest prices, price history, the caller's own practice
+and real portfolio, their watchlist and learning lessons. It can explain and
+cite; it cannot give advice, predict prices, promise returns or place,
+modify or cancel orders, move money or reveal its instructions. Every
+answer carries server-built citations, fact cards, an optional action
+proposal (for example `open_instrument`, never an execution) and a
+disclosure line. Numeric claims are checked against the trusted tool
+results that produced them; fabricated citations, ungrounded numbers,
+markup and instruction-override attempts are rejected or rewritten to a
+safe fallback, and every run writes a content-free audit event.
+
+The assistant requires an active account with practice eligibility and an
+accepted `ai_processing` consent document; without it requests answer
+`compliance.not_eligible` or `auth.forbidden` like any other gated
+endpoint. `Assistant__Enabled=false` is the kill switch: every call then
+answers `assistant.unavailable` while the rest of the API is unaffected.
+Messages are limited to `Assistant__MaxMessageCharacters` (2000),
+`Assistant__MessagesPerHour` (20) and `Assistant__MessagesPerDay` (100) per
+user, with `Assistant__MessageTimeBudgetSeconds` bounding each turn.
+Conversations and messages are deleted after
+`Assistant__ConversationRetentionDays` (90); audit events are kept.
+
+The only model adapter shipped is the deterministic fake
+(`Assistant__Provider=fake`), which is refused at startup in Production.
+The real provider, its secret and its evaluation are a launch gate: the
+versioned evaluation set in
+`src/Modules/AskVest.Modules.Assistant/Content/evaluation-set.json` must
+pass against the real model before the assistant may be enabled in
+production. The set is provider agnostic; `{AAPL_ID}` and `{HOSTILE_ID}`
+placeholders are substituted by the integration harness.
+
+### Assistant smoke test
+
+The smoke override enables the fake model, turns the diagnostics probes on
+and lowers the hourly limit so bounding is cheap to observe:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.smoke.yml up -d --build --wait
+ASKVEST_SMOKE_BASE_URL=http://localhost:5081 dotnet test --project tests/AskVest.SmokeTests --filter "FullyQualifiedName~Assistant"
+```
+
+`POST /api/v1/diagnostics/assistant-scenario` (probe flag only, never in
+Production, a no-op for non-fake models) switches the fake between
+`normal`, `error`, `injection_obey`, `fabricated_citation`,
+`ungrounded_number`, `advice_phrase`, `markup_output`, `malformed_output`,
+`loop_tools` and `slow`.
+
 ## Rotating signing keys
 
 Access tokens are signed with ES256. To rotate:

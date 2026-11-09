@@ -99,6 +99,7 @@ services:
       Practice__MaxResetsPer30Days: "3"
       Learning__ContentPath: "data/learning"
       Learning__LoadSampleContent: "false"
+      Assistant__Enabled: "false"
       Portfolio__CashEquivalentAssets__0: "USD"
       Portfolio__CashEquivalentAssets__1: "USDC"
       Portfolio__WatchlistMaximum: "50"

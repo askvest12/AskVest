@@ -61,6 +61,10 @@ services:
       Practice__ResetCooldownHours: "0.001"
       Learning__LoadSampleContent: "true"
       Learning__SampleContentPath: "data/learning-sample"
+      Assistant__Enabled: "true"
+      Assistant__Provider: "fake"
+      Assistant__MessagesPerHour: "10"
+      Assistant__MessagesPerDay: "50"
     ports: !override
       - "127.0.0.1:${ASKVEST_SMOKE_API_PORT:-5081}:8080"
 

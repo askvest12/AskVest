@@ -27,6 +27,19 @@ public sealed class AssistantModuleGuardTests
     }
 
     [Fact]
+    public void Disabled_Fake_Model_In_Production_Registers()
+    {
+        var services = new ServiceCollection();
+        var configuration = ConfigurationWith(new Dictionary<string, string?>
+        {
+            ["ConnectionStrings:Platform"] = "Host=localhost;Database=x",
+            ["Assistant:Enabled"] = "false",
+        });
+        services.AddAssistantModule(configuration, new StubEnvironment("Production"));
+        services.ShouldContain(descriptor => descriptor.ServiceType.Name.Contains("ILanguageModelClient"));
+    }
+
+    [Fact]
     public void Unknown_Provider_Throws_In_Any_Environment()
     {
         var services = new ServiceCollection();

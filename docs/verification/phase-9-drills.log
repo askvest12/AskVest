@@ -1,0 +1,81 @@
+=== Phase 9 assistant failure drills ===
+base: http://localhost:5081  at 2026-11-09T20:22:34Z
+>>> POST /api/v1/auth/sign-up  Idempotency-Key: drill-signup
+<<< 200
+{"success":true,"message":"If this email can be verified, a verification code has been sent.","data":null,"error":null,"correlationId":"01a1c1fa16eb7a099ea1ecc26ccf2c58"}
+
+>>> POST /api/v1/auth/verify-email  Idempotency-Key: drill-verify
+<<< 200
+{"success":true,"message":"Email verified.","data":null,"error":null,"correlationId":"01a1c1fa2036789e956d591d7faa37ee"}
+
+>>> POST /api/v1/compliance/consents  Idempotency-Key: drill-consent
+<<< 200
+{"success":true,"message":"Consents recorded.","data":null,"error":null,"correlationId":"01a1c1fa21cd7c858e367daeaf91fa4a"}
+
+>>> PUT /api/v1/compliance/country  Idempotency-Key: drill-country
+<<< 200
+{"success":true,"message":"Country recorded.","data":{"country":"NG"},"error":null,"correlationId":"01a1c1fa220074ad870b5bfc1ba756dd"}
+
+>>> POST /api/v1/diagnostics/assistant-scenario  Idempotency-Key: drill-sc-normal
+<<< 200
+{"success":true,"message":"Scenario set.","data":{"applied":true,"scenario":"normal"},"error":null,"correlationId":"01a1c1fa224c77878120b38ff89dec2e"}
+
+user ready: drill-1794255754@smoke.test
+=== Drill 1: stop postgres, send message, expect service.unavailable ===
+>>> POST /api/v1/diagnostics/assistant-scenario  Idempotency-Key: drill-sc-slow
+<<< 200
+{"success":true,"message":"Scenario set.","data":{"applied":true,"scenario":"slow"},"error":null,"correlationId":"01a1c1fa227d727695ad878c31da1b77"}
+
+>>> POST /api/v1/assistant/messages  Idempotency-Key: drill-msg-db-1
+<<< 503
+{"success":false,"message":"The service is temporarily unavailable.","data":null,"error":{"code":"service.unavailable","details":null},"correlationId":"01a1c1fa26947632b06b688e0c26dbe9"}
+
+postgres restarting; waiting for health...
+ERROR:  column u.email does not exist
+LINE 1: ..._id JOIN identity.users u ON u.id=c.user_id WHERE u.email='d...
+                                                             ^
+>>> POST /api/v1/diagnostics/assistant-scenario  Idempotency-Key: drill-sc-normal2
+<<< 200
+{"success":true,"message":"Scenario set.","data":{"applied":true,"scenario":"normal"},"error":null,"correlationId":"01a1c1fa2ecb735d92498eef94aa488f"}
+
+=== Drill 2: slow call in flight, kill api, restart, retry same key ===
+>>> POST /api/v1/diagnostics/assistant-scenario  Idempotency-Key: drill-sc-slow2
+<<< 200
+{"success":true,"message":"Scenario set.","data":{"applied":true,"scenario":"slow"},"error":null,"correlationId":"01a1c1fa2ef0760b80d48f124f80b0e7"}
+
+>>> api killed mid-request; restarting
+>>> api healthy again; retrying same idempotency key
+<<< retry 1: 409
+{"success":false,"message":"The request conflicts with current state.","data":null,"error":{"code":"idempotency.request_in_progress","details":null},"correlationId":"01a1c1fa6275775d8ad866de2c10d5eb"}
+<<< retry 2: 409
+{"success":false,"message":"The request conflicts with current state.","data":null,"error":{"code":"idempotency.request_in_progress","details":null},"correlationId":"01a1c1fa8ad078c298747fe42e829d4c"}
+<<< retry 3: 409
+{"success":false,"message":"The request conflicts with current state.","data":null,"error":{"code":"idempotency.request_in_progress","details":null},"correlationId":"01a1c1fab2287ac683017cd04a76284f"}
+<<< retry 4: 409
+{"success":false,"message":"The request conflicts with current state.","data":null,"error":{"code":"idempotency.request_in_progress","details":null},"correlationId":"01a1c1fad9937ce18ed1fad2fdc82985"}
+<<< retry 5: 409
+{"success":false,"message":"The request conflicts with current state.","data":null,"error":{"code":"idempotency.request_in_progress","details":null},"correlationId":"01a1c1fb00eb77e3962f48d3cd74b428"}
+<<< retry 6: 200
+{"success":true,"message":"Assistant replied.","data":{"conversationId":"01a1c1fb-2a57-7011-9a98-f97e04fc1b10","messageId":"01a1c1fb-2a79-7e3b-94ec-da707c6b343c","text":"I could not find any matching instruments.","citations":[],"factCards":[],"actions":[],"policy":{"version":"prompt-1","blocked":fa
+ERROR:  column u.email does not exist
+LINE 1: ..._id JOIN identity.users u ON u.id=c.user_id WHERE u.email='d...
+                                                             ^
+>>> POST /api/v1/diagnostics/assistant-scenario  Idempotency-Key: drill-sc-normal3
+<<< 200
+{"success":true,"message":"Scenario set.","data":{"applied":true,"scenario":"normal"},"error":null,"correlationId":"01a1c1fb2d7e7fb9a6a76ac0819d0f3b"}
+
+=== Drill 3: Assistant__Enabled=false, restart, expect assistant.unavailable ===
+>>> POST /api/v1/assistant/messages  Idempotency-Key: drill-msg-ks
+<<< 503
+{"success":false,"message":"The assistant is unavailable.","data":null,"error":{"code":"assistant.unavailable","details":null},"correlationId":"01a1c1fb57e9705fa9dd75dd48add832"}
+
+>>> GET /api/v1/system/info
+<<< 200
+{"success":true,"message":"Service information retrieved.","data":{"service":"askvest-api","version":"1.0.0+ebd92a187a4bf15aeccaea6dbb4ae6f02756b7d4","serverTimeUtc":"2026-11-09T20:23:57.8104735Z"},"error":null,"correlationId":"01a1c1fb5a61716f98a8fa084c76f7be"}
+
+>>> assistant re-enabled; sanity check
+>>> POST /api/v1/assistant/messages  Idempotency-Key: drill-msg-back
+<<< 200
+{"success":true,"message":"Assistant replied.","data":{"conversationId":"01a1c1fb-87a8-7f6f-9a24-5641bfc16c51","messageId":"01a1c1fb-87b8-7898-9f6f-37918732095f","text":"I could not find any matching instruments.","citations":[],"factCards":[],"actions":[],"policy":{"version":"prompt-1","blocked":false},"disclosure":"This assistant explains and researches only. It is not financial advice and it cannot place trades."},"error":null,"correlationId":"01a1c1fb83957a439556d2f8394e858b"}
+
+=== drills done ===

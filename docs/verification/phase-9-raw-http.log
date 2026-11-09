@@ -1,0 +1,82 @@
+=== Phase 9 assistant raw HTTP evidence ===
+base: http://localhost:5081  mailpit: http://localhost:18025  at 2026-11-09T20:21:47Z
+>>> POST /api/v1/auth/sign-up  Idempotency-Key: ev-signup-1
+>>> body: {"email":"evidence-1794255707@smoke.test","password":"CorrectHorseSmoke9"}
+<<< 200
+{"success":true,"message":"If this email can be verified, a verification code has been sent.","data":null,"error":null,"correlationId":"01a1c1f95c1c73ffa41357e67c4fc929"}
+
+>>> verify code for evidence-1794255707@smoke.test: 222504
+>>> POST /api/v1/auth/verify-email  Idempotency-Key: ev-verify-1
+>>> body: {"email":"evidence-1794255707@smoke.test","code":"222504"}
+<<< 200
+{"success":true,"message":"Email verified.","data":null,"error":null,"correlationId":"01a1c1f965b87f05a13f769faf11c574"}
+
+>>> login ok, token acquired
+>>> POST /api/v1/compliance/consents  Idempotency-Key: ev-consent-1
+>>> body: {"documents":[{"type": "terms", "version": "dev-1", "sha256": "3cd4ce09a1de6487158536c2633bcdaca51c58a9a3f17dab2343de11c3d69a5a"}, {"type": "privacy", "version": "dev-1", "sha256": "7f391c05d905e1c1d21ae43ab91215b6762ef83266eccb81972d2ef6b9296115"}, {"type": "ai_processing", "version": "dev-1", "sha256": "9b1d3f5a7c2e4a6b8d0f1a3c5e7b9d2f4a6c8e0b1d3f5a7c9e2b4d6f8a0c1e3b"}]}
+<<< 200
+{"success":true,"message":"Consents recorded.","data":null,"error":null,"correlationId":"01a1c1f9677e705b890c5cf4ca2aae5c"}
+
+>>> PUT /api/v1/compliance/country  Idempotency-Key: ev-country-1
+>>> body: {"country":"NG"}
+<<< 200
+{"success":true,"message":"Country recorded.","data":{"country":"NG"},"error":null,"correlationId":"01a1c1f967a8772a8e7daebaf2d9f3f6"}
+
+>>> POST /api/v1/assistant/messages  Idempotency-Key: ev-unauth-1
+>>> body: {"text":"hello"}
+<<< 401
+{"success":false,"message":"Authentication is required.","data":null,"error":{"code":"auth.unauthenticated","details":null},"correlationId":"0HNPUJK5R61F3:00000001"}
+
+>>> POST /api/v1/assistant/messages  Idempotency-Key: ev-msg-1
+>>> body: {"text":"What is a tokenized stock?"}
+<<< 200
+{"success":true,"message":"Assistant replied.","data":{"conversationId":"01a1c1f9-6816-7883-a265-ea21ac47e4f1","messageId":"01a1c1f9-6816-70b0-b10f-f5bb25f014ae","text":"I found matching lessons you can read for more detail. [r1]","citations":[{"type":"lesson","id":"what-you-own","title":"What you actually own","asOf":"2026-11-09T20:21:50.2297735Z","label":null}],"factCards":[{"cardType":"lesson_search","title":"lesson search","fields":[{"name":"query","value":"tokenized"},{"name":"count","value":"1"},{"name":"what-you-own","value":"What you actually own - Holding a token is not the same as owning the share."}]}],"actions":[],"policy":{"version":"prompt-1","blocked":false},"disclosure":"This assistant explains and researches only. It is not financial advice and it cannot place trades."},"error":null,"correlationId":"01a1c1f967f677d7912f0d03928abbf2"}
+
+>>> POST /api/v1/assistant/messages  Idempotency-Key: ev-msg-2
+>>> body: {"text":"What is the latest price for sample-aapl?"}
+<<< 200
+{"success":true,"message":"Assistant replied.","data":{"conversationId":"01a1c1f9-688a-7f89-b0d0-9e032a2b1401","messageId":"01a1c1f9-688a-7ca1-80ee-7fef8e01af91","text":"SAPL is priced at 79.32 USD as of 2026-11-09T20:21:50.345629+00:00 (label: live). This is a research summary, not advice. [r1][r2]","citations":[{"type":"instrument","id":"sample-aapl","title":"SampleApple Incorporated (fictional)","asOf":"2026-11-09T20:21:50.3373917Z","label":null},{"type":"price","id":"sample-aapl","title":"SAPL","asOf":"2026-11-09T20:21:47.4736340Z","label":"live"}],"factCards":[{"cardType":"instrument_search","title":"instrument search","fields":[{"name":"query","value":"sample-aapl"},{"name":"count","value":"1"},{"name":"SAPL","value":"SampleApple Incorporated (fictional) (active)"}]},{"cardType":"price","title":"SAPL","fields":[{"name":"price","value":"79.32"},{"name":"currency","value":"USD"},{"name":"asOf","value":"2026-11-09T20:21:47.4736340+00:00"},{"name":"label","value":"live"},{"name":"session","value":"regular"},{"name":"usableForExecution","value":"True"}]}],"actions":[],"policy":{"version":"prompt-1","blocked":false},"disclosure":"This assistant explains and researches only. It is n
+
+>>> GET /api/v1/marketdata/prices?instrumentIds=sample-aapl
+<<< 200
+{"success":true,"message":"Prices retrieved.","data":[{"instrumentId":"sample-aapl","price":"79.320000000000000000","currency":"USD","asOf":"2026-11-09T20:21:47.4736340Z","ageSeconds":2,"session":"regular","label":"live","usableForExecution":true,"source":"AskVest Demo Feed","previousClose":null}],"error":null,"correlationId":"01a1c1f968c87bca957fa63dda2fc276"}
+
+>>> GET /api/v1/assistant/conversations
+<<< 200
+{"success":true,"message":"Conversations loaded.","data":{"items":[{"id":"01a1c1f9-688a-7f89-b0d0-9e032a2b1401","title":"What is the latest price for sample-aapl?","createdAt":"2026-11-09T20:21:50.3463900Z","updatedAt":"2026-11-09T20:21:50.3466150Z"},{"id":"01a1c1f9-6816-7883-a265-ea21ac47e4f1","title":"What is a tokenized stock?","createdAt":"2026-11-09T20:21:50.2302200Z","updatedAt":"2026-11-09T20:21:50.2304310Z"}],"nextCursor":null,"hasMore":false,"limit":20},"error":null,"correlationId":"01a1c1f969027bd0b2d346b54aa3f283"}
+
+>>> GET /api/v1/assistant/conversations/01a1c1f9-688a-7f89-b0d0-9e032a2b1401
+<<< 200
+{"success":true,"message":"Conversation loaded.","data":{"id":"01a1c1f9-688a-7f89-b0d0-9e032a2b1401","title":"What is the latest price for sample-aapl?","createdAt":"2026-11-09T20:21:50.3463900Z","updatedAt":"2026-11-09T20:21:50.3466150Z","messages":[{"id":"01a1c1f9-688a-73c0-9080-57dd96efa142","role":"user","text":"What is the latest price for sample-aapl?","citations":[],"factCards":[],"actions":[],"policyOutcome":null,"createdAt":"2026-11-09T20:21:50.3463900Z"},{"id":"01a1c1f9-688a-7ca1-80ee-7fef8e01af91","role":"assistant","text":"SAPL is priced at 79.32 USD as of 2026-11-09T20:21:50.345629+00:00 (label: live). This is a research summary, not advice. [r1][r2]","citations":[{"id":"sample-aapl","asOf":"2026-11-09T20:21:50.3373917+00:00","type":"instrument","label":null,"title":"SampleApple Incorporated (fictional)"},{"id":"sample-aapl","asOf":"2026-11-09T20:21:47.473634+00:00","type":"price","label":"live","title":"SAPL"}],"factCards":[{"title":"instrument search","fields":[{"name":"query","value":"sample-aapl"},{"name":"count","value":"1"},{"name":"SAPL","value":"SampleApple Incorporated (fictional) (active)"}],"cardType":"instrument_search"},{"title":"SAPL","fields":[{"name":"p
+
+>>> POST /api/v1/assistant/messages  Idempotency-Key: ev-msg-1
+>>> body: {"text":"What is a tokenized stock?"}
+<<< 200
+{"success":true,"message":"Assistant replied.","data":{"conversationId":"01a1c1f9-6816-7883-a265-ea21ac47e4f1","messageId":"01a1c1f9-6816-70b0-b10f-f5bb25f014ae","text":"I found matching lessons you can read for more detail. [r1]","citations":[{"type":"lesson","id":"what-you-own","title":"What you actually own","asOf":"2026-11-09T20:21:50.2297735Z","label":null}],"factCards":[{"cardType":"lesson_search","title":"lesson search","fields":[{"name":"query","value":"tokenized"},{"name":"count","value":"1"},{"name":"what-you-own","value":"What you actually own - Holding a token is not the same as owning the share."}]}],"actions":[],"policy":{"version":"prompt-1","blocked":false},"disclosure":"This assistant explains and researches only. It is not financial advice and it cannot place trades."},"error":null,"correlationId":"01a1c1f967f677d7912f0d03928abbf2"}
+
+>>> POST /api/v1/diagnostics/assistant-scenario  Idempotency-Key: ev-sc-1
+>>> body: {"scenario":"advice_phrase"}
+<<< 200
+{"success":true,"message":"Scenario set.","data":{"applied":true,"scenario":"advice_phrase"},"error":null,"correlationId":"01a1c1f969cd74b6a37717eefcf00129"}
+
+>>> POST /api/v1/assistant/messages  Idempotency-Key: ev-sc-msg-1
+>>> body: {"text":"probe"}
+<<< 200
+{"success":true,"message":"Assistant replied.","data":{"conversationId":"01a1c1f9-69f5-757e-a5cd-d1d3120d1890","messageId":"01a1c1f9-69f5-7092-93df-d507f305b9ac","text":"I could not put together a reliable answer for that. Please try rephrasing, or browse the lessons for the concepts.","citations":[],"factCards":[],"actions":[],"policy":{"version":"prompt-1","blocked":true},"disclosure":"This assistant explains and researches only. It is not financial advice and it cannot place trades."},"error":null,"correlationId":"01a1c1f969e17797873eb8e10676cd5e"}
+
+>>> POST /api/v1/diagnostics/assistant-scenario  Idempotency-Key: ev-sc-2
+>>> body: {"scenario":"error"}
+<<< 200
+{"success":true,"message":"Scenario set.","data":{"applied":true,"scenario":"error"},"error":null,"correlationId":"01a1c1f96a217529ac56b98c0c94583f"}
+
+>>> POST /api/v1/assistant/messages  Idempotency-Key: ev-sc-msg-2
+>>> body: {"text":"probe"}
+<<< 503
+{"success":false,"message":"The assistant is unavailable.","data":null,"error":{"code":"assistant.unavailable","details":null},"correlationId":"01a1c1f96a447438b9ff319b6203307b"}
+
+>>> POST /api/v1/diagnostics/assistant-scenario  Idempotency-Key: ev-sc-3
+>>> body: {"scenario":"normal"}
+<<< 200
+{"success":true,"message":"Scenario set.","data":{"applied":true,"scenario":"normal"},"error":null,"correlationId":"01a1c1f96a8a7feeb0f419b8de5835f6"}
+
+=== done ===

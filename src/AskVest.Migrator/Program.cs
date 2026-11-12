@@ -16,6 +16,7 @@ using AskVest.Modules.Portfolio;
 using AskVest.Modules.Portfolio.Persistence;
 using AskVest.Modules.Practice;
 using AskVest.Modules.Practice.Persistence;
+using AskVest.Modules.Trading.Persistence;
 using AskVest.Platform;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -66,6 +67,7 @@ try
             connectionString => new LearningDbContext(LearningDbContextOptions.Create(connectionString)),
             connectionString => new PortfolioDbContext(PortfolioDbContextOptions.Create(connectionString)),
             connectionString => new AssistantDbContext(AssistantDbContextOptions.Create(connectionString)),
+            connectionString => new TradingDbContext(TradingDbContextOptions.Create(connectionString)),
         ],
         cancellation.Token);
     if (logger.IsEnabled(LogLevel.Information))

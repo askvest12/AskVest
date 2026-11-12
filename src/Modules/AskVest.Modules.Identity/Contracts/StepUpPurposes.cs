@@ -1,5 +1,9 @@
-namespace AskVest.Modules.Identity.Services;
+namespace AskVest.Modules.Identity.Contracts;
 
+/// <summary>
+/// The known step-up grant purposes. Other modules reference these constants
+/// so a grant can never be consumed under a misspelled purpose.
+/// </summary>
 public static class StepUpPurposes
 {
     public const string AuthorizeOrder = "authorize_order";

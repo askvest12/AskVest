@@ -1,5 +1,9 @@
 using AskVest.Modules.Trading.Configuration;
+using AskVest.Modules.Trading.Gateway;
+using AskVest.Modules.Trading.Persistence;
+using AskVest.Modules.Trading.Services;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -19,11 +23,15 @@ public static class TradingModuleExtensions
             ?? new TradingOptions();
         if (environment?.IsProduction() == true
             && settings.Gateway.Routes.Values.Any(route =>
-                string.Equals(route.Provider, "fake", StringComparison.Ordinal)))
+                string.Equals(route.Provider, FakeIssuerGateway.ProviderName, StringComparison.Ordinal)))
         {
             throw new InvalidOperationException(
                 "The fake issuer gateway cannot run in Production; a real adapter is required first.");
         }
+
+        var connectionString = configuration.GetConnectionString("Trading")
+            ?? configuration.GetConnectionString("Platform")
+            ?? throw new InvalidOperationException("ConnectionStrings:Trading or ConnectionStrings:Platform is required.");
 
         services.AddSingleton<IValidateOptions<TradingOptions>>(TradingOptions.Validator);
         services.AddOptions<TradingOptions>()
@@ -31,6 +39,17 @@ public static class TradingModuleExtensions
             .ValidateOnStart();
         services.TryAddSingleton(TimeProvider.System);
         services.AddValidatorsFromAssembly(typeof(TradingModuleExtensions).Assembly);
+
+        services.AddSingleton<FakeIssuerGateway>();
+        services.AddSingleton<GatewayRegistry>();
+        services.AddScoped<TradingEventWriter>();
+
+        services.AddDbContext<TradingDbContext>((IServiceProvider provider, DbContextOptionsBuilder options) =>
+        {
+            var platformOptions = provider.GetRequiredService<IOptions<AskVest.Platform.PlatformOptions>>().Value;
+            var scope = provider.GetService<AskVest.Platform.ITransactionScope>();
+            TradingDbContextOptions.Configure(options, connectionString, platformOptions.CommandTimeoutSeconds, scope?.Connection);
+        });
 
         return services;
     }

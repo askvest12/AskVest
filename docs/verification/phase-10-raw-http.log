@@ -1,0 +1,18 @@
+=== Phase 10 trading raw HTTP evidence ===
+base: http://localhost:5081 at 2026-11-12T19:03:12Z
+
+>>> GET /api/v1/openapi/v1.json (trading paths)
+/api/v1/diagnostics/trading-scenario
+/api/v1/real/balances
+/api/v1/real/ledger/entries
+/api/v1/real/orders
+/api/v1/real/orders/{orderId}
+/api/v1/real/orders/{orderId}/cancel
+/api/v1/real/portfolio
+/api/v1/real/quotes
+/api/v1/real/quotes/{quoteId}
+
+>>> POST /api/v1/real/quotes (no auth)
+{"success":false,"message":"Authentication is required.","data":null,"error":{"code":"auth.unauthenticated","details":null},"correlationId":"0HNQ0SJ890MC2:00000001"}
+>>> POST /api/v1/real/orders (no auth)
+{"success":false,"message":"Authentication is required.","data":null,"error":{"code":"auth.unauthenticated","details":null},"correlationId":"0HNQ0SJ890MC3:00000001"}

@@ -84,6 +84,10 @@ Pattern `^[a-z]+(_[a-z]+)*(\.[a-z]+(_[a-z]+)*)+$`.
 | `learning.quiz_required` | 422 | Lesson has a quiz; complete it through `quiz-attempts` instead |
 | `portfolio.watchlist_full` | 422 | Watchlist is at its maximum size |
 | `assistant.unavailable` | 503 | Assistant disabled, provider error, timeout or malformed model output after retry; fail closed |
+| `trading.not_available` | 422 | Quote refused; details list the catalog blocker codes or the closed-market reason |
+| `trading.order_invalid` | 422 | Order fails validation; details name the reason (below minimum, above maximum, daily limit, too many open orders, quantity scale) |
+| `trading.quote_unavailable` | 503 | Gateway failure or the price deviation guard refused the quote |
+| `trading.quote_invalid` | 409 | Quote expired, already used or not found; the client must request a new quote |
 | `idempotency.key_missing` | 400 | State-changing call without `Idempotency-Key` |
 | `idempotency.key_invalid` | 400 | Key fails the format rule |
 | `idempotency.key_reused` | 422 | Same key, different request fingerprint |
@@ -139,6 +143,10 @@ Header `Idempotency-Key` (8 to 128 chars of `[A-Za-z0-9_.:-]`). Opt in with `.Re
 - `X-Correlation-Id`: accepted inbound only if it matches `^[A-Za-z0-9._-]{8,64}$`, echoed outbound always.
 - `Idempotency-Key`: inbound on state-changing endpoints.
 - `Idempotency-Replayed: true`: outbound on replays.
+
+## Trading endpoints
+
+All under `/api/v1/real` behind the `RealEligible` policy. `POST /quotes`, `POST /orders` and `POST /orders/{orderId}/cancel` require an `Idempotency-Key`; `GET /quotes/{quoteId}`, `GET /orders` and `GET /orders/{orderId}` are reads. Quote and order money fields serialize as strings; the gateway key and gateway reference never appear in any response. Order states are `pending_submission`, `submitting`, `submitted`, `executed`, `failed`, `cancelled` and `needs_reconciliation`; clients must treat `needs_reconciliation` as "funds still held, outcome pending" and never as an error to retry blindly.
 
 ## Assistant endpoints
 

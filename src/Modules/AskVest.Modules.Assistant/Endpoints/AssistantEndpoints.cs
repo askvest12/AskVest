@@ -5,9 +5,9 @@ using AskVest.Modules.Assistant.Tools;
 using AskVest.Modules.Compliance.Contracts;
 using AskVest.SharedKernel;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace AskVest.Modules.Assistant.Endpoints;
 

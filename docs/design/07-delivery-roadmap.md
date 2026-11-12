@@ -13,8 +13,8 @@ Phases 0 to 17. Each phase ends with the Definition of Done in `CLAUDE.md`.
 | 6 | Practice: virtual credits, simulated orders (done) | 3, 4, 5 |
 | 7 | Learning: lessons, quizzes, streaks (done; deliberately does not consume `PracticeOrderFilled`) | 1, 2 |
 | 8 | Portfolio: holdings, cost basis, watchlist (done) | 3, 4, 5, 6 |
-| 9 | Assistant: AI chat, tool calls, citations, audit | 1, 4, 8 |
-| 10 | Trading: quotes, real orders, order state machine | 2, 3, 4, 5, 8 |
+| 9 | Assistant: AI chat, tool calls, citations, audit (done) | 1, 4, 8 |
+| 10 | Trading: quotes, real orders, order state machine (in progress) | 2, 3, 4, 5, 8 |
 | 11 | Wallets: custody abstraction, addresses, signing requests | 1, 2 |
 | 12 | Funding: deposits, conversion, withdrawals, webhooks | 3, 10, 11 |
 | 13 | Notifications: channels, alerts, preferences | 1 |

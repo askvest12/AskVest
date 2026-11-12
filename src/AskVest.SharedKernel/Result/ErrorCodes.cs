@@ -59,4 +59,8 @@ public static class ErrorCodes
     public const string LearningQuizRequired = "learning.quiz_required";
     public const string PortfolioWatchlistFull = "portfolio.watchlist_full";
     public const string AssistantUnavailable = "assistant.unavailable";
+    public const string TradingNotAvailable = "trading.not_available";
+    public const string TradingOrderInvalid = "trading.order_invalid";
+    public const string TradingQuoteUnavailable = "trading.quote_unavailable";
+    public const string TradingQuoteInvalid = "trading.quote_invalid";
 }

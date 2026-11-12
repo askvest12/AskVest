@@ -162,3 +162,53 @@ stateDiagram-v2
 ```
 
 Phase 10's real order machine extends this shape with quote, authorization and submission states; the practice states and journal patterns carry over.
+
+## Real quote and order (Trading, Phase 10)
+
+A quote is a one-time offer: `open` until an order consumes it (`used`) or its expiry passes (expiry is computed from time, never stored as a state). A quote can create at most one order.
+
+```mermaid
+stateDiagram-v2
+    [*] --> open
+    open --> used: order placed inside the expiry
+    open --> [*]: expired (computed, no transition)
+    used --> [*]
+```
+
+The real order separates submission from execution. Terminal states are `executed`, `failed` and `cancelled`; `needs_reconciliation` is non-terminal and keeps the reserved funds held until a definitive gateway answer arrives.
+
+```mermaid
+stateDiagram-v2
+    [*] --> pending_submission: quote used, grant consumed, hold posted
+    pending_submission --> submitting: dispatcher claims the row
+    pending_submission --> cancelled: user cancel wins the row lock
+    submitting --> submitted: gateway acknowledged
+    submitting --> failed: definitive rejection, hold released
+    submitting --> needs_reconciliation: outcome unknown
+    submitted --> executed: fill equals the quote exactly
+    submitted --> failed: definitive rejection, hold released
+    submitted --> needs_reconciliation: fill mismatch or stale timeout
+    needs_reconciliation --> executed: confirmed matching fill
+    needs_reconciliation --> failed: confirmed rejection, hold released
+    executed --> [*]
+    failed --> [*]
+    cancelled --> [*]
+```
+
+Transition table (anything not listed is illegal, logged and refused):
+
+| From | To | Trigger |
+|---|---|---|
+| - | `pending_submission` | order insert inside the placement transaction |
+| `pending_submission` | `submitting` | outbox dispatcher claims the order row |
+| `pending_submission` | `cancelled` | user cancel while still unclaimed |
+| `submitting` | `submitted` | gateway acknowledges with a reference |
+| `submitting` | `failed` | gateway definitively rejects |
+| `submitting` | `needs_reconciliation` | submit outcome unknown (timeout, lost connection) |
+| `submitted` | `executed` | status poll reports a fill matching the quote |
+| `submitted` | `failed` | status poll reports a definitive rejection |
+| `submitted` | `needs_reconciliation` | fill mismatch, or `submitted` older than the timeout |
+| `needs_reconciliation` | `executed` | status poll confirms a matching fill |
+| `needs_reconciliation` | `failed` | status poll confirms a rejection |
+
+Recovery without transitions: a `pending_submission` order stuck past the threshold is re-enqueued by the progress job; a `submitting` order stuck past the threshold is resolved by asking the gateway for the status by our key. "Not found" is never definitive: the order stays in `needs_reconciliation` and nothing is auto-released on uncertainty.

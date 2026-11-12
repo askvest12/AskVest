@@ -12,6 +12,7 @@
     <ProjectReference Include="..\Modules\AskVest.Modules.Learning\AskVest.Modules.Learning.csproj" />
     <ProjectReference Include="..\Modules\AskVest.Modules.Portfolio\AskVest.Modules.Portfolio.csproj" />
     <ProjectReference Include="..\Modules\AskVest.Modules.Assistant\AskVest.Modules.Assistant.csproj" />
+    <ProjectReference Include="..\Modules\AskVest.Modules.Trading\AskVest.Modules.Trading.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

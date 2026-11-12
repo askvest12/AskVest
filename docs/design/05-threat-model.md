@@ -24,9 +24,9 @@
 | T2 | Replay or duplicate money movement | idempotency middleware plus unique key per operation; journals carry a unique idempotency key plus content hash, same key and content replays, different content conflicts; inserts tolerate conflicts without aborting the transaction | 0, 3, 10, 12 |
 | T3 | Race condition on balance (double spend) | Read Committed plus deterministic row locks on balance rows sorted by account id; user-kind balances forbidden negative by check constraint; deadlock or lock timeout surfaces `service.unavailable` and the client retries with its key | 3 |
 | T4 | Object-level authorization bypass (IDOR) | ownership in every query, not-found answers, cross-user tests per endpoint | 1 onward |
-| T5 | Quote tampering or stale quote | server-side signed quotes, expiry, never trust client amounts | 10 |
+| T5 | Quote tampering or stale quote | server-side signed quotes, expiry, never trust client amounts; Phase 10 adds: a quote is a stored one-time offer with a terms hash, a fresh PIN step-up grant bound to that hash, single-use consumption inside the placement transaction, and a 30 second expiry | 10 |
 | T6 | Webhook forgery or replay | HMAC-SHA256 signature over timestamp and raw body, constant-time compare, 5 minute tolerance, provider event-id dedupe (Phase 2 KYC webhook; funding webhooks in 12 reuse the same contract) | 2, 12 |
-| T7 | Provider outage or partial failure | pending states, timeouts, circuit breaker, reconciliation | 10, 12, 15 |
+| T7 | Provider outage or partial failure | pending states, timeouts, circuit breaker, reconciliation; Phase 10 adds: submission and execution are separate states, the progress job polls by our key, `needs_reconciliation` keeps funds held and nothing auto-releases on uncertainty | 10, 12, 15 |
 | T8 | Signing key compromise | KMS or HSM, no raw keys in DB or env, rotation, signing limits | 11 |
 | T9 | Insider or admin abuse | RBAC, four-eyes on sensitive actions, immutable audit log | 15 |
 | T10 | Prompt injection or data exfiltration through AI chat | tool allowlist, no tool moves money, retrieved text treated as untrusted, per-user data scoping | 9 |
@@ -73,3 +73,8 @@
 | T41 | Personal data sent to the model provider | only consented users reach the model; the prompt carries the user's own messages and tool-scoped reads, never credentials, documents or ledger internals; provider research records data-processing and retention terms before selection | 9 |
 | T42 | Cost abuse through unbounded model or tool calls | bounded history, tool-call and model-call caps, per-user rate limit, a time budget per request, token usage recorded in audit events | 9 |
 | T43 | Conversation retention beyond policy | conversations and messages stored server-side with ids only in audit events; retention job removes expired conversations and deletes conversations of anonymized users; no cross-conversation memory | 9 |
+| T44 | Replayed step-up grant places an order without fresh authorization | grants are single-use with a 120 second life, bound to purpose `authorize_order` and the quote terms hash, consumed atomically inside the placement transaction; a rolled-back order does not consume the grant | 10 |
+| T45 | Faulty or hostile gateway reports a fill that differs from the quote | a fill must equal quantity, price and totals exactly or nothing posts to the ledger; mismatches move the order to `needs_reconciliation` with an error log | 10 |
+| T46 | Stuck funds when submission outcome is unknown | `needs_reconciliation` never auto-releases; only a definitive gateway answer settles or releases, and "not found" is treated as ambiguous | 10 |
+| T47 | Cancel versus dispatch race loses or double-spends a hold | cancel is allowed only in `pending_submission`; claim and cancel both lock the order row and check state so exactly one wins | 10 |
+| T48 | Limit bypass through parallel orders | per-user transaction-scoped advisory lock serializes the limit check and order insert; unique constraints on quote id and (user, idempotency key) close the remaining races | 10 |

@@ -17,5 +17,6 @@ public sealed record CatalogToken(
     string LedgerAssetCode,
     string Status,
     string GatewayKey,
+    string ScheduleKind,
     DateTimeOffset? ReviewedAt,
     DateTimeOffset? ReviewExpiresAt);

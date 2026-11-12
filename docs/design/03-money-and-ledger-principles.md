@@ -135,6 +135,21 @@ per asset.
 | Practice reset | `practice_reset` | every non-zero practice balance of the user back to the system accounts, then a fresh `practice_credit_grant` |
 | Corporate action split | `corporate_action_split` | position quantity changes with no cost change |
 | Dividend | `dividend` | cash received counts as income for the instrument named by the journal reference; no cost change |
+| Real order buy hold | `hold` | settlement asset: `user_available` to `user_held` for the total (gross plus our fee plus gateway fee) |
+| Real order sell hold | `hold` | token asset: `user_available` to `user_held` for the quantity |
+| Real order buy fill | `trade_buy` | settlement asset: `user_held` pays the total, `system_clearing` receives the gross, `system_fees` receives our fee plus gateway fee; token asset: `system_clearing` gives the quantity to `user_available` |
+| Real order sell fill | `trade_sell` | token asset: `user_held` gives the quantity to `system_clearing`; settlement asset: `system_clearing` pays the gross, `user_available` receives gross minus fees, `system_fees` receives our fee plus gateway fee |
+| Real order release | `release` | exact mirror of the matching hold, keyed `real:order:<orderId>:release` |
+
+Real trading journals (Phase 10) use ledger keys `real:order:<orderId>:hold`,
+`:fill` and `:release`, reason codes `hold`, `release`, `trade_buy` and
+`trade_sell`, and reference type `real_order` with the order id. A fill posts
+only when the gateway fill equals the quote exactly; the user's cash leg is the
+total paid on a buy or the net proceeds on a sell, and both fees land on
+`system_fees`. The standing invariant: for every user, the held balance of each
+asset equals the sum of reserved amounts of their non-final orders, and each
+executed order has exactly one fill journal while each failed or cancelled
+order has exactly one release journal and no fill.
 
 ## Portfolio replay
 

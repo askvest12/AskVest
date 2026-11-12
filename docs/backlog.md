@@ -24,3 +24,4 @@
 - Practice: limit orders, queued orders at market open, spread simulation, multi-currency practice with simulated conversion, leaderboards, profit and loss, watchlists.
 - Learning: translations including Pidgin (the content layout allows a language folder later), admin content editor (Phase 15), practice tasks inside lessons, achievements and badges, streak notifications, user time zones for streak days, question pools, retry cooldowns and streak freezes.
 - Assistant: real language-model provider selection, adapter and evaluation run against the checked-in set (mandatory before launch); streaming, cross-conversation memory, web or news tools and a user hide-portfolio setting.
+- Trading: limit orders, partial fills, order cancellation after submission, gateway webhooks (polling only for now), stop-loss for real money, batch orders, quote streaming, per-tier limits, operator tools for reconciliation cases (Phase 15).

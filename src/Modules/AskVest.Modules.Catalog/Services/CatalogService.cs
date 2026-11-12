@@ -153,6 +153,7 @@ internal sealed class CatalogService(
         token.LedgerAssetCode,
         CatalogText.ToDb(token.Status),
         token.GatewayKey,
+        CatalogText.ToDb(token.ScheduleKind),
         token.ReviewedAt,
         token.ReviewExpiresAt);
 

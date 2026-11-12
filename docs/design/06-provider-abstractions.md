@@ -113,6 +113,52 @@ No provider is confirmed. Record findings before selecting one.
 | Whether prompts are used for provider training | | | |
 | Determinism or seed controls for evaluation | | | |
 
+## Issuer gateway contract (Phase 10)
+
+`IIssuerGateway` is the only seam to an issuer or venue. One interface, resolved per token through the token's gateway key and the configured route table; the module contains no chain-specific code and treats settlement references as opaque text (a chain id plus a reference). The deterministic fake is the only built-in route and is refused in Production.
+
+The interface surface:
+
+- **Firm quote** for a token reference (catalog token id, chain id, canonical address, decimals), side and amount or quantity, returning price, quantity, a fee breakdown, the settlement asset, an expiry and the gateway quote id.
+- **Submit** with our order id as the idempotency key plus the gateway quote id, side and quantities, returning an acknowledgement with a gateway reference or a definitive rejection with a reason code.
+- **Status** by our key returning `pending`, `filled` (with fill details and the settlement reference) or `rejected`, or `not_found`. "Not found" is never treated as definitive.
+
+The gateway declares the settlement asset and the tokens it supports; the route configuration maps a gateway key to a provider and a settlement asset (default `USD`).
+
+Rules every adapter must satisfy:
+
+1. Submission is idempotent by our order id; a repeated submission cannot create two orders.
+2. Quotes are firm with an explicit expiry.
+3. Fills are all or nothing; an adapter reports `filled` only after the issuer's finality rule (for example required chain confirmations) is satisfied.
+4. Status by our key exposes only definitive states; `not_found` is ambiguous.
+5. All timestamps are UTC; decimals are parsed from text, never binary floating point.
+6. Errors map to exactly five outcomes: transient, rate limited (with retry delay), rejected (with reason code), not found, authentication failure.
+7. Every call respects the configured timeout.
+8. Fees are reported as a breakdown, never a single opaque number.
+9. The fake gateway is forbidden in Production; a real adapter adds its credentials to the secret store, never to this configuration.
+
+The fake gateway quotes from the Market Data reference price plus a configured spread and fills after a configured delay. Scenarios, set by configuration or by `POST /api/v1/diagnostics/gateway-scenario` behind the probe flag: `normal`, `delayed_fill`, `rejected`, `quote_error`, `short_quote_expiry`, `slow_submit`, `submit_timeout_filled`, `submit_timeout_lost`, `status_unavailable`, `fill_mismatch`.
+
+## Gateway fact sheet (fill one column per provider during research)
+
+| Question | Provider A | Provider B | Provider C |
+|---|---|---|---|
+| Which chains and token standards are supported | | | |
+| What the holder legally owns | | | |
+| Quote model (RFQ, pool, order book), firm quote validity and latency | | | |
+| Fee breakdown: issuer, gateway, spread, network | | | |
+| Minimums and maximums per order and per user | | | |
+| Settlement asset and whether conversion is supported | | | |
+| Settlement finality rule and required confirmations per chain | | | |
+| Idempotency support on submit and status endpoints | | | |
+| Who holds the tokens: self-custody, omnibus or issuer-managed | | | |
+| Operating hours, cutoffs and closed-market behavior | | | |
+| Sandbox availability | | | |
+| Rate limits and quotas | | | |
+| Error semantics and retry guidance | | | |
+| Reconciliation and reporting support | | | |
+| Licensing and legal agreements required | | | |
+
 ## Provider fact sheet (fill one column per provider during research)
 
 | Question | Provider A | Provider B | Provider C |

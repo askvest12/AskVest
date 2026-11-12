@@ -4,6 +4,7 @@ using AskVest.Modules.Identity.Crypto;
 using AskVest.Modules.Identity.Domain.Enums;
 using AskVest.Modules.Identity.Persistence;
 using AskVest.Modules.Identity.Persistence.Entities;
+using AskVest.Platform;
 using AskVest.SharedKernel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -28,7 +29,8 @@ public sealed class StepUpService(
     IKeyedHasher keyedHasher,
     SecurityEventRecorder securityEvents,
     IOptions<IdentityOptions> options,
-    TimeProvider timeProvider) : IStepUpAuthorizer
+    TimeProvider timeProvider,
+    ITransactionScope transactionScope) : IStepUpAuthorizer
 {
     private static readonly Error _stepUpInvalid = new(
         ErrorCodes.AuthStepUpInvalid,
@@ -99,6 +101,13 @@ public sealed class StepUpService(
         var now = timeProvider.GetUtcNow();
         var tokenHash = keyedHasher.Sha256Hex(token);
         var bindingHash = string.IsNullOrEmpty(binding) ? null : keyedHasher.Sha256Hex(binding);
+
+        // When the caller holds an ambient transaction (order placement), the
+        // consumption must commit or roll back with it.
+        if (transactionScope.Transaction is not null)
+        {
+            await db.Database.UseTransactionAsync(transactionScope.Transaction, cancellationToken);
+        }
 
         var consumed = await db.Database.SqlQuery<Guid>($@"
             UPDATE identity.step_up_grants

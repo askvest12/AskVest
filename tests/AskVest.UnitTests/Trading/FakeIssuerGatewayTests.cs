@@ -3,6 +3,7 @@ using AskVest.Modules.Trading.Configuration;
 using AskVest.Modules.Trading.Domain;
 using AskVest.Modules.Trading.Gateway;
 using AskVest.UnitTests.Assistant;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 using Shouldly;
@@ -47,8 +48,11 @@ public sealed class FakeIssuerGatewayTests
         market.Prices.Add(new MarketDataPrice(
             "INST-1", price, "USD", Now, 0, "regular", "live", true, "fake", null));
         var clock = new FakeTimeProvider(Now);
+        var provider = new ServiceCollection()
+            .AddSingleton<IMarketData>(market)
+            .BuildServiceProvider();
         var gateway = new FakeIssuerGateway(
-            market,
+            provider.GetRequiredService<IServiceScopeFactory>(),
             Options.Create(options),
             clock);
         return (gateway, market, clock, options);

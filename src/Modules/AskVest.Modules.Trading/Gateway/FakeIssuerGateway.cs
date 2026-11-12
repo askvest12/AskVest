@@ -2,6 +2,7 @@ using AskVest.Modules.MarketData.Contracts;
 using AskVest.Modules.Trading.Configuration;
 using AskVest.Modules.Trading.Domain;
 using AskVest.SharedKernel;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 namespace AskVest.Modules.Trading.Gateway;
@@ -14,7 +15,7 @@ namespace AskVest.Modules.Trading.Gateway;
 /// and tests can arm failure modes. Refused in Production at startup.
 /// </summary>
 internal sealed class FakeIssuerGateway(
-    IMarketData marketData,
+    IServiceScopeFactory scopeFactory,
     IOptions<TradingOptions> options,
     TimeProvider timeProvider) : IIssuerGateway
 {
@@ -35,6 +36,9 @@ internal sealed class FakeIssuerGateway(
                 ErrorType.Unavailable));
         }
 
+        // Market Data is scoped; the singleton gateway resolves it per call.
+        await using var scope = scopeFactory.CreateAsyncScope();
+        var marketData = scope.ServiceProvider.GetRequiredService<IMarketData>();
         var price = await marketData.GetLatestPriceAsync(request.Token.InstrumentId, cancellationToken);
         if (price?.Price is not { } reference || reference <= 0m)
         {

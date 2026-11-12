@@ -2,6 +2,7 @@ using AskVest.Modules.Trading.Configuration;
 using AskVest.Modules.Trading.Gateway;
 using AskVest.Modules.Trading.Persistence;
 using AskVest.Modules.Trading.Services;
+using AskVest.Platform;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -43,6 +44,13 @@ public static class TradingModuleExtensions
         services.AddSingleton<FakeIssuerGateway>();
         services.AddSingleton<GatewayRegistry>();
         services.AddScoped<TradingEventWriter>();
+        services.AddScoped<QuoteService>();
+        services.AddScoped<OrderService>();
+        services.AddScoped<OrderSubmissionService>();
+        services.AddScoped<OrderProgressService>();
+        services.AddScoped<IOutboxHandler, TradingSubmitHandler>();
+        services.AddSingleton<TradingProgressJob>();
+        services.AddHostedService(provider => provider.GetRequiredService<TradingProgressJob>());
 
         services.AddDbContext<TradingDbContext>((IServiceProvider provider, DbContextOptionsBuilder options) =>
         {

@@ -206,6 +206,10 @@ dotnet_diagnostic.CA1031.severity = none
 [src/Modules/AskVest.Modules.Practice/Services/PracticeStopEvaluator.cs]
 dotnet_diagnostic.CA1031.severity = none
 
+# The trading progress job must survive any order or gateway failure and retry next cycle.
+[src/Modules/AskVest.Modules.Trading/Services/TradingProgressJob.cs]
+dotnet_diagnostic.CA1031.severity = none
+
 # The retention job must survive any database failure and retry on the next tick.
 [src/Modules/AskVest.Modules.Assistant/Services/AssistantRetentionService.cs]
 dotnet_diagnostic.CA1031.severity = none

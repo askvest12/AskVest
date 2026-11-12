@@ -478,6 +478,60 @@ Production, a no-op for non-fake models) switches the fake between
 `ungrounded_number`, `advice_phrase`, `markup_output`, `malformed_output`,
 `loop_tools` and `slow`.
 
+## Real trading
+
+The Trading module runs the real order engine behind `/api/v1/real` (the
+`RealEligible` policy applies to every route). The flow is:
+
+1. `POST /api/v1/real/quotes` asks the configured issuer gateway for a firm
+   quote. The response shows every term the user will get - side, token,
+   quantity, price, gross, our fee, gateway fee, total, settlement asset,
+   expiry and a `termsHash` - and the quote is stored with a deterministic
+   hash of those terms.
+2. `POST /api/v1/auth/step-up` issues a short lived grant for
+   `authorize_order` bound to that `termsHash` and the user's PIN.
+3. `POST /api/v1/real/orders` (idempotency key required) rechecks
+   eligibility, catalog availability and limits, consumes the grant, holds
+   the cash or tokens in the real ledger and enqueues gateway submission in
+   the same transaction. One quote produces at most one order; replaying
+   the same key returns the same order.
+4. An outbox worker submits to the gateway using the order id as the
+   gateway idempotency reference, and a progress job polls fills. Order
+   states are `pending_submission`, `submitting`, `submitted`,
+   `executed`, `failed`, `cancelled` and `needs_reconciliation`.
+
+A fill settles only when quantity, price, gross, gateway fee and the
+gateway side total match the quote exactly; anything else goes to
+`needs_reconciliation` with the hold preserved for operator review.
+Definitive rejections fail the order and release the hold. While an order
+is non-final its held funds stay held and it counts toward the open order
+cap. `POST /api/v1/real/orders/{id}/cancel` cancels a
+`pending_submission` order and releases the hold.
+
+No real issuer gateway ships yet: routes are configured under
+`Trading__Gateway__Routes__<gatewayKey>` and only the deterministic fake
+(`Provider=fake`, refused in Production) exists. The fake gateway scenarios
+(`normal`, `quote_error`, `rejected`, `slow_submit`, `submit_timeout_lost`,
+`submit_timeout_filled`, `delayed_fill`, `fill_mismatch`,
+`status_unavailable`) are switchable through
+`POST /api/v1/diagnostics/trading-scenario` when probes are enabled.
+
+### Real trading smoke test
+
+The smoke override wires both sample gateway keys to the fake provider,
+shrinks job intervals and limits, and enables the probes:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.smoke.yml up -d --build --wait
+ASKVEST_SMOKE_BASE_URL=http://localhost:5081 dotnet test --project tests/AskVest.SmokeTests --filter "FullyQualifiedName~Trading"
+```
+
+The journey signs up a user, completes documents, consents, country, KYC
+approval and the learning gate, funds the ledger through the diagnostics
+post, takes a quote, binds a step-up grant to the terms hash, places the
+order, watches it execute, verifies the balances, sells back, and drills
+the rejected and mismatched fill scenarios.
+
 ## Rotating signing keys
 
 Access tokens are signed with ES256. To rotate:

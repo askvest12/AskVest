@@ -66,6 +66,16 @@ services:
       Assistant__MessagesPerHour: "10"
       Assistant__MessagesPerDay: "50"
       Assistant__MessageTimeBudgetSeconds: "10"
+      Trading__ProgressIntervalSeconds: "1"
+      Trading__Fake__FillDelaySeconds: "1"
+      Trading__Fake__SubmitDelaySeconds: "1"
+      Trading__Fake__SpreadPercent: "0.5"
+      Trading__SubmissionStuckSeconds: "10"
+      Trading__SubmittedTimeoutSeconds: "60"
+      Trading__Gateway__Routes__sample-gateway-evm-a__Provider: "fake"
+      Trading__Gateway__Routes__sample-gateway-evm-a__SettlementAsset: "USD"
+      Trading__Gateway__Routes__sample-gateway-evm-b__Provider: "fake"
+      Trading__Gateway__Routes__sample-gateway-evm-b__SettlementAsset: "USD"
     ports: !override
       - "127.0.0.1:${ASKVEST_SMOKE_API_PORT:-5081}:8080"
 

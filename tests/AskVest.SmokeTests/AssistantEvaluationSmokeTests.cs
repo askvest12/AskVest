@@ -325,13 +325,45 @@ public sealed partial class AssistantEvaluationSmokeTests
 
     private static async Task<string> NewEligibleUserAsync(HttpClient client, HttpClient mailpit, string prefix)
     {
+        for (var attempt = 0; attempt < 8; attempt++)
+        {
+            var token = await NewEligibleUserOnceAsync(client, mailpit, prefix);
+            if (token is not null)
+            {
+                return token;
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(11), TestContext.Current.CancellationToken);
+        }
+
+        throw new TimeoutException("sign-up stayed rate limited");
+    }
+
+    private static bool RateLimited(JsonElement json)
+        => !json.GetProperty("success").GetBoolean()
+            && json.TryGetProperty("error", out var error)
+            && error.ValueKind == JsonValueKind.Object
+            && error.GetProperty("code").GetString() == "rate_limit.exceeded";
+
+    private static async Task<string?> NewEligibleUserOnceAsync(HttpClient client, HttpClient mailpit, string prefix)
+    {
         var email = $"{prefix}-{Guid.CreateVersion7():N}@smoke.test";
         var signUp = await SendWithStatusAsync(client, Request(HttpMethod.Post, "/api/v1/auth/sign-up",
             new { email, password = Password }, null));
+        if (RateLimited(signUp.Json))
+        {
+            return null;
+        }
+
         signUp.Json.GetProperty("success").GetBoolean().ShouldBeTrue(signUp.Json.GetRawText());
         var verifyCode = await WaitForCodeAsync(mailpit, email);
         var verify = await SendWithStatusAsync(client, Request(HttpMethod.Post, "/api/v1/auth/verify-email",
             new { email, code = verifyCode }, null));
+        if (RateLimited(verify.Json))
+        {
+            return null;
+        }
+
         verify.Json.GetProperty("success").GetBoolean().ShouldBeTrue(verify.Json.GetRawText());
         var login = await SendWithStatusAsync(client, Request(HttpMethod.Post, "/api/v1/auth/login", new
         {
@@ -339,6 +371,11 @@ public sealed partial class AssistantEvaluationSmokeTests
             password = Password,
             device = new { installationId = $"dev-{Guid.CreateVersion7():N}", platform = "android", deviceName = "Smoke", appVersion = "1.0.0" },
         }, null));
+        if (RateLimited(login.Json))
+        {
+            return null;
+        }
+
         login.Json.GetProperty("success").GetBoolean().ShouldBeTrue(login.Json.GetRawText());
         var token = login.Json.GetProperty("data").GetProperty("accessToken").GetString()!;
 

@@ -4,7 +4,7 @@ using FluentValidation;
 
 namespace AskVest.Modules.Trading.Validation;
 
-public sealed class QuoteRequestValidator : AbstractValidator<QuoteRequest>
+internal sealed class QuoteRequestValidator : AbstractValidator<QuoteRequest>
 {
     public QuoteRequestValidator()
     {

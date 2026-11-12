@@ -3,7 +3,7 @@ using FluentValidation;
 
 namespace AskVest.Modules.Trading.Validation;
 
-public sealed class OrderRequestValidator : AbstractValidator<OrderRequest>
+internal sealed class OrderRequestValidator : AbstractValidator<OrderRequest>
 {
     public OrderRequestValidator()
     {

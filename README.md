@@ -532,6 +532,76 @@ post, takes a quote, binds a step-up grant to the terms hash, places the
 order, watches it execute, verifies the balances, sells back, and drills
 the rejected and mismatched fill scenarios.
 
+## Wallets and custody
+
+The Wallets module runs deposits and withdrawals behind `/api/v1/real`
+(the `RealEligible` policy applies to every route). Custody and address
+screening sit behind provider interfaces; only the deterministic fakes
+exist in this phase and both are refused in Production.
+
+Deposits:
+
+1. `GET /api/v1/real/wallets/{chainId}` returns the user's deposit
+   instruction for a chain, creating it through the custody provider on
+   first use. Chains without a custody route fail closed.
+2. A background job polls each routed chain for deposits, deduplicates by
+   provider deposit id, resolves the destination wallet address and the
+   token contract, screens the sender address and credits the real ledger
+   exactly once. `GET /api/v1/real/deposits` lists the feed with states
+   `pending`, `credited`, `quarantined` and `ignored`.
+
+Withdrawals:
+
+1. `POST /api/v1/real/withdrawal-addresses` adds a destination after a
+   `change_withdrawal_address` step-up grant bound to the canonical
+   address. Screening hits, internal addresses, own deposit addresses and
+   cooling-off addresses are refused.
+2. `POST /api/v1/real/withdrawals/previews` prices a withdrawal: gross
+   quantity, flat fee, net quantity, USD value limits, expiry and a
+   `termsHash` over every term.
+3. `POST /api/v1/real/withdrawals` consumes an `authorize_withdrawal`
+   grant bound to that `termsHash`, holds the gross quantity in the real
+   ledger and enqueues custody submission in the same transaction. The
+   platform withdrawal id is the provider idempotency reference.
+4. A submit worker calls the custody provider outside any database
+   transaction; a progress job polls status and settles or releases the
+   hold. States are `previewed`, `requested`, `submitting`, `submitted`,
+   `completed`, `failed`, `cancelled` and `needs_reconciliation`.
+   Ambiguous provider outcomes never guess: they keep the hold and move
+   to `needs_reconciliation` for operator review.
+
+Rolling 24 hour limits, per-withdrawal and per-user caps, the address
+book maximum and preview expiry all apply at placement. A reserves job
+compares custody holdings against ledger clearing balances per chain and
+token; consecutive mismatches pause withdrawals for that scope until an
+operator resumes.
+
+The fake custody scenarios (`normal`, `rejected`, `submit_timeout_lost`,
+`submit_timeout_filled`, `delayed`, `status_unavailable`,
+`holdings_mismatch`) and the fake screening scenario (`normal`, `error`)
+are switchable through `POST /api/v1/diagnostics/wallets-custody-scenario`
+and `POST /api/v1/diagnostics/wallets-screening-scenario` when probes are
+enabled. `POST /api/v1/diagnostics/wallets-deposit` injects a deposit for
+testing.
+
+### Wallets smoke test
+
+The smoke override routes both sample chains to the fake custody provider
+and shrinks every job interval:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.smoke.yml up -d --build --wait
+ASKVEST_SMOKE_BASE_URL=http://localhost:5081 dotnet test --project tests/AskVest.SmokeTests --filter "FullyQualifiedName~Wallets"
+```
+
+The journey signs up a real-eligible user, fetches the deposit
+instruction, injects a deposit through the probe, watches it credit,
+adds a withdrawal address behind a step-up grant, previews and places a
+withdrawal bound to the terms hash, replays the placement idempotently,
+verifies cross-user isolation and watches the withdrawal complete with
+the hold released. A second test drills the rejected custody scenario
+and confirms the hold returns to the user.
+
 ## Rotating signing keys
 
 Access tokens are signed with ES256. To rotate:

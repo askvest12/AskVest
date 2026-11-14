@@ -63,4 +63,10 @@ public static class ErrorCodes
     public const string TradingOrderInvalid = "trading.order_invalid";
     public const string TradingQuoteUnavailable = "trading.quote_unavailable";
     public const string TradingQuoteInvalid = "trading.quote_invalid";
+    public const string WalletNotAvailable = "wallet.not_available";
+    public const string WalletAddressInvalid = "wallet.address_invalid";
+    public const string WalletAddressCoolingOff = "wallet.address_cooling_off";
+    public const string WalletLimitExceeded = "wallet.limit_exceeded";
+    public const string WalletPreviewInvalid = "wallet.preview_invalid";
+    public const string WalletUnavailable = "wallet.unavailable";
 }

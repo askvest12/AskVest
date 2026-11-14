@@ -8,6 +8,7 @@ using AskVest.Modules.MarketData.Persistence;
 using AskVest.Modules.Portfolio.Persistence;
 using AskVest.Modules.Practice.Persistence;
 using AskVest.Modules.Trading.Persistence;
+using AskVest.Modules.Wallets.Persistence;
 using AskVest.Platform;
 using DotNet.Testcontainers.Configurations;
 using Npgsql;
@@ -80,6 +81,7 @@ public sealed class PostgresFixture : IAsyncLifetime
                 connectionString => new PortfolioDbContext(PortfolioDbContextOptions.Create(connectionString)),
                 connectionString => new AssistantDbContext(AssistantDbContextOptions.Create(connectionString)),
                 connectionString => new TradingDbContext(TradingDbContextOptions.Create(connectionString)),
+                connectionString => new WalletsDbContext(WalletsDbContextOptions.Create(connectionString)),
             ]);
         if (applied.Count == 0)
         {
@@ -116,10 +118,10 @@ public sealed class PostgresFixture : IAsyncLifetime
                 new RespawnerOptions
                 {
                     DbAdapter = DbAdapter.Postgres,
-                    // audit_events and trading_events are append-only for the app role,
+                    // audit_events, trading_events and wallet_events are append-only for the app role,
                     // so their schemas reset as the owner like catalog and practice.
-                    SchemasToInclude = ["catalog", "practice", "learning", "assistant", "trading"],
-                    TablesToIgnore = ["catalog.__ef_migrations_history", "practice.__ef_migrations_history", "learning.__ef_migrations_history", "assistant.__ef_migrations_history", "trading.__ef_migrations_history"],
+                    SchemasToInclude = ["catalog", "practice", "learning", "assistant", "trading", "wallets"],
+                    TablesToIgnore = ["catalog.__ef_migrations_history", "practice.__ef_migrations_history", "learning.__ef_migrations_history", "assistant.__ef_migrations_history", "trading.__ef_migrations_history", "wallets.__ef_migrations_history"],
                 });
         }
     }

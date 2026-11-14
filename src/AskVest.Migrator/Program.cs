@@ -17,6 +17,8 @@ using AskVest.Modules.Portfolio.Persistence;
 using AskVest.Modules.Practice;
 using AskVest.Modules.Practice.Persistence;
 using AskVest.Modules.Trading.Persistence;
+using AskVest.Modules.Wallets;
+using AskVest.Modules.Wallets.Persistence;
 using AskVest.Platform;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -40,6 +42,7 @@ builder.Services.AddMarketDataModule(builder.Configuration);
 builder.Services.AddPracticeModule(builder.Configuration);
 builder.Services.AddLearningModule(builder.Configuration, builder.Environment);
 builder.Services.AddPortfolioModule(builder.Configuration);
+builder.Services.AddWalletsModule(builder.Configuration, builder.Environment);
 // The assistant runtime is API-only: its fake model is refused under the migrator's Production environment.
 
 var host = builder.Build();
@@ -68,6 +71,7 @@ try
             connectionString => new PortfolioDbContext(PortfolioDbContextOptions.Create(connectionString)),
             connectionString => new AssistantDbContext(AssistantDbContextOptions.Create(connectionString)),
             connectionString => new TradingDbContext(TradingDbContextOptions.Create(connectionString)),
+            connectionString => new WalletsDbContext(WalletsDbContextOptions.Create(connectionString)),
         ],
         cancellation.Token);
     if (logger.IsEnabled(LogLevel.Information))

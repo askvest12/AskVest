@@ -97,6 +97,30 @@ internal sealed class LedgerService(
         return Result.Success<IReadOnlyList<LedgerBalance>>(balances);
     }
 
+    public async Task<Result<IReadOnlyList<LedgerAssetTotal>>> GetAssetTotalsAsync(
+        Book book,
+        CancellationToken cancellationToken = default)
+    {
+        var rows = await db.Accounts
+            .Where(account => account.Book == book
+                && (account.Kind == AccountKind.UserAvailable
+                    || account.Kind == AccountKind.UserHeld
+                    || account.Kind == AccountKind.SystemFees))
+            .Join(
+                db.AccountBalances,
+                account => account.Id,
+                balance => balance.AccountId,
+                (account, balance) => new { account.AssetCode, balance.Balance })
+            .ToListAsync(cancellationToken);
+
+        var totals = rows
+            .GroupBy(row => row.AssetCode, StringComparer.Ordinal)
+            .OrderBy(group => group.Key, StringComparer.Ordinal)
+            .Select(group => new LedgerAssetTotal(group.Key, group.Sum(row => row.Balance)))
+            .ToList();
+        return Result.Success<IReadOnlyList<LedgerAssetTotal>>(totals);
+    }
+
     public async Task<PageResult<LedgerMovement>> GetMovementsAsync(
         Guid userId,
         Book book,

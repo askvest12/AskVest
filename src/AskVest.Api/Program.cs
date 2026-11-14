@@ -10,6 +10,7 @@ using AskVest.Modules.MarketData;
 using AskVest.Modules.Portfolio;
 using AskVest.Modules.Practice;
 using AskVest.Modules.Trading;
+using AskVest.Modules.Wallets;
 using AskVest.Platform;
 using FluentValidation;
 using Microsoft.AspNetCore.Http.Json;
@@ -41,6 +42,7 @@ builder.Services.AddLearningModule(builder.Configuration, builder.Environment);
 builder.Services.AddPortfolioModule(builder.Configuration);
 builder.Services.AddAssistantModule(builder.Configuration, builder.Environment);
 builder.Services.AddTradingModule(builder.Configuration, builder.Environment);
+builder.Services.AddWalletsModule(builder.Configuration, builder.Environment);
 builder.Services.AddScoped<IIdempotencyStore, EfIdempotencyStore>();
 builder.Services.AddSingleton<IIdempotencyScopeResolver, AuthenticatedIdempotencyScopeResolver>();
 builder.Services.AddHostedService<IdempotencyCleanupService>();
@@ -160,6 +162,7 @@ api.MapLearningEndpoints();
 api.MapPortfolioEndpoints();
 api.MapAssistantEndpoints(diagnostics.EnableProbes && !app.Environment.IsProduction());
 api.MapTradingEndpoints(diagnostics.EnableProbes && !app.Environment.IsProduction());
+api.MapWalletsEndpoints(diagnostics.EnableProbes && !app.Environment.IsProduction());
 
 if (docs.Enabled)
 {

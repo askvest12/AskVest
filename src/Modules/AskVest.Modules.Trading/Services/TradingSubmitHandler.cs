@@ -1,6 +1,6 @@
 using System.Text.Json;
-using Microsoft.Extensions.DependencyInjection;
 using AskVest.Platform;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace AskVest.Modules.Trading.Services;
 

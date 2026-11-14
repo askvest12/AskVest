@@ -56,7 +56,8 @@ public sealed class TradingApiTests(PostgresFixture fixture) : IAsyncLifetime
             assetCode: _assetCode,
             gatewayKey: GatewayKey,
             countries: ["NG"])
-            with { Symbol = symbol };
+            with
+        { Symbol = symbol };
         var instrument = CatalogImportTestData.Instrument("instr-trading", [token]) with
         {
             Symbol = symbol,

@@ -154,6 +154,7 @@ internal sealed class CatalogService(
         CatalogText.ToDb(token.Status),
         token.GatewayKey,
         CatalogText.ToDb(token.ScheduleKind),
+        CatalogText.ToDb(token.ExternalTransfers),
         token.ReviewedAt,
         token.ReviewExpiresAt);
 

@@ -265,4 +265,56 @@ public sealed class PortfolioReplayTests
         var asset = result.Assets.ShouldHaveSingleItem();
         asset.TotalCost.ShouldBe(33.333333m);
     }
+
+    [Fact]
+    public void Token_Deposit_Adds_Quantity_Without_Cost_And_Flags_Unclassified()
+    {
+        var deposit = Guid.Parse("55555555-5555-5555-5555-555555555555");
+        var movements = BuyJournalRows(10m, 100m)
+            .Concat([
+                Movement(deposit, LedgerReasonCodes.Deposit, "TOK", 4m, "wallet_deposit", deposit),
+            ])
+            .ToList();
+        var result = Replay(movements);
+        var asset = result.Assets.ShouldHaveSingleItem();
+        asset.Quantity.ShouldBe(14m);
+        asset.TotalCost.ShouldBe(100m);
+        asset.RealizedProfit.ShouldBe(0m);
+        result.HasUnclassifiedMovements.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void Token_Withdrawal_Removes_Cost_Proportionally_With_No_Profit_Or_Flag()
+    {
+        var withdrawal = Guid.Parse("66666666-6666-6666-6666-666666666666");
+        var at2 = new DateTimeOffset(2026, 1, 2, 0, 0, 0, TimeSpan.Zero);
+        var movements = BuyJournalRows(10m, 100m)
+            .Concat(BuyJournalRows(10m, 150m, Guid.Parse("44444444-4444-4444-4444-444444444444"), at2))
+            .Concat([
+                Movement(withdrawal, LedgerReasonCodes.Withdrawal, "TOK", -10m, "wallet_withdrawal", withdrawal, at2.AddDays(1)),
+            ])
+            .ToList();
+        var result = Replay(movements);
+        var asset = result.Assets.ShouldHaveSingleItem();
+        asset.Quantity.ShouldBe(10m);
+        asset.TotalCost.ShouldBe(125m);
+        asset.RealizedProfit.ShouldBe(0m);
+        result.HasUnclassifiedMovements.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void Token_Withdrawal_To_Zero_Clears_Cost_Without_Realized_Profit()
+    {
+        var withdrawal = Guid.Parse("77777777-7777-7777-7777-777777777777");
+        var at2 = new DateTimeOffset(2026, 1, 2, 0, 0, 0, TimeSpan.Zero);
+        var movements = BuyJournalRows(10m, 100m)
+            .Concat([
+                Movement(withdrawal, LedgerReasonCodes.Withdrawal, "TOK", -10m, "wallet_withdrawal", withdrawal, at2),
+            ])
+            .ToList();
+        var asset = Replay(movements).Assets.ShouldHaveSingleItem();
+        asset.Quantity.ShouldBe(0m);
+        asset.TotalCost.ShouldBe(0m);
+        asset.RealizedProfit.ShouldBe(0m);
+    }
 }

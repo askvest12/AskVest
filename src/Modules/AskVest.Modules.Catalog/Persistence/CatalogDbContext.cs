@@ -112,6 +112,9 @@ public class CatalogDbContext(DbContextOptions<CatalogDbContext> options) : DbCo
             entity.Property(token => token.ScheduleKind)
                 .HasConversion(v => CatalogText.ToDb(v), v => CatalogText.TradingScheduleKindFromDb(v))
                 .HasMaxLength(32).IsRequired();
+            entity.Property(token => token.ExternalTransfers)
+                .HasConversion(v => CatalogText.ToDb(v), v => CatalogText.ExternalTransferPolicyFromDb(v))
+                .HasMaxLength(32).IsRequired();
             entity.Property(token => token.ScheduleTimeZone).HasMaxLength(64);
             entity.Property(token => token.ScheduleNote).HasMaxLength(500);
             entity.Property(token => token.ClaimType)

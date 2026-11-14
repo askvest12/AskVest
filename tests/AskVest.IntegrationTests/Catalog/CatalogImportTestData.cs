@@ -118,7 +118,8 @@ internal static class CatalogImportTestData
         DateTimeOffset? reviewedAt = null,
         DateTimeOffset? reviewExpiresAt = null,
         string claimType = "direct_share_claim",
-        string dividendPolicy = "distributed")
+        string dividendPolicy = "distributed",
+        string? externalTransfers = null)
         => new()
         {
             IssuerId = issuerId,
@@ -132,6 +133,7 @@ internal static class CatalogImportTestData
             EverListed = everListed,
             GatewayKey = gatewayKey,
             Schedule = new TradingScheduleData { Kind = "always" },
+            ExternalTransfers = externalTransfers,
             ClaimType = claimType,
             ClaimDescription = "Holders claim a notional share in the sample issuer.",
             BackingDescription = "Each token is backed one to one by a custodied share.",

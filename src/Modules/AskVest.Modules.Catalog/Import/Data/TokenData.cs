@@ -24,6 +24,8 @@ internal sealed record TokenData
 
     public required TradingScheduleData Schedule { get; init; }
 
+    public string? ExternalTransfers { get; init; }
+
     public required string ClaimType { get; init; }
 
     public required string ClaimDescription { get; init; }

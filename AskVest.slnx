@@ -10,6 +10,7 @@
     <Project Path="src/Modules/AskVest.Modules.Portfolio/AskVest.Modules.Portfolio.csproj" />
     <Project Path="src/Modules/AskVest.Modules.Assistant/AskVest.Modules.Assistant.csproj" />
     <Project Path="src/Modules/AskVest.Modules.Trading/AskVest.Modules.Trading.csproj" />
+    <Project Path="src/Modules/AskVest.Modules.Wallets/AskVest.Modules.Wallets.csproj" />
     <Project Path="src/AskVest.Api/AskVest.Api.csproj" />
     <Project Path="src/AskVest.Migrator/AskVest.Migrator.csproj" />
     <Project Path="src/AskVest.Platform/AskVest.Platform.csproj" />

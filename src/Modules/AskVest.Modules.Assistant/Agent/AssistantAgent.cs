@@ -144,7 +144,10 @@ internal sealed class AssistantAgent(
             }
 
             var sanitized = TextSanitizer.Sanitize(completion.Text);
-            if (AnswerPolicy.Check(sanitized, settings.ForbiddenPhrases) is not null)
+            var forbidden = settings.ForbiddenPhrases.Count > 0
+                ? settings.ForbiddenPhrases
+                : AssistantOptions.DefaultForbiddenPhrases;
+            if (AnswerPolicy.Check(sanitized, forbidden) is not null)
             {
                 if (run.PolicyRetries++ == 0 && run.ModelCalls < settings.MaxModelCallsPerMessage)
                 {

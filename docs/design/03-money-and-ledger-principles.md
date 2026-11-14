@@ -140,6 +140,10 @@ per asset.
 | Real order buy fill | `trade_buy` | settlement asset: `user_held` pays the total, `system_clearing` receives the gross, `system_fees` receives our fee plus gateway fee; token asset: `system_clearing` gives the quantity to `user_available` |
 | Real order sell fill | `trade_sell` | token asset: `user_held` gives the quantity to `system_clearing`; settlement asset: `system_clearing` pays the gross, `user_available` receives gross minus fees, `system_fees` receives our fee plus gateway fee |
 | Real order release | `release` | exact mirror of the matching hold, keyed `real:order:<orderId>:release` |
+| Token deposit credit | `deposit` | token asset: `system_clearing` gives the quantity to `user_available` |
+| Wallet withdrawal hold | `hold` | token asset: `user_available` to `user_held` for the gross quantity |
+| Wallet withdrawal settle | `withdrawal` | token asset: `user_held` gives the gross quantity; `system_clearing` receives the net quantity, `system_fees` receives the fee in token units |
+| Wallet withdrawal release | `release` | exact mirror of the matching hold, keyed `wallet:withdrawal:<id>:release` |
 
 Real trading journals (Phase 10) use ledger keys `real:order:<orderId>:hold`,
 `:fill` and `:release`, reason codes `hold`, `release`, `trade_buy` and
@@ -150,6 +154,26 @@ total paid on a buy or the net proceeds on a sell, and both fees land on
 asset equals the sum of reserved amounts of their non-final orders, and each
 executed order has exactly one fill journal while each failed or cancelled
 order has exactly one release journal and no fill.
+
+Wallet journals (Phase 11) use ledger keys `wallet:deposit:<depositId>`,
+`wallet:withdrawal:<withdrawalId>:hold`, `:settle` and `:release`, reason codes
+`deposit`, `hold`, `withdrawal` and `release`, and reference types `wallet_deposit`
+and `wallet_withdrawal` with the respective ids. A deposit credits only after
+the provider reports finality, the token is recognized, the sender screens
+clear and the amount is above dust. A withdrawal reserves the gross quantity
+before submission; settlement posts the net quantity to clearing and the fee
+to `system_fees` in token units; a release mirrors the hold exactly. The
+standing invariant: for every user, the held balance of each token equals the
+sum of gross quantities of their non-final withdrawals, and each completed
+withdrawal has exactly one settle journal while each failed or cancelled one
+has exactly one release journal and no settle.
+
+The reserves identity (Phase 11): for every chain and token, the custody
+holdings reported by the provider must equal the sum of all non-clearing
+ledger balances that custody must cover, that is every user available and
+held balance plus system fees for that token. Tokens with any pending deposit
+or in-flight withdrawal are skipped for that run; a mismatch in two
+consecutive runs pauses withdrawals for that chain and token.
 
 ## Portfolio replay
 
@@ -167,7 +191,10 @@ in proportion (removed cost rounds half up at 6 decimals) and realizes
 proceeds minus removed cost, clearing rounding dust into realized profit when
 the quantity reaches zero. `corporate_action_split` changes quantity with no
 cost change. `dividend` counts as income for the instrument named by the
-journal reference. Cash-only reasons never touch positions. Any other
+journal reference. A token `withdrawal` (Phase 11) removes quantity and cost
+in the same proportion as a sell but realizes no profit and sets no flag; a
+token `deposit` adds quantity with no cost and sets `hasUnclassifiedMovements`.
+Other cash-only reasons never touch positions. Any other
 movement of a position asset changes quantity with no cost change and sets
 `hasUnclassifiedMovements`; an inconsistent oversell applies only what is
 held and sets `hasInconsistency` with an error log carrying ids only.

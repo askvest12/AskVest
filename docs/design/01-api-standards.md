@@ -88,6 +88,12 @@ Pattern `^[a-z]+(_[a-z]+)*(\.[a-z]+(_[a-z]+)*)+$`.
 | `trading.order_invalid` | 422 | Order fails validation; details name the reason (below minimum, above maximum, daily limit, too many open orders, quantity scale) |
 | `trading.quote_unavailable` | 503 | Gateway failure or the price deviation guard refused the quote |
 | `trading.quote_invalid` | 409 | Quote expired, already used or not found; the client must request a new quote |
+| `wallet.not_available` | 422 | Wallet operation refused; details name the reason (token not withdrawable, chain disabled, paused, no usable price, cooling off handled separately) |
+| `wallet.address_invalid` | 422 | Address fails validation, is internal or a deposit address, fails screening, or the address book is full |
+| `wallet.address_cooling_off` | 422 | Address exists but is still cooling off; details carry the active-from time |
+| `wallet.limit_exceeded` | 422 | Withdrawal fails a limit; details name the limit (minimum, maximum value, rolling 24 hour value) |
+| `wallet.preview_invalid` | 409 | Preview expired, already used or unknown; request a new preview |
+| `wallet.unavailable` | 503 | Custody or screening provider failure; fail closed |
 | `idempotency.key_missing` | 400 | State-changing call without `Idempotency-Key` |
 | `idempotency.key_invalid` | 400 | Key fails the format rule |
 | `idempotency.key_reused` | 422 | Same key, different request fingerprint |
@@ -147,6 +153,10 @@ Header `Idempotency-Key` (8 to 128 chars of `[A-Za-z0-9_.:-]`). Opt in with `.Re
 ## Trading endpoints
 
 All under `/api/v1/real` behind the `RealEligible` policy. `POST /quotes`, `POST /orders` and `POST /orders/{orderId}/cancel` require an `Idempotency-Key`; `GET /quotes/{quoteId}`, `GET /orders` and `GET /orders/{orderId}` are reads. Quote and order money fields serialize as strings; the gateway key and gateway reference never appear in any response. Order states are `pending_submission`, `submitting`, `submitted`, `executed`, `failed`, `cancelled` and `needs_reconciliation`; clients must treat `needs_reconciliation` as "funds still held, outcome pending" and never as an error to retry blindly.
+
+## Wallet endpoints
+
+All under `/api/v1/real` behind the `RealEligible` policy. `POST /wallets`, `POST /withdrawal-addresses`, `POST /withdrawals/previews`, `POST /withdrawals` and `POST /withdrawals/{withdrawalId}/cancel` require an `Idempotency-Key`; `DELETE /withdrawal-addresses/{addressId}` is exempt as naturally idempotent (removing twice is harmless). Quantities, fees and amounts serialize as strings; provider keys, provider references, custody addresses of other users and grant tokens never appear in any response. Withdrawal states are `previewed`, `requested`, `submitting`, `submitted`, `completed`, `failed`, `cancelled` and `needs_reconciliation`; deposit states are `pending`, `credited`, `quarantined` and `ignored`. Clients must treat `needs_reconciliation` as "funds still held, outcome pending".
 
 ## Assistant endpoints
 

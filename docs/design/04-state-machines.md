@@ -212,3 +212,75 @@ Transition table (anything not listed is illegal, logged and refused):
 | `needs_reconciliation` | `failed` | status poll confirms a rejection |
 
 Recovery without transitions: a `pending_submission` order stuck past the threshold is re-enqueued by the progress job; a `submitting` order stuck past the threshold is resolved by asking the gateway for the status by our key. "Not found" is never definitive: the order stays in `needs_reconciliation` and nothing is auto-released on uncertainty.
+
+## Wallet deposit (Wallets, Phase 11)
+
+A detected on-chain deposit is stored first and credited only when every rule passes. Terminal states are `credited`, `quarantined` and `ignored`; `pending` is non-terminal and retries.
+
+```mermaid
+stateDiagram-v2
+    [*] --> pending: provider reports a deposit
+    pending --> credited: recognized token, clear sender, final, above dust
+    pending --> quarantined: sender screening hit
+    pending --> ignored: unknown token, unknown destination or below dust
+    pending --> pending: screening error, not final yet (retry)
+    credited --> [*]
+    quarantined --> [*]
+    ignored --> [*]
+```
+
+Transition table:
+
+| From | To | Trigger |
+|---|---|---|
+| - | `pending` | deposit job stores a provider-reported deposit |
+| `pending` | `credited` | all credit rules pass and the ledger journal posts once |
+| `pending` | `quarantined` | sender screening returns a hit |
+| `pending` | `ignored` | token unknown, destination not a user address, or amount below dust |
+| `pending` | `pending` | screening error or finality not reached; retried next cycle |
+
+Deposits to treasury addresses are never stored as user deposits. Crediting is keyed `wallet:deposit:<depositId>` so repeats and restarts cannot double-credit.
+
+## Wallet withdrawal (Wallets, Phase 11)
+
+A withdrawal mirrors the Phase 10 order machine: preview, bound step-up grant, reserve before send, submission separate from completion, and `needs_reconciliation` that never auto-releases.
+
+```mermaid
+stateDiagram-v2
+    [*] --> previewed: preview created (expires in 60 seconds)
+    previewed --> requested: placement consumes preview and grant, hold posted
+    previewed --> [*]: expired or used
+    requested --> submitting: dispatcher claims the row
+    requested --> cancelled: user cancel wins the row lock
+    submitting --> submitted: custody acknowledged
+    submitting --> failed: definitive rejection, hold released
+    submitting --> needs_reconciliation: outcome unknown
+    submitted --> completed: custody reports final completion
+    submitted --> failed: definitive failure, hold released
+    submitted --> needs_reconciliation: stale timeout
+    needs_reconciliation --> completed: confirmed completion
+    needs_reconciliation --> failed: confirmed failure, hold released
+    completed --> [*]
+    failed --> [*]
+    cancelled --> [*]
+```
+
+Transition table (anything not listed is illegal):
+
+| From | To | Trigger |
+|---|---|---|
+| - | `previewed` | preview insert with expiry and terms hash |
+| `previewed` | `requested` | placement inside one transaction: preview marked used, grant consumed, hold posted, submit message enqueued |
+| `previewed` | `cancelled` | preview expiry job deletes it (no state kept) |
+| `requested` | `submitting` | outbox dispatcher claims the row |
+| `requested` | `cancelled` | user cancel while still unclaimed; hold released |
+| `submitting` | `submitted` | custody acknowledges with a reference |
+| `submitting` | `failed` | definitive rejection; hold released |
+| `submitting` | `needs_reconciliation` | submit outcome unknown |
+| `submitted` | `completed` | status poll reports completion after finality |
+| `submitted` | `failed` | status poll reports definitive failure; hold released |
+| `submitted` | `needs_reconciliation` | submitted older than the timeout |
+| `needs_reconciliation` | `completed` | status poll confirms completion |
+| `needs_reconciliation` | `failed` | status poll confirms failure; hold released |
+
+Cancel is only legal in `requested`, before the dispatcher claims the row; any other state answers `resource.conflict`. "Not found" from the provider is never definitive. Ledger keys are `wallet:withdrawal:<id>:hold`, `:settle` and `:release`.

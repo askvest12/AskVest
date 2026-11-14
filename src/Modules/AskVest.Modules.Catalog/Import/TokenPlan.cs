@@ -20,6 +20,8 @@ internal sealed class TokenPlan
 
     public required TradingScheduleKind ScheduleKind { get; init; }
 
+    public required ExternalTransferPolicy ExternalTransfers { get; init; }
+
     public required ClaimType ClaimType { get; init; }
 
     public required DividendPolicy DividendPolicy { get; init; }

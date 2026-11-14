@@ -93,6 +93,36 @@ public sealed class LearningContentLoaderTests
         }
     }
 
+    [Theory]
+    [InlineData("non-custodial")]
+    [InlineData("self-custody")]
+    [InlineData("self custody")]
+    [InlineData("your keys")]
+    public void Custody_Phrases_Are_In_The_Default_Banned_List(string phrase)
+    {
+        LearningContentLoader.DefaultBannedPhrases.ShouldContain(phrase);
+    }
+
+    [Fact]
+    public void Default_Banned_Phrases_Are_Enforced_Without_Custom_List()
+    {
+        var directory = Directory.CreateTempSubdirectory("learning-content-").FullName;
+        try
+        {
+            File.WriteAllText(Path.Combine(directory, "content.json"), """
+                {"tracks":[{"id":"t","title":"T","summary":"S","lessons":[{"id":"l","title":"L","summary":"S","estimatedMinutes":2,"version":1,"requiredForReal":false,"blocks":[{"type":"paragraph","text":"This is self-custody."}],"quiz":null}]}]}
+                """);
+            var options = new LearningOptions { ContentPath = directory };
+            var exception = Should.Throw<InvalidOperationException>(
+                () => LearningContentLoader.Load(options, new TestEnvironment("Development")));
+            exception.Message.ShouldContain("self-custody");
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
     private static string RepositoryRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

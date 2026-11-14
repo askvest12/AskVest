@@ -18,5 +18,6 @@ public sealed record CatalogToken(
     string Status,
     string GatewayKey,
     string ScheduleKind,
+    string ExternalTransfers,
     DateTimeOffset? ReviewedAt,
     DateTimeOffset? ReviewExpiresAt);

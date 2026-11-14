@@ -196,6 +196,7 @@ public static class CatalogEndpoints
                     timeZone = token.ScheduleTimeZone,
                     note = token.ScheduleNote,
                 },
+                externalTransfers = CatalogText.ToDb(token.ExternalTransfers),
                 reviewedAt = token.ReviewedAt,
                 reviewExpiresAt = token.ReviewExpiresAt,
                 availability = AvailabilityView(detail.Availability),

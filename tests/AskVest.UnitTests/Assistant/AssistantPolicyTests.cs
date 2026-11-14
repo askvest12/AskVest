@@ -1,3 +1,4 @@
+using AskVest.Modules.Assistant.Configuration;
 using AskVest.Modules.Assistant.Policy;
 using AskVest.Modules.Assistant.Tools;
 using Shouldly;
@@ -56,6 +57,25 @@ public sealed class AssistantPolicyTests
     {
         AnswerPolicy.Check("Our firm says accumulate now.", ["accumulate now"]).ShouldNotBeNull();
         AnswerPolicy.Check("Our firm says accumulate now.", []).ShouldBeNull();
+    }
+
+    [Theory]
+    [InlineData("AskVest is non-custodial, so your keys stay with you.")]
+    [InlineData("This is a self-custody wallet.")]
+    [InlineData("It offers self custody for every user.")]
+    [InlineData("You control your keys at all times.")]
+    public void Default_Phrases_Block_Custody_Claims(string text)
+    {
+        AnswerPolicy.Check(text, AssistantOptions.DefaultForbiddenPhrases).ShouldNotBeNull();
+    }
+
+    [Fact]
+    public void Default_Phrases_Allow_Educational_Custody_Text()
+    {
+        AnswerPolicy.Check(
+                "Custodial means a provider holds the assets; the lesson explains the difference.",
+                AssistantOptions.DefaultForbiddenPhrases)
+            .ShouldBeNull();
     }
 
     [Theory]

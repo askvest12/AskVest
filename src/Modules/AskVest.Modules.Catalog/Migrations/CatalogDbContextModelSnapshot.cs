@@ -379,6 +379,12 @@ namespace AskVest.Modules.Catalog.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("ever_listed");
 
+                    b.Property<string>("ExternalTransfers")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("external_transfers");
+
                     b.Property<string>("GatewayKey")
                         .IsRequired()
                         .HasMaxLength(100)

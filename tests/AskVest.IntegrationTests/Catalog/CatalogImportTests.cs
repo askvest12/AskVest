@@ -53,6 +53,64 @@ public sealed class CatalogImportTests(PostgresFixture fixture, ITestOutputHelpe
     }
 
     [Fact]
+    public async Task External_Transfers_Defaults_To_Not_Supported_And_Stores_The_Value()
+    {
+        var suffix = Suffix();
+        var issuerId = $"xfer-issuer-{suffix}";
+        var instrumentId = $"xfer-instr-{suffix}";
+        var assetA = AssetCode("XFER", suffix);
+        var assetB = AssetCode("XFR2", suffix);
+        var folder = await CatalogImportTestData.WriteFolderAsync(
+            [CatalogImportTestData.Chain()],
+            [CatalogImportTestData.Issuer(issuerId)],
+            [CatalogImportTestData.Instrument(instrumentId,
+            [
+                CatalogImportTestData.Token(
+                    issuerId: issuerId,
+                    address: Address(suffix, 'a'),
+                    assetCode: assetA,
+                    externalTransfers: "allowed"),
+                CatalogImportTestData.Token(
+                    issuerId: issuerId,
+                    address: Address(suffix, 'b'),
+                    assetCode: assetB),
+            ])],
+            TestContext.Current.CancellationToken);
+
+        await using var provider = CatalogImportTestData.CreateProvider(fixture, folder);
+        var report = await ImportAsync(provider);
+        report.IsSuccess.ShouldBeTrue(report.Error?.Message);
+
+        var rows = await Database.QueryAsync(
+            fixture.OwnerConnectionString,
+            $"SELECT external_transfers FROM catalog.tokens WHERE ledger_asset_code IN ('{assetA}', '{assetB}') ORDER BY external_transfers",
+            TestContext.Current.CancellationToken);
+        rows.Select(row => row["external_transfers"]).ShouldBe(["allowed", "not_supported"]);
+    }
+
+    [Fact]
+    public async Task Invalid_External_Transfers_Value_Is_A_Problem()
+    {
+        var suffix = Suffix();
+        var issuerId = $"xfer-issuer-{suffix}";
+        var instrumentId = $"xfer-instr-{suffix}";
+        var folder = await CatalogImportTestData.WriteFolderAsync(
+            [CatalogImportTestData.Chain()],
+            [CatalogImportTestData.Issuer(issuerId)],
+            [CatalogImportTestData.Instrument(instrumentId, [CatalogImportTestData.Token(
+                issuerId: issuerId,
+                address: Address(suffix, 'a'),
+                assetCode: AssetCode("XFER", suffix),
+                externalTransfers: "sometimes")])],
+            TestContext.Current.CancellationToken);
+
+        await using var provider = CatalogImportTestData.CreateProvider(fixture, folder);
+        var report = await ImportAsync(provider);
+        report.IsFailure.ShouldBeTrue();
+        report.Error!.Message.ShouldContain("external transfers");
+    }
+
+    [Fact]
     public async Task Reimport_Of_Unchanged_Data_Writes_Nothing()
     {
         var suffix = Suffix();

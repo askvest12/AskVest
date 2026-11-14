@@ -8,7 +8,8 @@ No provider is confirmed. Each external dependency gets one interface in a `Cont
 | `ISanctionsScreeningProvider` | sanctions/PEP checks | deterministic hit/miss lists |
 | `IMarketDataProvider` | prices, candles | fixed series, controllable staleness |
 | `IIssuerGateway` | quote, execute, redeem tokenized securities | in-memory order book |
-| `ICustodyProvider` | wallets, addresses, signing | local key simulation, never real keys |
+| `ICustodyProvider` | deposit addresses, deposit reporting, withdrawal submission and status, holdings, internal addresses | deterministic fake |
+| `IAddressScreeningProvider` | address risk screening | deterministic fake |
 | `IFundingProvider` | deposits, conversions, withdrawals, webhooks | scripted webhook sequences |
 | `IFxRateProvider` | FX rates | fixed rate table |
 | `INotificationChannel` | push, SMS, email | records sent messages |
@@ -138,6 +139,71 @@ Rules every adapter must satisfy:
 9. The fake gateway is forbidden in Production; a real adapter adds its credentials to the secret store, never to this configuration.
 
 The fake gateway quotes from the Market Data reference price plus a configured spread and fills after a configured delay. Scenarios, set by configuration or by `POST /api/v1/diagnostics/gateway-scenario` behind the probe flag: `normal`, `delayed_fill`, `rejected`, `quote_error`, `short_quote_expiry`, `slow_submit`, `submit_timeout_filled`, `submit_timeout_lost`, `status_unavailable`, `fill_mismatch`.
+
+## Custody provider contract (Phase 11)
+
+`ICustodyProvider` is the only seam to a custody or key management provider. Keys never enter our process: signing happens inside the provider or a KMS, HSM or MPC service, and no adapter that signs locally may be approved. The module contains no chain-specific code; chains are catalog ids and token references are chain id plus canonical contract address.
+
+The interface surface:
+
+- **Deposit instruction**: get or create the deposit address (and optional memo) for a user reference and chain.
+- **Deposit listing**: list deposits for a chain since a cursor. Each deposit carries a stable provider deposit id, the destination address, the token reference (chain id plus canonical contract address), the quantity, the sender address, a settlement reference, an explicit finality state (`pending` or `final`) and an observed time.
+- **Withdrawal submission**: submit with our withdrawal id as the idempotency key, returning an acknowledgement or a definitive rejection with a reason code.
+- **Withdrawal status** by our key returning `pending`, `completed` (with the settlement reference), `failed` or `not_found`. `completed` only after the provider's finality rule.
+- **Holdings**: custody balances per chain and token, used by the reserves check.
+- **Internal addresses**: whether an address belongs to us (deposit or treasury), used to refuse withdrawals to ourselves.
+
+The provider declares its supported chains, address model, memo support and finality rule.
+
+## Address screening contract (Phase 11)
+
+`IAddressScreeningProvider` screens a chain id and address and returns `clear`, `hit` or `error` with a reference. Every call fails closed: a provider error is never treated as clear, at address-book add time, at withdrawal placement and for every deposit source.
+
+## Custody and screening adapter contract
+
+Every real custody or screening adapter must satisfy:
+
+1. Keys and signing material never exist in our database, configuration, logs or process memory.
+2. Withdrawal submission is idempotent by our key; a repeated submission cannot create two withdrawals.
+3. Deposits are reported with stable ids and an explicit finality state; `final` only after the chain's finality rule.
+4. Withdrawals report `completed` only after finality; status by our key exposes only definitive states and `not_found` is ambiguous.
+5. All timestamps are UTC; decimals are parsed from text, never binary floating point.
+6. Errors map to exactly five outcomes: transient, rate limited (with retry delay), rejected (with reason code), not found, authentication failure.
+7. Every call respects the configured timeout.
+8. Where the provider supports policy (address allowlists, limits, approvals), the adapter mirrors our rules there as defense in depth.
+9. The adapter never returns secrets and never logs addresses, amounts or credentials.
+10. The fake providers are forbidden in Production; real adapters add credentials to the secret store, never to configuration.
+
+## Custody and screening research (fill one column per provider during research)
+
+| Question | Provider A | Provider B | Provider C |
+|---|---|---|---|
+| Custody model: per-user deposit addresses or omnibus | | | |
+| Who controls the keys; MPC, HSM or KMS; multi-signature | | | |
+| Recovery and emergency release procedures | | | |
+| What happens if the provider fails or AskVest is down | | | |
+| Insurance and audit coverage | | | |
+| Supported chains and token standards | | | |
+| Deposit detection method and finality rule per chain | | | |
+| Memo and tag support | | | |
+| Fee and gas model | | | |
+| Policy engine: address allowlists, limits, approvals | | | |
+| Idempotency and status endpoints | | | |
+| Sandbox, rate limits, support commitments | | | |
+| Treatment of issuer transfer restrictions | | | |
+| Address screening coverage (chains, chains of risk) | | | |
+| Licenses and legal agreements required | | | |
+
+## Exit plan requirements (any real custody provider)
+
+If AskVest is down or gone, users' assets must remain recoverable by an independent party. A real provider must satisfy:
+
+- Assets are held in accounts the provider can release to an independent operator under a documented procedure.
+- A periodic export of user ownership (ledger balances by user and token) is kept outside our infrastructure.
+- Named operators and a tested runbook exist for the release procedure.
+- The legal arrangements covering this exit are in place before launch.
+
+Phase 11 builds the reserves check and the export-friendly data model; the legal and operational pieces remain launch blockers.
 
 ## Gateway fact sheet (fill one column per provider during research)
 

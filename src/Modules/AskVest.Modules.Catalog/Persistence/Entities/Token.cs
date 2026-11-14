@@ -17,6 +17,7 @@ public sealed class Token
     public TokenStatus Status { get; set; }
     public required string GatewayKey { get; set; }
     public TradingScheduleKind ScheduleKind { get; set; }
+    public ExternalTransferPolicy ExternalTransfers { get; set; }
     public string? ScheduleTimeZone { get; set; }
     public string? ScheduleNote { get; set; }
     public ClaimType ClaimType { get; set; }

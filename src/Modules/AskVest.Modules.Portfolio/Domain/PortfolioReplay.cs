@@ -72,6 +72,17 @@ internal static class PortfolioReplay
                 case LedgerReasonCodes.CorporateActionSplit:
                     ApplySplit(positions, assets, instrumentOf, ref hasInconsistency);
                     break;
+                case LedgerReasonCodes.Deposit:
+                    foreach (var row in positions)
+                    {
+                        var state = StateFor(assets, row, instrumentOf);
+                        state.Quantity += row.Amount;
+                        state.HasUnclassifiedMovements = true;
+                    }
+                    break;
+                case LedgerReasonCodes.Withdrawal:
+                    ApplyWithdrawal(positions, assets, instrumentOf, ref hasInconsistency);
+                    break;
                 case LedgerReasonCodes.Dividend:
                     var amount = cash.Sum(row => row.Amount);
                     if (amount != 0m)
@@ -179,6 +190,42 @@ internal static class PortfolioReplay
             state.Quantity = 0m;
         }
 
+    }
+
+    private static void ApplyWithdrawal(
+        IReadOnlyList<LedgerMovement> positions,
+        Dictionary<string, ReplayAssetState> assets,
+        Func<string, string?> instrumentOf,
+        ref bool hasInconsistency)
+    {
+        foreach (var row in positions)
+        {
+            if (row.Amount >= 0m)
+            {
+                continue;
+            }
+
+            var state = StateFor(assets, row, instrumentOf);
+            var withdrawn = -row.Amount;
+            var applied = withdrawn;
+            if (withdrawn > state.Quantity)
+            {
+                applied = state.Quantity;
+                hasInconsistency = true;
+            }
+
+            var quantityBefore = state.Quantity;
+            var removedCost = quantityBefore > 0m
+                ? PortfolioRounding.RoundCost(state.TotalCost * applied / quantityBefore)
+                : 0m;
+            state.Quantity -= applied;
+            state.TotalCost -= removedCost;
+            if (state.Quantity <= 0m)
+            {
+                state.TotalCost = 0m;
+                state.Quantity = 0m;
+            }
+        }
     }
 
     private static void ApplySplit(

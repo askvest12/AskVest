@@ -210,6 +210,7 @@ internal sealed partial class CatalogImportValidator
                     Status = plan.Status,
                     GatewayKey = data.GatewayKey ?? string.Empty,
                     ScheduleKind = plan.ScheduleKind,
+                    ExternalTransfers = plan.ExternalTransfers,
                     ScheduleTimeZone = data.Schedule.TimeZone,
                     ScheduleNote = data.Schedule.Note,
                     ClaimType = plan.ClaimType,
@@ -260,6 +261,7 @@ internal sealed partial class CatalogImportValidator
             SetIfChanged(changed, "ledgerAssetCode", plan.AssetCode, existing.LedgerAssetCode, v => existing.LedgerAssetCode = v);
             SetIfChanged(changed, "gatewayKey", data.GatewayKey ?? string.Empty, existing.GatewayKey, v => existing.GatewayKey = v);
             SetIfChanged(changed, "scheduleKind", plan.ScheduleKind, existing.ScheduleKind, v => existing.ScheduleKind = v);
+            SetIfChanged(changed, "externalTransfers", plan.ExternalTransfers, existing.ExternalTransfers, v => existing.ExternalTransfers = v);
             SetIfChanged(changed, "scheduleTimeZone", data.Schedule.TimeZone, existing.ScheduleTimeZone, v => existing.ScheduleTimeZone = v);
             SetIfChanged(changed, "scheduleNote", data.Schedule.Note, existing.ScheduleNote, v => existing.ScheduleNote = v);
             SetIfChanged(changed, "claimType", plan.ClaimType, existing.ClaimType, v => existing.ClaimType = v);

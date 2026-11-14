@@ -385,6 +385,14 @@ internal sealed partial class CatalogImportValidator(
             scheduleKind = TradingScheduleKind.Always;
         }
 
+        var externalTransfers = ExternalTransferPolicy.NotSupported;
+        if (token.ExternalTransfers is { Length: > 0 } transfersText
+            && !TryParseEnum(transfersText, CatalogText.ExternalTransferPolicyFromDb, out externalTransfers))
+        {
+            result.Problems.Add($"{label}: external transfers '{transfersText}' is not valid");
+            externalTransfers = ExternalTransferPolicy.NotSupported;
+        }
+
         var existing = MatchExistingToken(existingTokens, caip19, assetCode, claimedTokenIds, label, result);
         var wasEverListed = token.EverListed || existing?.EverListed == true;
 
@@ -426,6 +434,7 @@ internal sealed partial class CatalogImportValidator(
             Data = token,
             Status = status,
             ScheduleKind = scheduleKind,
+            ExternalTransfers = externalTransfers,
             ClaimType = claimType,
             DividendPolicy = dividendPolicy,
             CanonicalAddress = canonicalAddress ?? string.Empty,

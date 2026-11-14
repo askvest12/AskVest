@@ -23,6 +23,10 @@ internal static class LearningContentLoader
         "no risk",
         "profit guaranteed",
         "get rich",
+        "non-custodial",
+        "self-custody",
+        "self custody",
+        "your keys",
     ];
 
     public static LearningContentSnapshot Load(LearningOptions options, IHostEnvironment environment)

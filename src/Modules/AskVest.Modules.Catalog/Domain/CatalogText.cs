@@ -130,6 +130,22 @@ internal static class CatalogText
         _ => throw new ArgumentOutOfRangeException(nameof(value), value, null),
     };
 
+    public static string ToDb(ExternalTransferPolicy value) => value switch
+    {
+        ExternalTransferPolicy.Allowed => "allowed",
+        ExternalTransferPolicy.Restricted => "restricted",
+        ExternalTransferPolicy.NotSupported => "not_supported",
+        _ => throw new ArgumentOutOfRangeException(nameof(value), value, null),
+    };
+
+    public static ExternalTransferPolicy ExternalTransferPolicyFromDb(string value) => value switch
+    {
+        "allowed" => ExternalTransferPolicy.Allowed,
+        "restricted" => ExternalTransferPolicy.Restricted,
+        "not_supported" => ExternalTransferPolicy.NotSupported,
+        _ => throw new ArgumentOutOfRangeException(nameof(value), value, null),
+    };
+
     public static string ToDb(CatalogEventType value) => value switch
     {
         CatalogEventType.Imported => "imported",

@@ -53,6 +53,15 @@ public sealed class AssistantOptions
 
     public Collection<string> ForbiddenPhrases { get; } = [];
 
+    /// <summary>Applied when no phrases are configured, mirroring the learning lint defaults.</summary>
+    public static readonly IReadOnlyList<string> DefaultForbiddenPhrases =
+    [
+        "non-custodial",
+        "self-custody",
+        "self custody",
+        "your keys",
+    ];
+
     public string SafeFallbackMessage { get; set; } =
         "I could not put together a reliable answer for that. Please try rephrasing, or browse the lessons for the concepts.";
 

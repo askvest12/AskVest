@@ -227,13 +227,14 @@ public sealed class CatalogSchemaTests(PostgresFixture fixture)
                 claim_type, claim_description, backing_description, custodian_description,
                 redemption_description, dividend_policy, voting_rights, transfer_restrictions,
                 issuer_fees, no_issuer_fees, risk_statements, disclosure_document_link,
-                ever_listed, created_at, updated_at)
+                external_transfers, ever_listed, created_at, updated_at)
             VALUES (
                 '{id}', '{instrumentId}', '{issuerId}', '{chainId}', 'erc20', '0xCCC', '{caip19}',
                 'TST', {decimals}, '{assetCode}', '{status}', 'gateway-test', 'always',
                 'direct_share_claim', 'claim', 'backing', 'custodian',
                 'redemption', 'distributed', true, 'none',
                 ARRAY['fee']::text[], false, ARRAY['r1','r2','r3']::text[], 'https://docs.example/token',
+                'not_supported',
                 true, now(), now());
             """;
 }

@@ -83,8 +83,9 @@ public static class WalletsEndpoints
 
         real.MapDelete("/withdrawal-addresses/{addressId:guid}", RemoveAddressAsync)
             .WithName("RemoveWithdrawalAddress")
-            .WithSummary("Remove a withdrawal destination. Idempotent by design.")
-            .WithTags("Real Wallets");
+            .WithSummary("Remove a withdrawal destination. Exempt from idempotency storage: deleting twice is harmless because a missing address answers resource.not_found.")
+            .WithTags("Real Wallets")
+            .WithMetadata(new IdempotencyExemptAttribute());
 
         real.MapPost("/withdrawals/previews", CreatePreviewAsync)
             .WithName("CreateWithdrawalPreview")

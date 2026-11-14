@@ -429,7 +429,11 @@ internal sealed class WithdrawalService(
         var netValueUsd = net * reference.Price.Value;
         var rolling = await db.Withdrawals.AsNoTracking()
             .Where(row => row.UserId == userId
-                && WithdrawalTransitions.CountsTowardRollingTotal(row.State)
+                && (row.State == WithdrawalState.Requested
+                    || row.State == WithdrawalState.Submitting
+                    || row.State == WithdrawalState.Submitted
+                    || row.State == WithdrawalState.Completed
+                    || row.State == WithdrawalState.NeedsReconciliation)
                 && row.CreatedAt >= timeProvider.GetUtcNow() - TimeSpan.FromHours(24))
             .ToListAsync(cancellationToken);
         var usage = 0m;

@@ -46,7 +46,7 @@ internal static class WithdrawalJournals
         var lines = new List<LedgerLine>
         {
             new(LedgerAccounts.UserHeld(Book.Real, userId), assetCode, -grossQuantity),
-            new(LedgerAccounts.SystemClearing(Book.Real), assetCode, -net),
+            new(LedgerAccounts.SystemClearing(Book.Real), assetCode, net),
         };
         if (fee != 0m)
         {

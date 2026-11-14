@@ -84,7 +84,7 @@ internal sealed class AddressBookService(
             await LockUserAsync(userId, cancellationToken);
 
             var chain = await catalog.FindChainAsync(chainId, cancellationToken);
-            if (chain is null || chain.Status != "active")
+            if (chain is null || chain.Status != "enabled")
             {
                 await RollbackAsync(ownsScope, cancellationToken);
                 return Result.Failure<WithdrawalAddress>(WalletsResults.WalletNotAvailable("chain_unknown"));

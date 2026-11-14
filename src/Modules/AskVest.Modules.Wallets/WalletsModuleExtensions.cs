@@ -2,6 +2,9 @@ using AskVest.Modules.Wallets.Configuration;
 using AskVest.Modules.Wallets.Custody;
 using AskVest.Modules.Wallets.Persistence;
 using AskVest.Modules.Wallets.Screening;
+using AskVest.Modules.Wallets.Services;
+using AskVest.Platform;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -51,6 +54,21 @@ public static class WalletsModuleExtensions
             var scope = provider.GetService<AskVest.Platform.ITransactionScope>();
             WalletsDbContextOptions.Configure(options, connectionString, platformOptions.CommandTimeoutSeconds, scope?.Connection);
         });
+
+        services.AddValidatorsFromAssembly(typeof(WalletsModuleExtensions).Assembly);
+
+        services.AddScoped<WalletEventWriter>();
+        services.AddScoped<WalletService>();
+        services.AddScoped<AddressBookService>();
+        services.AddScoped<WithdrawalService>();
+        services.AddScoped<WithdrawalSubmitService>();
+        services.AddScoped<WithdrawalProgressService>();
+        services.AddScoped<ReservesService>();
+        services.AddScoped<IOutboxHandler, WithdrawalSubmitHandler>();
+        services.AddSingleton<DepositJob>();
+        services.AddHostedService(provider => provider.GetRequiredService<DepositJob>());
+        services.AddSingleton<WithdrawalProgressJob>();
+        services.AddHostedService(provider => provider.GetRequiredService<WithdrawalProgressJob>());
 
         return services;
     }

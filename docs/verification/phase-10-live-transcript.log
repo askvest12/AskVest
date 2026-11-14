@@ -1,0 +1,213 @@
+=== AskVest Phase 10 real order engine - live HTTP transcript ===
+api: http://localhost:5081   mailpit: http://localhost:18025   2026-11-14T11:09:41Z
+
+>>> POST /api/v1/auth/sign-up  Idempotency-Key: tr-signup-1794654581-1
+>>> body: {"email": "tr-1794654581@example.com", "password": "CorrectHorseSmoke9"}
+{"success":true,"message":"If this email can be verified, a verification code has been sent.","data":null,"error":null,"correlationId":"01a1d9bfb2fb7b6aa94ace784e74b9f2"}
+
+>>> verification email captured in Mailpit, code: 482461
+>>> POST /api/v1/auth/verify-email  Idempotency-Key: tr-verify-1794654581-1
+>>> body: {"email": "tr-1794654581@example.com", "code": "482461"}
+{"success":true,"message":"Email verified.","data":null,"error":null,"correlationId":"01a1d9bfb7dc76f78c8fb6c13b10fe8f"}
+
+>>> POST /api/v1/auth/login  Idempotency-Key: tr-login-1794654581-1
+>>> body: {"email": "tr-1794654581@example.com", "password": "CorrectHorseSmoke9", "device": {"installationId": "dev-tr1", "platform": "android", "deviceName": "Transcript", "appVersion": "1.0.0"}}
+{"success":true,"message":"Signed in.","data":{"result":"authenticated","accessToken":"eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJhc2t2ZXN0LWFwaSIsImlzcyI6ImFza3Zlc3QiLCJleHAiOjE3OTQ2NTUxODMsImlhdCI6MTc5NDY1NDU4MywibmJmIjoxNzk0NjU0NTgzLCJzdWIiOiIwMWExZDliZi1iMzJiLTcxYzUtOTEyMC03YjViYmViNTUxMjkiLCJzaWQiOiIwMWExZDliZi1iYjI1LTcwYzgtYTQ2Yi03Y2IwMWRhNTRiMjIiLCJqdGkiOiIwMWExZDliZi1iYjI1LTc3ZTktYmY3NS0wM2RlMTY4ZDc5ZDgifQ.1niTMfRZIrMvCJZEKdyl8JMubP4V4rTiUVD9NLqJFhtZYis8MOPR6BAn5Eisiz9gnD105mpzEbx0kYX0s0kImg","refreshToken":"vbtuuLMxJWLOjBCt9DkniCyBrwAxQDqDBPPxL-dTlnk","accessTokenExpiresAt":"2026-11-14T11:19:43.5899113Z","refreshIdleExpiresAt":"2026-12-14T11:09:43.5840243Z","sessionId":"01a1d9bf-bb25-70c8-a46b-7cb01da54b22"},"error":null,"correlationId":"01a1d9bfb91e7e3cbfcc98fa6b757424"}
+
+>>> Bearer token acquired (len 422)
+
+>>> GET /api/v1/compliance/documents
+{"success":true,"message":"Documents retrieved.","data":{"documents":[{"type":"terms","version":"dev-1","url":"https://askvest.example/legal/terms","sha256":"3cd4ce09a1de6487158536c2633bcdaca51c58a9a3f17dab2343de11c3d69a5a","requiredFor":"practice","accepted":false},{"type":"privacy","version":"dev-1","url":"https://askvest.example/legal/privacy","sha256":"7f391c05d905e1c1d21ae43ab91215b6762ef83266eccb81972d2ef6b9296115","requiredFor":"practice","accepted":false},{"type":"risk_disclosure","version":"dev-1","url":"https://askvest.example/legal/risk-disclosure","sha256":"1fe38db50174c30ad107c1a86ec8d19e9cf3f12d8a1b8e481d582a29dc0e39f6","requiredFor":"real","accepted":false},{"type":"token_disclosure","version":"dev-1","url":"https://askvest.example/legal/token-disclosure","sha256":"54439deda9b18fc787732ee6b2332cf92e9889ecd83b07166b036df81688a419","requiredFor":"real","accepted":false},{"type":"ai_processing","version":"dev-1","url":"https://askvest.example/legal/ai-processing","sha256":"9b1d3f5a7c2e4a6b8d0f1a3c5e7b9d2f4a6c8e0b1d3f5a7c9e2b4d6f8a0c1e3b","requiredFor":"assistant","accepted":false}]},"error":null,"correlationId":"01a1d9bfbbe97327b3911b6dbe2bd4e8"}
+
+>>> POST /api/v1/compliance/consents  Idempotency-Key: tr-consent-1794654581-1
+>>> body: {"documents": [{"type": "terms", "version": "dev-1", "sha256": "3cd4ce09a1de6487158536c2633bcdaca51c58a9a3f17dab2343de11c3d69a5a"}, {"type": "privacy", "version": "dev-1", "sha256": "7f391c05d905e1c1d21ae43ab91215b6762ef83266eccb81972d2ef6b9296115"}, {"type": "risk_disclosure", "version": "dev-1", "sha256": "1fe38db50174c30ad107c1a86ec8d19e9cf3f12d8a1b8e481d582a29dc0e39f6"}, {"type": "token_disclosure", "version": "dev-1", "sha256": "54439deda9b18fc787732ee6b2332cf92e9889ecd83b07166b036df81688a419"}, {"type": "ai_processing", "version": "dev-1", "sha256": "9b1d3f5a7c2e4a6b8d0f1a3c5e7b9d2f4a6c8e0b1d3f5a7c9e2b4d6f8a0c1e3b"}]}
+{"success":true,"message":"Consents recorded.","data":null,"error":null,"correlationId":"01a1d9bfbcee7e89b566c63f086af574"}
+
+>>> PUT /api/v1/compliance/country  Idempotency-Key: tr-country-1794654581-1
+>>> body: {"country":"NG"}
+{"success":true,"message":"Country recorded.","data":{"country":"NG"},"error":null,"correlationId":"01a1d9bfbd4173ff8f3c824b6aec2e3a"}
+
+>>> POST /api/v1/compliance/kyc/start  Idempotency-Key: tr-kyc-1794654581-1
+>>> body: {}
+{"success":true,"message":"Verification session ready.","data":{"providerReference":"fake-01a1d9bfbdfd7048a5b7749dfd73d147","sessionUrl":"https://kyc.example.test/session/fake-01a1d9bfbdfd7048a5b7749dfd73d147","kycStatus":"InReview"},"error":null,"correlationId":"01a1d9bfbdd573929b21006a96a82537"}
+
+>>> POST /api/v1/webhooks/kyc/fake  (signed HMAC webhook)
+>>> body: {"eventId": "evt-434620837", "providerReference": "fake-01a1d9bfbdfd7048a5b7749dfd73d147", "outcome": "approved", "verifiedCountry": "NG", "fullName": "Transcript User", "dateOfBirth": "1990-04-12"}
+{"success":true,"message":"Webhook received.","data":null,"error":null,"correlationId":"01a1d9bfc0597e108f808013fde0245d"}
+
+>>> GET /api/v1/learning/lessons/what-you-own
+{"success": true, "message": "Lesson loaded.", "data": {"lesson": {"id": "what-you-own", "trackId": "investing-safely", "title": "What you actually own", "summary": "Holding a token is not the same as owning the share.", "estimatedMinutes": 5, "version": 1, "requiredForReal": true, "blocks": [{"type": "heading", "text": "Tokenized does not mean identical", "items": null, "kind": null}, {"type": "paragraph", "text": "A token that tracks a stock is a digital record managed by an issuer. Holding it is not the same as holding the share itself: the rights, backing and exit options depend on the iss
+
+>>> POST /api/v1/learning/lessons/what-you-own/quiz-attempts
+{"success": true, "message": "Quiz attempt graded.", "data": {"score": 100, "passed": true, "attemptsCount": 1, "lessonComplete": true, "questions": [{"questionId": "q1", "correct": true, "selectedOptionId": "b", "correctOptionId": "b", "explanation": "A tracking token is a claim managed by an issuer, not the share itself."}, {"questionId": "q2", "correct": true, "selectedOptionId": "a", "correctOptionId": "a", "explanation": "Disclosures state backing, rights, fees and exit options in writing."}, {"questionId": "q3", "correct": true, "selectedOptionId": "a", "correctOptionId": "a", "explanati
+
+>>> POST /api/v1/account/pin  Idempotency-Key: tr-pin-1794654581-1
+>>> body: {"password":"CorrectHorseSmoke9","pin":"246810"}
+{"success":true,"message":"PIN set.","data":null,"error":null,"correlationId":"01a1d9bfc31e798fa0b25b742e7c5154"}
+
+>>> POST /api/v1/real/diagnostics/ledger-post  Idempotency-Key: tr-fund-1794654581-1
+>>> body: {"kind":"credit","asset":"USD","amount":"100"}
+{"success":true,"message":"Probe journal posted.","data":{"journalId":"01a1d9bf-c6bb-728f-b522-47c3c614c138","book":"real","reasonCode":"deposit","postedAt":"2026-11-14T11:09:46.5558054Z"},"error":null,"correlationId":"01a1d9bfc68f7b7dab8dcd14a4a0c6bb"}
+
+>>> GET /api/v1/real/balances
+{"success":true,"message":"Balances loaded.","data":[{"asset":"USD","available":"100","held":"0"}],"error":null,"correlationId":"01a1d9bfc7297c6db41c8351001eba26"}
+
+>>> GET /api/v1/catalog/instruments/sample-nvda
+{"success":true,"message":"Instrument loaded.","data":{"instrument":{"id":"sample-nvda","kind":"stock","name":"SampleNvda Corporation (fictional)","symbol":"SNVDA","isin":"US0000000001","listingExchange":"NASDAQ","countryOfListing":"US","quoteCurrency":"USD","sector":"Technology","shortDescription":"Fictional sample stock used only for catalog smoke tests.","logoLink":null},"tokens":[{"id":"01a1b89c-4db3-7fb2-9eca-4d994f866b7a","chainId":"eip155:11155111","symbol":"SNVDA","status":"listed","ledgerAssetCode":"SMPNVDA1","caip19":"eip155:11155111/erc20:0xaaaAAAAAAaAaaaaAAAaaAAAAaAaaaaAaaAaaAA01","availability":{"buyable":true,"sellable":true,"buyBlockers":[],"sellBlockers":[]}},{"id":"01a1b89c-4e50-7cd7-98f4-f80f758b6d02","chainId":"eip155:11155111","symbol":"SNVDA-D","status":"delisted","ledgerAssetCode":"SMPNVDA4","caip19":"eip155:11155111/erc20:0xAaAAaAaAAaaAAaAAaaAaAaAAaAAAAaaaaaAaAa04","availability":{"buyable":false,"sellable":true,"buyBlockers":["token_not_listed"],"sellBlockers":[]}},{"id":"01a1b89c-4e4d-7134-9d35-7b767d02c45f","chainId":"eip155:11155111","symbol":"SNVDA-S","status":"suspended","ledgerAssetCode":"SMPNVDA3","caip19":"eip155:11155111/erc20:0xaaaaaAAAAAaaaAAAaAAaAAAAAaAAAAaaAaaaaa03","availability":{"buyable":false,"sellable":false,"buyBlockers":["token_not_listed"],"sellBlockers":["token_suspended"]}}]},"error":null,"correlationId":"01a1d9bfc76e70ecb14ff8baee243d1a"}
+
+>>> token id for SNVDA: 01a1b89c-4db3-7fb2-9eca-4d994f866b7a
+>>> POST /api/v1/real/quotes  Idempotency-Key: tr-quote-1794654581-1
+>>> body: {"tokenId": "01a1b89c-4db3-7fb2-9eca-4d994f866b7a", "side": "buy", "amount": "10"}
+{
+    "success": true,
+    "message": "Quote created.",
+    "data": {
+        "id": "01a1d9bf-ca69-7121-a824-7197f3f2fe08",
+        "tokenId": "01a1b89c-4db3-7fb2-9eca-4d994f866b7a",
+        "side": "buy",
+        "quantity": "0.312900904283613379",
+        "price": "31.959000000000000000",
+        "grossAmount": "10.000000",
+        "ourFee": "0.000000",
+        "gatewayFee": "0",
+        "total": "10.000000",
+        "settlementAsset": "USD",
+        "expiresAt": "2026-11-14T11:10:17.4977758Z",
+        "warnings": [],
+        "termsHash": "28102a667f89fc78862507af0f8cf5cc9c31586b4860f9b3f27ffbc62c2a038d",
+        "state": "open",
+        "createdAt": "2026-11-14T11:09:47.4979059Z"
+    },
+    "error": null,
+    "correlationId": "01a1d9bfc9ce7515b3fdd1665944517f"
+}
+
+>>> POST /api/v1/auth/step-up  Idempotency-Key: tr-stepup-1794654581-1
+>>> body: {"purpose": "authorize_order", "pin": "246810", "binding": "28102a667f89fc78862507af0f8cf5cc9c31586b4860f9b3f27ffbc62c2a038d"}
+{
+    "success": true,
+    "message": "Step-up grant issued.",
+    "data": {
+        "grantToken": "0ApdXMUCYOVqMsDN84ow4cBCM0_ocM2l3A2xDqS4diE",
+        "expiresAt": "2026-11-14T11:11:49.0539473Z"
+    },
+    "error": null,
+    "correlationId": "01a1d9bfce9a76939ebc25e7a82ad058"
+}
+
+>>> POST /api/v1/real/orders  Idempotency-Key: tr-order-1794654581-1
+>>> body: {"quoteId": "01a1d9bf-ca69-7121-a824-7197f3f2fe08", "stepUpToken": "0ApdXMUCYOVqMsDN84ow4cBCM0_ocM2l3A2xDqS4diE"}
+{
+    "success": true,
+    "message": "Order placed.",
+    "data": {
+        "id": "01a1d9bf-d36f-7407-b9d4-726c9623b304",
+        "quoteId": "01a1d9bf-ca69-7121-a824-7197f3f2fe08",
+        "tokenId": "01a1b89c-4db3-7fb2-9eca-4d994f866b7a",
+        "instrumentId": "sample-nvda",
+        "side": "buy",
+        "state": "pending_submission",
+        "settlementAsset": "USD",
+        "quantity": "0.312900904283613379",
+        "price": "31.959000000000000000",
+        "grossAmount": "10.000000000000000000",
+        "ourFee": "0.000000000000000000",
+        "gatewayFee": "0.000000000000000000",
+        "total": "10.000000000000000000",
+        "gatewayReference": null,
+        "failureCode": null,
+        "detailCode": null,
+        "createdAt": "2026-11-14T11:09:49.7544010Z",
+        "submittedAt": null,
+        "executedAt": null,
+        "failedAt": null,
+        "cancelledAt": null
+    },
+    "error": null,
+    "correlationId": "01a1d9bfd2ea7df6a8cb5d3fe12b2f89"
+}
+
+>>> GET /api/v1/real/orders/01a1d9bf-d36f-7407-b9d4-726c9623b304 (polled until terminal)
+{
+    "success": true,
+    "message": "Order loaded.",
+    "data": {
+        "id": "01a1d9bf-d36f-7407-b9d4-726c9623b304",
+        "quoteId": "01a1d9bf-ca69-7121-a824-7197f3f2fe08",
+        "tokenId": "01a1b89c-4db3-7fb2-9eca-4d994f866b7a",
+        "instrumentId": "sample-nvda",
+        "side": "buy",
+        "state": "executed",
+        "settlementAsset": "USD",
+        "quantity": "0.312900904283613379",
+        "price": "31.959000000000000000",
+        "grossAmount": "10.000000000000000000",
+        "ourFee": "0.000000000000000000",
+        "gatewayFee": "0.000000000000000000",
+        "total": "10.000000000000000000",
+        "gatewayReference": "fake-order-01a1d9bfd36f7407b9d4726c9623b304",
+        "failureCode": null,
+        "detailCode": null,
+        "createdAt": "2026-11-14T11:09:49.7544010Z",
+        "submittedAt": "2026-11-14T11:09:51.8174480Z",
+        "executedAt": "2026-11-14T11:09:53.5749030Z",
+        "failedAt": null,
+        "cancelledAt": null
+    },
+    "error": null,
+    "correlationId": "01a1d9bfe51b772f9b130bc3d43e6c3e"
+}
+
+>>> GET /api/v1/real/balances (after execution)
+{
+    "success": true,
+    "message": "Balances loaded.",
+    "data": [
+        {
+            "asset": "SMPNVDA1",
+            "available": "0.312900904283613379",
+            "held": "0"
+        },
+        {
+            "asset": "USD",
+            "available": "90",
+            "held": "0"
+        }
+    ],
+    "error": null,
+    "correlationId": "01a1d9bfe70776e5bc3691ed1af79411"
+}
+
+>>> GET /api/v1/real/orders
+{
+    "success": true,
+    "message": "Orders loaded.",
+    "data": [
+        {
+            "id": "01a1d9bf-d36f-7407-b9d4-726c9623b304",
+            "quoteId": "01a1d9bf-ca69-7121-a824-7197f3f2fe08",
+            "tokenId": "01a1b89c-4db3-7fb2-9eca-4d994f866b7a",
+            "instrumentId": "sample-nvda",
+            "side": "buy",
+            "state": "executed",
+            "settlementAsset": "USD",
+            "quantity": "0.312900904283613379",
+            "price": "31.959000000000000000",
+            "grossAmount": "10.000000000000000000",
+            "ourFee": "0.000000000000000000",
+            "gatewayFee": "0.000000000000000000",
+            "total": "10.000000000000000000",
+            "gatewayReference": "fake-order-01a1d9bfd36f7407b9d4726c9623b304",
+            "failureCode": null,
+            "detailCode": null,
+            "createdAt": "2026-11-14T11:09:49.7544010Z",
+            "submittedAt": "2026-11-14T11:09:51.8174480Z",
+            "executedAt": "2026-11-14T11:09:53.5749030Z",
+            "failedAt": null,
+            "cancelledAt": null
+        }
+    ],
+    "error": null,
+    "correlationId": "01a1d9bfe894771b8b50dfbf0179ab1a"
+}
+

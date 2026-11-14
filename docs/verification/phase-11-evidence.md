@@ -11,6 +11,8 @@ Mailpit on 18025). Spec: `AskVest-Backend-Phase-11-Wallets-and-Custody.md`.
 - `808a9c0` feat(wallets): phase 11 endpoints, services and background jobs
 - `0109e1b` fix(wallets): correct settle journal sign and add API integration tests
 - `43f2c11` fix(catalog): backfill empty external_transfers and add wallets smoke coverage
+- `200f26d` docs(wallets): phase 11 verification evidence
+- `d28340a` fix(wallets,catalog): idempotency exemption on address delete and external_transfers default
 
 ## What was built
 
@@ -58,6 +60,17 @@ Mailpit on 18025). Spec: `AskVest-Backend-Phase-11-Wallets-and-Custody.md`.
    the policy converter cannot parse, breaking catalog reads and the
    migrator import on upgraded databases. Forward-only
    `BackfillExternalTransfers` sets them to `not_supported` (`43f2c11`).
+5. `DELETE /api/v1/real/withdrawal-addresses/{addressId}` declared
+   idempotency only in prose; the architecture test requires the
+   `IdempotencyExempt` metadata. Deletion is repeat-safe (missing rows
+   answer `resource.not_found`), so it is exempt with a written reason
+   (`d28340a`).
+6. `catalog.tokens.external_transfers` still carried `DEFAULT ''` from
+   the original AddColumn migration, so raw inserts that omit the column
+   produced rows the enum converter cannot parse. Forward-only
+   `ExternalTransfersDefault` sets the database default to
+   `not_supported`, and `CatalogSchemaTests` names the column explicitly
+   (`d28340a`).
 
 ## Step 8A: API-level integration tests
 
@@ -106,6 +119,13 @@ The smoke override (`docker-compose.smoke.yml`) routes
 `eip155:11155111` and `eip155:17000` to the fake custody provider, sets
 `Screening:Provider=fake`, shrinks deposit, progress and reserves
 intervals and disables cooling off for the journey.
+
+## Full integration suite
+
+`tests/AskVest.IntegrationTests` against a fresh Testcontainers
+PostgreSQL: 466 total, 0 errors, 0 failed, 0 skipped (1662s). This run
+includes the two `WalletsApiTests`, the `WalletsSchemaTests`, the idempotency
+architecture suite and every earlier module suite.
 
 ## Unit and architecture layers
 

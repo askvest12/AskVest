@@ -50,7 +50,7 @@ public sealed class FundingOptionsTests
             DailyCapSource = 50_000m,
             MaxJumpPercent = 5m,
         });
-        options.FxRates["USD:NGN"] = 1500m;
+        options.FxRates.Add(new FundingFxRateOption { From = "USD", To = "NGN", Rate = 1500m });
         return options;
     }
 

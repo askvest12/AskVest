@@ -40,10 +40,18 @@ internal sealed class FakeFxRateProvider : IFxRateProvider
             throw new FundingProviderException(FundingProviderFailureKind.Transient, "fx_error");
         }
 
-        if (!_options.Value.FxRates.TryGetValue(pair, out var baseRate))
+        var separator = pair.IndexOf(':', StringComparison.Ordinal);
+        var entry = separator > 0
+            ? _options.Value.FxRates.FirstOrDefault(rate =>
+                string.Equals(rate.From, pair[..separator], StringComparison.Ordinal)
+                && string.Equals(rate.To, pair[(separator + 1)..], StringComparison.Ordinal))
+            : null;
+        if (entry is null)
         {
             throw new FundingProviderException(FundingProviderFailureKind.Rejected, "fx_pair_unknown");
         }
+
+        var baseRate = entry.Rate;
 
         var now = _timeProvider.GetUtcNow();
         var asOf = Scenario == ScenarioStale

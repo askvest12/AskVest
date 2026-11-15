@@ -25,10 +25,10 @@ public sealed class FundingOptions
     public string FxProvider { get; set; } = string.Empty;
 
     /// <summary>
-    /// Mid rates per "FROM:TO" pair used by the fake FX provider. Required
-    /// for every enabled pair while the fake is configured.
+    /// Mid rates used by the fake FX provider. A list because pair keys
+    /// contain ':' which cannot appear in a configuration key.
     /// </summary>
-    public Dictionary<string, decimal> FxRates { get; } = new(StringComparer.Ordinal);
+    public Collection<FundingFxRateOption> FxRates { get; } = [];
 
     public int ProviderTimeoutSeconds { get; set; } = 10;
 
@@ -208,10 +208,23 @@ public sealed class FundingOptions
                 $"Funding:FxProvider '{options.FxProvider}' has no adapter; only 'fake' is implemented.");
             if (options.FxProvider == "fake")
             {
+                var rates = new Dictionary<string, decimal>(StringComparer.Ordinal);
+                foreach (var rate in options.FxRates)
+                {
+                    var key = $"{rate.From}:{rate.To}";
+                    Check(IsAssetCode(rate.From) && IsAssetCode(rate.To)
+                        && !string.Equals(rate.From, rate.To, StringComparison.Ordinal),
+                        $"Funding:FxRates entry '{key}' is invalid.");
+                    Check(rate.Rate > 0m,
+                        $"Funding:FxRates entry '{key}' must be positive.");
+                    Check(rates.TryAdd(key, rate.Rate),
+                        $"Funding:FxRates has a duplicate '{key}'.");
+                }
+
                 foreach (var pair in options.Pairs.Where(pair => pair.Enabled))
                 {
                     var key = $"{pair.From}:{pair.To}";
-                    Check(options.FxRates.TryGetValue(key, out var rate) && rate > 0m,
+                    Check(rates.TryGetValue(key, out var rate) && rate > 0m,
                         $"Funding:FxRates is missing a positive rate for enabled pair '{key}'.");
                 }
             }
@@ -310,6 +323,16 @@ public sealed class FundingProviderOption
     /// Real adapters read these from the provider instead.
     /// </summary>
     public Dictionary<string, decimal> SettlementBalances { get; } = new(StringComparer.Ordinal);
+}
+
+/// <summary>One mid rate for a "FROM:TO" pair used by the fake FX provider.</summary>
+public sealed class FundingFxRateOption
+{
+    public string From { get; set; } = string.Empty;
+
+    public string To { get; set; } = string.Empty;
+
+    public decimal Rate { get; set; }
 }
 
 /// <summary>An operator-declared withdrawal pause for one currency.</summary>

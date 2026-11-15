@@ -87,8 +87,7 @@ internal sealed class FundingAccountService(
 
         var existing = await db.FundingAccounts
             .FirstOrDefaultAsync(
-                row => row.UserId == userId
-                    && string.Equals(row.Currency, code, StringComparison.Ordinal),
+                row => row.UserId == userId && row.Currency == code,
                 cancellationToken);
         if (existing is not null)
         {
@@ -127,8 +126,7 @@ internal sealed class FundingAccountService(
             db.Entry(account).State = EntityState.Detached;
             var winner = await db.FundingAccounts.AsNoTracking()
                 .FirstAsync(
-                    row => row.UserId == userId
-                        && string.Equals(row.Currency, code, StringComparison.Ordinal),
+                    row => row.UserId == userId && row.Currency == code,
                     cancellationToken);
             return Result.Success(winner);
         }

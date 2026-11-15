@@ -60,7 +60,7 @@ internal static class FundingResults
         => new(
             ErrorCodes.FundingBeneficiaryCoolingOff,
             $"The beneficiary is still cooling off until {activeFrom:O}.",
-            ErrorType.Conflict);
+            ErrorType.BusinessRule);
 
     public static Error QuoteInvalid(string reason)
         => new(

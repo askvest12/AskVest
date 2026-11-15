@@ -469,6 +469,28 @@ namespace AskVest.Modules.Funding.Migrations
                     b.ToTable("funding_pauses", "funding");
                 });
 
+            modelBuilder.Entity("AskVest.Modules.Funding.Persistence.Entities.FundingPollCursor", b =>
+                {
+                    b.Property<string>("ProviderKey")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("provider_key");
+
+                    b.Property<string>("Cursor")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)")
+                        .HasColumnName("cursor");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("ProviderKey")
+                        .HasName("pk_poll_cursors");
+
+                    b.ToTable("poll_cursors", "funding");
+                });
+
             modelBuilder.Entity("AskVest.Modules.Funding.Persistence.Entities.FundingRestriction", b =>
                 {
                     b.Property<Guid>("Id")

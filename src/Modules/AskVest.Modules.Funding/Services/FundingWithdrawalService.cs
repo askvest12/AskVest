@@ -589,7 +589,9 @@ internal sealed class FundingWithdrawalService(
         var committed = db.Withdrawals.AsNoTracking()
             .Where(row => row.UserId == userId
                 && row.Currency == option.Code
-                && WithdrawalTransitions.CountsTowardRollingTotal(row.State));
+                && row.State != WithdrawalState.Previewed
+                && row.State != WithdrawalState.Failed
+                && row.State != WithdrawalState.Cancelled);
         var dayUsed = await committed
             .Where(row => row.CreatedAt > dayStart)
             .SumAsync(row => (decimal?)row.TotalDebited, cancellationToken) ?? 0m;

@@ -275,7 +275,7 @@ public sealed class FundingProviderFakeTests
     public async Task Fx_Fake_Scenarios()
     {
         var options = Options.Create(new FundingOptions());
-        options.Value.FxRates["USD:NGN"] = 1500m;
+        options.Value.FxRates.Add(new FundingFxRateOption { From = "USD", To = "NGN", Rate = 1500m });
         var fx = new FakeFxRateProvider(options, TimeProvider.System);
 
         var rate = await fx.GetMidRateAsync("USD:NGN", TestContext.Current.CancellationToken);

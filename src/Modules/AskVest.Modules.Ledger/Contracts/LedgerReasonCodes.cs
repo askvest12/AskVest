@@ -15,4 +15,6 @@ public static class LedgerReasonCodes
     public const string Fee = "fee";
     public const string Reversal = "reversal";
     public const string Adjustment = "adjustment";
+    public const string Conversion = "conversion";
+    public const string DepositReversal = "deposit_reversal";
 }

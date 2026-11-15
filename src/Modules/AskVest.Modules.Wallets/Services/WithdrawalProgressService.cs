@@ -1,5 +1,6 @@
 using AskVest.Modules.Catalog.Contracts;
 using AskVest.Modules.Ledger.Contracts;
+using AskVest.Modules.Wallets.Configuration;
 using AskVest.Modules.Wallets.Custody;
 using AskVest.Modules.Wallets.Domain;
 using AskVest.Modules.Wallets.Persistence;
@@ -9,7 +10,6 @@ using AskVest.SharedKernel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using AskVest.Modules.Wallets.Configuration;
 
 namespace AskVest.Modules.Wallets.Services;
 

@@ -58,7 +58,8 @@ public sealed class WalletsApiTests(PostgresFixture fixture) : IAsyncLifetime
             gatewayKey: "gw-none",
             countries: ["NG"],
             externalTransfers: "allowed")
-            with { Symbol = $"W{suffix}".ToUpperInvariant()[..8] };
+            with
+        { Symbol = $"W{suffix}".ToUpperInvariant()[..8] };
         var instrument = CatalogImportTestData.Instrument("instr-wallets", [token]) with
         {
             Symbol = token.Symbol,

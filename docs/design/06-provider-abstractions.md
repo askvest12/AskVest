@@ -194,6 +194,68 @@ Every real custody or screening adapter must satisfy:
 | Address screening coverage (chains, chains of risk) | | | |
 | Licenses and legal agreements required | | | |
 
+## Funding provider contract (Phase 12)
+
+`IFundingProvider` is the only seam to a payment or payout provider. The module contains no vendor, country or rail specific code: currencies, rails, countries, limits and fees are configuration, and the provider declares what it supports. The deterministic fake is the only built-in route and is refused in Production.
+
+The interface surface:
+
+- **Funding instruction**: get or create the instruction for a user reference and currency. Rails are account-transfer style only: the user pays from their own bank to the provider-issued details; there are no cards and no hosted payment pages.
+- **Deposit listing**: list deposits since a cursor for the polling fallback. Each deposit carries a stable provider deposit id, the account reference, the currency, the amount, the provider fee, a payer-verified flag, a state (`pending`, `completed`, `failed`, `reversed`) and an observed time.
+- **Beneficiary**: add a beneficiary for a user reference and currency with a details map validated against the provider's declared schema for that currency, returning a beneficiary reference, a masked display and a `nameMatch` flag. Bank or mobile money details are passed through and never returned in full.
+- **Payout**: request a payout with our withdrawal id as the idempotency key, beneficiary reference, currency and amount, returning an acknowledgement or a definitive rejection.
+- **Payout status** by our key returning `pending`, `completed`, `failed` or `not_found`. `completed` only after the provider's final settlement.
+- **Settlement balance**: the provider's reported balance per currency, used by the fiat reserves check.
+- **Webhook verify and parse**: signature check over timestamp and raw body, then normalization into the same event shapes the polling path produces.
+
+The provider declares supported currencies, the required beneficiary fields per currency and its limits.
+
+## FX rate provider contract (Phase 12)
+
+`IFxRateProvider` returns the mid rate for a currency pair with an as-of time and a source label. We are the counterparty for conversions: the Funding module applies the configured spread and fee itself and never trusts a provider-side converted amount. The deterministic fake is the only built-in provider and is refused in Production.
+
+## Funding and FX adapter contract
+
+Every real funding or FX adapter must satisfy, in addition to the general adapter rules above:
+
+1. Payouts are idempotent by our withdrawal id; a repeated request cannot create two payouts.
+2. Deposit ids are stable across listing pages; `completed` only after final settlement, never on an optimistic state.
+3. The payer-verified flag is reported explicitly; an absent flag is treated as unverified.
+4. Beneficiary name match is reported explicitly; bank details are never returned in full.
+5. Payout status by our key exposes only definitive states; `not_found` is ambiguous.
+6. Webhooks carry a documented signature scheme over timestamp and raw body plus a unique event id; retries and replay are safe because of event-id dedupe.
+7. All timestamps are UTC; decimals are parsed from text, never binary floating point.
+8. Errors map to exactly five outcomes: transient, rate limited (with retry delay), rejected (with reason code), not found, authentication failure.
+9. Every call respects the configured timeout.
+10. A settlement report or balance endpoint exists for the reserves check.
+11. The fake providers are forbidden in Production; real adapters add credentials to the secret store, never to configuration.
+
+## Funding and FX research (fill one column per provider during research)
+
+Payment rails per country, FX coverage and licensing are open research. Record findings before selecting providers; these are launch blockers.
+
+| Question | Provider A | Provider B | Provider C |
+|---|---|---|---|
+| Payment rails per country: bank transfer, virtual accounts, mobile money | | | |
+| Settlement time and finality rule per rail | | | |
+| Reversal, chargeback and return rules | | | |
+| Fee structure per rail and per payout | | | |
+| Payer name verification against the account holder | | | |
+| Beneficiary name enquiry and match reporting | | | |
+| Payout rails and speed per country | | | |
+| Whether the provider relies on our identity checks or runs its own KYC | | | |
+| Webhook signature scheme, retries and replay behavior | | | |
+| Idempotency support on payout endpoints | | | |
+| Sandbox availability | | | |
+| Rate limits and quotas | | | |
+| Settlement reports and balance endpoints for reserves | | | |
+| Limits per user tier | | | |
+| Licenses required in each launch country | | | |
+| Capital controls and currency convertibility, including local currency restrictions | | | |
+| FX provider: pair coverage, rate frequency, firm quote availability | | | |
+| FX liquidity, hedging options and exposure handling | | | |
+| Data residency for payment and identity data | | | |
+
 ## Exit plan requirements (any real custody provider)
 
 If AskVest is down or gone, users' assets must remain recoverable by an independent party. A real provider must satisfy:

@@ -1,5 +1,6 @@
 using AskVest.Modules.Catalog.Contracts;
 using AskVest.Modules.Ledger.Contracts;
+using AskVest.Modules.Wallets.Configuration;
 using AskVest.Modules.Wallets.Custody;
 using AskVest.Modules.Wallets.Domain;
 using AskVest.Modules.Wallets.Persistence;
@@ -9,7 +10,6 @@ using AskVest.SharedKernel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using AskVest.Modules.Wallets.Configuration;
 
 namespace AskVest.Modules.Wallets.Services;
 
@@ -24,6 +24,7 @@ internal sealed class ReservesService(
     ICatalog catalog,
     CustodyRegistry custody,
     ILedger ledger,
+    ApprovedStablecoins approvedStablecoins,
     IOptions<WalletsOptions> options,
     TimeProvider timeProvider,
     ITransactionScope scope,
@@ -108,6 +109,55 @@ internal sealed class ReservesService(
             }
 
             await RecordMismatchAsync(scopeKey, custodyQuantity, ledgerQuantity, cancellationToken);
+        }
+
+        await CheckStablecoinsAsync(holdings, totals.Value, cancellationToken);
+    }
+
+    /// <summary>
+    /// Approved stablecoins credit cash assets, so their reserves compare per
+    /// asset code with holdings aggregated across every approved chain.
+    /// Pending deposits on a covered chain skip that asset for the run,
+    /// mirroring the in-flight rule for tokens.
+    /// </summary>
+    private async Task CheckStablecoinsAsync(
+        IReadOnlyDictionary<(string ChainId, string Contract), decimal> holdings,
+        IReadOnlyList<LedgerAssetTotal> totals,
+        CancellationToken cancellationToken)
+    {
+        var pendingChains = await db.Deposits.AsNoTracking()
+            .Where(row => row.State == DepositState.Pending)
+            .Select(row => row.ChainId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        foreach (var group in approvedStablecoins.Entries.GroupBy(entry => entry.LedgerAssetCode))
+        {
+            if (group.Any(entry => pendingChains.Contains(entry.ChainId)))
+            {
+                continue;
+            }
+
+            var custodyTotal = group.Sum(entry =>
+                holdings.GetValueOrDefault((entry.ChainId, entry.Contract)));
+            var ledgerTotal = totals
+                .Where(total => string.Equals(total.AssetCode, group.Key, StringComparison.Ordinal))
+                .Sum(total => total.Total);
+            var matches = ReservesComparison.Matches(custodyTotal, ledgerTotal);
+            var pause = await UpsertPauseAsync(group.Key, null, matches, cancellationToken);
+            if (!matches
+                && pause is not null
+                && ReservesComparison.ShouldPause(pause.ConsecutiveMismatches, options.Value.ReservesMismatchThreshold)
+                && pause.PausedAt is null)
+            {
+                pause.PausedAt = timeProvider.GetUtcNow();
+                pause.ReasonCode = "reserves_mismatch";
+                pause.UpdatedAt = timeProvider.GetUtcNow();
+                await db.SaveChangesAsync(cancellationToken);
+                logger.LogWarning(
+                    "Custody pause activated for a stablecoin reserves mismatch on asset {AssetCode}.",
+                    group.Key);
+            }
         }
     }
 

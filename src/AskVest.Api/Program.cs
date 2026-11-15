@@ -3,6 +3,7 @@ using AskVest.Api.Endpoints;
 using AskVest.Modules.Assistant;
 using AskVest.Modules.Catalog;
 using AskVest.Modules.Compliance;
+using AskVest.Modules.Funding;
 using AskVest.Modules.Identity;
 using AskVest.Modules.Learning;
 using AskVest.Modules.Ledger;
@@ -43,6 +44,7 @@ builder.Services.AddPortfolioModule(builder.Configuration);
 builder.Services.AddAssistantModule(builder.Configuration, builder.Environment);
 builder.Services.AddTradingModule(builder.Configuration, builder.Environment);
 builder.Services.AddWalletsModule(builder.Configuration, builder.Environment);
+builder.Services.AddFundingModule(builder.Configuration, builder.Environment);
 builder.Services.AddScoped<IIdempotencyStore, EfIdempotencyStore>();
 builder.Services.AddSingleton<IIdempotencyScopeResolver, AuthenticatedIdempotencyScopeResolver>();
 builder.Services.AddHostedService<IdempotencyCleanupService>();
@@ -163,6 +165,7 @@ api.MapPortfolioEndpoints();
 api.MapAssistantEndpoints(diagnostics.EnableProbes && !app.Environment.IsProduction());
 api.MapTradingEndpoints(diagnostics.EnableProbes && !app.Environment.IsProduction());
 api.MapWalletsEndpoints(diagnostics.EnableProbes && !app.Environment.IsProduction());
+api.MapFundingEndpoints(diagnostics.EnableProbes && !app.Environment.IsProduction());
 
 if (docs.Enabled)
 {

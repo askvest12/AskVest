@@ -57,6 +57,8 @@ public static class WalletsModuleExtensions
 
         services.AddValidatorsFromAssembly(typeof(WalletsModuleExtensions).Assembly);
 
+        services.AddSingleton<ApprovedStablecoins>();
+        services.AddHostedService<StablecoinConfigValidator>();
         services.AddScoped<WalletEventWriter>();
         services.AddScoped<WalletService>();
         services.AddScoped<AddressBookService>();

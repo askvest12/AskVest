@@ -175,6 +175,66 @@ held balance plus system fees for that token. Tokens with any pending deposit
 or in-flight withdrawal are skipped for that run; a mismatch in two
 consecutive runs pauses withdrawals for that chain and token.
 
+## Fee schedule (Phase 12)
+
+One schedule, all configuration, every fee shown before the user approves.
+There are no hidden fees and no hidden spreads.
+
+| Fee | Where configured | Where shown |
+|---|---|---|
+| Trading fee (our fee plus gateway fee) | Trading options, Phase 10 | quote `ourFee` and `gatewayFee`, order `total` |
+| Token withdrawal fee | `Wallets:WithdrawalFees` flat per token, Phase 11 | withdrawal preview `fee` and `netQuantity` |
+| Deposit fee | `Funding` deposit fee per currency, default 0 | recorded on the deposit; shown on funding methods |
+| Conversion spread and fee | `Funding` pairs: spread basis points plus fee basis points in the target asset | conversion quote `spread`, `fee`, `netAmount` |
+| Cash withdrawal fee | `Funding` per currency: flat fee plus basis points | withdrawal preview `fee`, `totalDebited` |
+
+## Fiat journal patterns (Phase 12)
+
+Cash assets are `fiat` (local currencies registered from configuration,
+`USD` already exists) and `stablecoin` (`USDC`). Journals follow the same
+rules: balanced per asset, ids only in keys and references.
+
+| Pattern | Reason code | Lines |
+|---|---|---|
+| Fiat deposit credit | `deposit` | currency: `system_clearing` pays, `user_available` receives the provider-reported received amount; provider fee recorded on the deposit row, not a ledger line |
+| Conversion | `conversion` | source asset: `user_available` pays gross to `system_clearing`; target asset: `system_clearing` pays net to `user_available` and fee to `system_fees` |
+| Cash withdrawal hold | `hold` | currency: `user_available` to `user_held` for the total debited (amount plus fee) |
+| Cash withdrawal settle | `withdrawal` | currency: `user_held` gives the total; `system_clearing` receives the net payout, `system_fees` receives the fee |
+| Cash withdrawal release | `release` | exact mirror of the matching hold |
+| Deposit reversal | `deposit_reversal` | currency: `user_available` gives back up to the available balance to `system_clearing`; any shortfall is recorded on the deposit row and never makes a balance negative |
+
+Funding journals use ledger keys `funding:deposit:<depositId>`,
+`funding:conversion:<conversionId>`, `funding:withdrawal:<id>:hold`,
+`:settle` and `:release`, with reference types `funding_deposit`,
+`funding_conversion` and `funding_withdrawal`.
+
+The standing invariant mirrors Phase 11: for every user and currency, the
+held balance equals the sum of totals debited of their non-final cash
+withdrawals; each completed withdrawal has exactly one settle journal,
+each failed or cancelled one exactly one release journal and no settle.
+
+## Reversal and shortfall rules
+
+A provider-reported reversal of a credited deposit posts a
+`deposit_reversal` journal for as much as the user's available balance
+allows. The unrecovered remainder is stored on the deposit as the
+shortfall, the deposit is marked `reversed`, and a funding restriction is
+placed on the user that blocks new cash withdrawals until an operator
+clears it. Balances never go negative; the check constraint is the last
+line of defense, not the mechanism.
+
+## Reserves model (fiat)
+
+The fiat reserves check compares, per local currency, the provider's
+reported settlement balance with what we owe users: every user available
+and held balance plus system fees for that currency. Only a shortfall
+counts (owing more than the provider holds); excess is logged as
+information because treasury sweeps happen outside this system. In-flight
+withdrawals skip the run. Two consecutive shortfalls pause cash
+withdrawals for the currency through a stored pause that survives
+restarts; deposits and conversions continue during a pause. USD reserves
+are out of scope. Token reserves stay under the Phase 11 identity.
+
 ## Portfolio replay
 
 The portfolio stores no money facts. It asks the Ledger contract for the

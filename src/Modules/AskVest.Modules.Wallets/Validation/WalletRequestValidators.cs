@@ -1,5 +1,5 @@
-using FluentValidation;
 using AskVest.Modules.Wallets.Endpoints;
+using FluentValidation;
 
 namespace AskVest.Modules.Wallets.Validation;
 

@@ -284,3 +284,89 @@ Transition table (anything not listed is illegal):
 | `needs_reconciliation` | `failed` | status poll confirms failure; hold released |
 
 Cancel is only legal in `requested`, before the dispatcher claims the row; any other state answers `resource.conflict`. "Not found" from the provider is never definitive. Ledger keys are `wallet:withdrawal:<id>:hold`, `:settle` and `:release`.
+
+## Funding deposit (Funding, Phase 12)
+
+A funding deposit is created when we first learn of a payment, by signed webhook or by the polling fallback. Credit happens only on the provider's final `completed` state after every credit rule passes; anything that cannot be credited safely is quarantined or ignored with a reason, never refused silently and never credited blindly.
+
+```mermaid
+stateDiagram-v2
+    [*] --> pending: provider reports a payment
+    pending --> credited: final, payer verified, within limits, no restriction
+    pending --> quarantined: payer unverified, over limit, or restricted
+    pending --> failed: provider reports failed
+    pending --> ignored: account reference matches nobody
+    credited --> reversed: provider reports a reversal
+    credited --> [*]
+    quarantined --> [*]
+    failed --> [*]
+    ignored --> [*]
+    reversed --> [*]
+```
+
+Transition table:
+
+| From | To | Trigger |
+|---|---|---|
+| - | `pending` | webhook or polling stores a provider deposit (unique on provider key plus provider deposit id) |
+| `pending` | `credited` | provider says final, payer verified, amount within limits, no restriction; ledger journal posts once |
+| `pending` | `quarantined` | a credit rule fails; reason stored, resolved by an operator through the contract |
+| `pending` | `failed` | provider reports the payment failed |
+| `pending` | `ignored` | account reference maps to no user; stored for operators, acknowledged |
+| `credited` | `reversed` | provider reports a reversal; journal reverses up to the available balance, shortfall recorded, restriction placed |
+
+## Conversion (Funding, Phase 12)
+
+A conversion quote is a one-time firm offer valid for 30 seconds. We are the counterparty: the quote applies the configured spread to the mid rate and a configured fee in the target asset, shows every number, and carries a terms hash. Execution posts one journal inside the ledger.
+
+```mermaid
+stateDiagram-v2
+    [*] --> quoted
+    quoted --> completed: execution inside expiry, limits re-checked
+    quoted --> [*]: expired (computed, no transition)
+    completed --> [*]
+```
+
+A quote can complete once. Expired, used, another user's and unknown quotes answer `funding.quote_invalid`. FX safety refusals answer `funding.quote_unavailable`.
+
+## Funding beneficiary (Funding, Phase 12)
+
+```mermaid
+stateDiagram-v2
+    [*] --> cooling_off: provider verified the beneficiary, name match true
+    cooling_off --> active: cooling-off period elapsed
+    cooling_off --> removed: user removes
+    active --> removed: user removes
+    removed --> [*]
+```
+
+Bank or mobile money details are passed to the provider and never stored, logged or kept in idempotency storage. Adding needs a PIN grant bound to the currency and provider beneficiary reference; the provider's `nameMatch` must be true or the add is refused.
+
+## Cash withdrawal (Funding, Phase 12)
+
+Mirrors the Phase 11 token withdrawal machine with review and fresh-deposit rules added.
+
+```mermaid
+stateDiagram-v2
+    [*] --> previewed: preview created (expires in 60 seconds)
+    previewed --> requested: placement consumes preview and grant, hold posted
+    previewed --> [*]: expired or used
+    requested --> under_review: review rule applies (threshold or account age)
+    requested --> submitting: dispatcher claims the row
+    under_review --> requested: operator approves through the contract
+    under_review --> failed: operator rejects, hold released
+    requested --> cancelled: user cancel wins the row lock
+    submitting --> submitted: provider acknowledged
+    submitting --> failed: definitive rejection, hold released
+    submitting --> needs_reconciliation: outcome unknown
+    submitted --> completed: provider reports final completion
+    submitted --> failed: definitive failure, hold released
+    submitted --> needs_reconciliation: stale timeout
+    needs_reconciliation --> completed: confirmed completion
+    needs_reconciliation --> failed: confirmed failure, hold released
+    completed --> [*]
+    failed --> [*]
+    cancelled --> [*]
+```
+
+Cancel is only legal in `requested`. `under_review` rows hold funds and never reach the dispatcher until an operator approves them through the Funding contract; rejection releases the hold. "Not found" from the provider is never definitive. Ledger keys are `funding:withdrawal:<id>:hold`, `:settle` and `:release`.

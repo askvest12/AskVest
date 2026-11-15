@@ -16,7 +16,7 @@ Phases 0 to 17. Each phase ends with the Definition of Done in `CLAUDE.md`.
 | 9 | Assistant: AI chat, tool calls, citations, audit (done) | 1, 4, 8 |
 | 10 | Trading: quotes, real orders, order state machine (in progress) | 2, 3, 4, 5, 8 |
 | 11 | Wallets and custody: deposit addresses, deposit crediting, withdrawal address book, token withdrawals, reserves check (provider interfaces and fakes only) | 1, 2, 3, 4, 5, 10 |
-| 12 | Funding: deposits, conversion, withdrawals, webhooks | 3, 10, 11 |
+| 12 | Funding: deposits, conversion, withdrawals, webhooks (in progress) | 3, 10, 11 |
 | 13 | Notifications: channels, alerts, preferences | 1 |
 | 14 | Earn: opt-in positions, yield sources | 3, 10 |
 | 15 | Back office: admin, audit log, reconciliation, feature flags | 1, 3 |

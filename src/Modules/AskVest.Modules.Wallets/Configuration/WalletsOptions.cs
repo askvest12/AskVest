@@ -65,6 +65,14 @@ public sealed class WalletsOptions
     /// </summary>
     public Collection<CustodyPauseOption> ManualPauses { get; } = [];
 
+    /// <summary>
+    /// Stablecoin contracts whose deposits credit a cash ledger asset
+    /// instead of a catalog token. Each entry names the chain, the canonical
+    /// contract, the cash asset code and its decimals; the startup validator
+    /// proves every entry through the Catalog address rules.
+    /// </summary>
+    public Collection<ApprovedStablecoinOption> ApprovedStablecoins { get; } = [];
+
     public CustodyOptions Custody { get; set; } = new();
 
     public ScreeningOptions Screening { get; set; } = new();
@@ -145,6 +153,24 @@ public sealed class WalletsOptions
 
             Check(options.Screening.Provider is "fake",
                 $"Wallets:Screening:Provider '{options.Screening.Provider}' has no adapter; only 'fake' is implemented.");
+
+            var seenStablecoins = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var stablecoin in options.ApprovedStablecoins)
+            {
+                Check(!string.IsNullOrWhiteSpace(stablecoin.ChainId),
+                    "Wallets:ApprovedStablecoins entries require a ChainId.");
+                Check(!string.IsNullOrWhiteSpace(stablecoin.Contract)
+                    && stablecoin.Contract.Length <= 128,
+                    "Wallets:ApprovedStablecoins entries require a Contract of at most 128 characters.");
+                Check(stablecoin.LedgerAssetCode.Length is >= 1 and <= 16,
+                    $"Wallets:ApprovedStablecoins asset code '{stablecoin.LedgerAssetCode}' must be 1 to 16 characters.");
+                Check(stablecoin.Decimals is >= 0 and <= 18,
+                    $"Wallets:ApprovedStablecoins decimals for '{stablecoin.LedgerAssetCode}' must be between 0 and 18.");
+                Check(stablecoin.DustMinimum is null or >= 0m,
+                    $"Wallets:ApprovedStablecoins dust minimum for '{stablecoin.LedgerAssetCode}' must not be negative.");
+                Check(seenStablecoins.Add($"{stablecoin.ChainId}:{stablecoin.Contract}"),
+                    $"Wallets:ApprovedStablecoins has a duplicate entry for chain '{stablecoin.ChainId}'.");
+            }
 
             return failures.Count == 0
                 ? ValidateOptionsResult.Success

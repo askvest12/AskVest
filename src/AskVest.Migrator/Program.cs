@@ -4,6 +4,7 @@ using AskVest.Modules.Catalog.Import;
 using AskVest.Modules.Catalog.Persistence;
 using AskVest.Modules.Compliance;
 using AskVest.Modules.Compliance.Persistence;
+using AskVest.Modules.Funding;
 using AskVest.Modules.Identity;
 using AskVest.Modules.Identity.Persistence;
 using AskVest.Modules.Learning;
@@ -43,6 +44,7 @@ builder.Services.AddPracticeModule(builder.Configuration);
 builder.Services.AddLearningModule(builder.Configuration, builder.Environment);
 builder.Services.AddPortfolioModule(builder.Configuration);
 builder.Services.AddWalletsModule(builder.Configuration, builder.Environment);
+builder.Services.AddFundingModule(builder.Configuration, builder.Environment);
 // The assistant runtime is API-only: its fake model is refused under the migrator's Production environment.
 
 var host = builder.Build();

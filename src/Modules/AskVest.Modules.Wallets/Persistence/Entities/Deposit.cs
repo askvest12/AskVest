@@ -21,6 +21,12 @@ public sealed class Deposit
 
     public Guid TokenId { get; set; }
 
+    /// <summary>
+    /// The ledger asset code credited, set on credit for both catalog token
+    /// and approved stablecoin deposits. Empty until credited.
+    /// </summary>
+    public string AssetCode { get; set; } = string.Empty;
+
     public decimal Quantity { get; set; }
 
     public string SenderAddress { get; set; } = string.Empty;

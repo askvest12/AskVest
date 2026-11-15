@@ -94,6 +94,13 @@ Pattern `^[a-z]+(_[a-z]+)*(\.[a-z]+(_[a-z]+)*)+$`.
 | `wallet.limit_exceeded` | 422 | Withdrawal fails a limit; details name the limit (minimum, maximum value, rolling 24 hour value) |
 | `wallet.preview_invalid` | 409 | Preview expired, already used or unknown; request a new preview |
 | `wallet.unavailable` | 503 | Custody or screening provider failure; fail closed |
+| `funding.not_available` | 422 | Funding operation refused; details name the reason (currency or method unsupported for the country, pair disabled, paused, restricted) |
+| `funding.limit_exceeded` | 422 | Funding operation fails a limit; details name the limit (minimum, maximum, rolling caps, fresh-deposit lock) |
+| `funding.beneficiary_invalid` | 422 | Beneficiary fails validation; details name the reason (bad details, name mismatch, book full) |
+| `funding.beneficiary_cooling_off` | 422 | Beneficiary exists but is still cooling off; details carry the active-from time |
+| `funding.quote_invalid` | 409 | Conversion quote or withdrawal preview expired, used or unknown; the client must request a new one |
+| `funding.quote_unavailable` | 503 | FX provider failure, stale rate or out-of-band jump; fail closed |
+| `funding.unavailable` | 503 | Funding provider failure; fail closed |
 | `idempotency.key_missing` | 400 | State-changing call without `Idempotency-Key` |
 | `idempotency.key_invalid` | 400 | Key fails the format rule |
 | `idempotency.key_reused` | 422 | Same key, different request fingerprint |
@@ -157,6 +164,10 @@ All under `/api/v1/real` behind the `RealEligible` policy. `POST /quotes`, `POST
 ## Wallet endpoints
 
 All under `/api/v1/real` behind the `RealEligible` policy. `POST /wallets`, `POST /withdrawal-addresses`, `POST /withdrawals/previews`, `POST /withdrawals` and `POST /withdrawals/{withdrawalId}/cancel` require an `Idempotency-Key`; `DELETE /withdrawal-addresses/{addressId}` is exempt as naturally idempotent (removing twice is harmless). Quantities, fees and amounts serialize as strings; provider keys, provider references, custody addresses of other users and grant tokens never appear in any response. Withdrawal states are `previewed`, `requested`, `submitting`, `submitted`, `completed`, `failed`, `cancelled` and `needs_reconciliation`; deposit states are `pending`, `credited`, `quarantined` and `ignored`. Clients must treat `needs_reconciliation` as "funds still held, outcome pending".
+
+## Funding endpoints
+
+All under `/api/v1/real` behind the `RealEligible` policy except `POST /webhooks/funding/{provider}`, which is anonymous and authenticates by signature. `POST /funding/accounts`, `POST /funding/conversions/quotes`, `POST /funding/conversions`, `POST /funding/beneficiaries`, `POST /funding/withdrawals/previews`, `POST /funding/withdrawals` and `POST /funding/withdrawals/{withdrawalId}/cancel` require an `Idempotency-Key`; `DELETE /funding/beneficiaries/{beneficiaryId}` and the webhook are exempt (naturally idempotent and own deduplication respectively, reasons on the endpoints). Amounts, fees, rates and limits serialize as strings; beneficiary bank or mobile money details are accepted in request bodies only and never appear in any response, log, database row or idempotency record; provider references never appear in any response. Deposit states are `pending`, `credited`, `quarantined`, `failed`, `reversed` and `ignored`; conversion states are `quoted`, `completed` and `expired`; beneficiary states are `cooling_off`, `active` and `removed`; cash withdrawal states are `previewed`, `requested`, `under_review`, `submitting`, `submitted`, `completed`, `failed`, `cancelled` and `needs_reconciliation`. Clients must treat `needs_reconciliation` as "funds still held, outcome pending".
 
 ## Assistant endpoints
 

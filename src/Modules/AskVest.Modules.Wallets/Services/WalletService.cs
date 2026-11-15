@@ -26,6 +26,7 @@ internal sealed class WalletService(
     IAddressScreeningProvider screening,
     ICatalog catalog,
     ILedger ledger,
+    ApprovedStablecoins approvedStablecoins,
     IOptions<WalletsOptions> options,
     TimeProvider timeProvider,
     ITransactionScope scope,
@@ -243,16 +244,40 @@ internal sealed class WalletService(
                 return;
             }
 
-            var tokens = await catalog.ListListedTokensForChainAsync(deposit.ChainId, cancellationToken);
-            var token = tokens.FirstOrDefault(candidate =>
-                string.Equals(candidate.CanonicalAddress, deposit.TokenContractAddress, StringComparison.Ordinal));
-            if (token is null)
+            // Approved stablecoins credit a cash asset; every other contract
+            // must resolve to a listed catalog token. Both paths share the
+            // same dust, screening, finality and exactly-once rules.
+            string assetCode;
+            int assetDecimals;
+            AssetKind assetKind;
+            decimal dust;
+            CatalogToken? token = null;
+            if (approvedStablecoins.TryResolve(
+                    deposit.ChainId, deposit.TokenContractAddress, out var stablecoin)
+                && stablecoin is not null)
             {
-                await IgnoreAsync(row, "token_unknown", ownsScope, cancellationToken);
-                return;
+                assetCode = stablecoin.LedgerAssetCode;
+                assetDecimals = stablecoin.Decimals;
+                assetKind = AssetKind.Stablecoin;
+                dust = stablecoin.DustMinimum ?? options.Value.DefaultDustMinimum;
+            }
+            else
+            {
+                var tokens = await catalog.ListListedTokensForChainAsync(deposit.ChainId, cancellationToken);
+                token = tokens.FirstOrDefault(candidate =>
+                    string.Equals(candidate.CanonicalAddress, deposit.TokenContractAddress, StringComparison.Ordinal));
+                if (token is null)
+                {
+                    await IgnoreAsync(row, "token_unknown", ownsScope, cancellationToken);
+                    return;
+                }
+
+                assetCode = token.LedgerAssetCode;
+                assetDecimals = token.Decimals;
+                assetKind = AssetKind.Token;
+                dust = DustMinimumFor(token.Id);
             }
 
-            var dust = DustMinimumFor(token.Id);
             if (deposit.Quantity < dust)
             {
                 await IgnoreAsync(row, "dust", ownsScope, cancellationToken);
@@ -266,7 +291,8 @@ internal sealed class WalletService(
                 row.State = DepositState.Quarantined;
                 row.DetailCode = "screening_hit";
                 row.UserId = destination.UserId;
-                row.TokenId = token.Id;
+                row.TokenId = token?.Id ?? Guid.Empty;
+                row.AssetCode = assetCode;
                 await db.SaveChangesAsync(cancellationToken);
                 await CommitIfOwnerAsync(ownsScope, cancellationToken);
                 if (logger.IsEnabled(LogLevel.Information))
@@ -285,7 +311,7 @@ internal sealed class WalletService(
                 return;
             }
 
-            await CreditAsync(row, destination.UserId, token, ownsScope, cancellationToken);
+            await CreditAsync(row, destination.UserId, token, assetCode, assetDecimals, assetKind, ownsScope, cancellationToken);
         }
         catch
         {
@@ -297,12 +323,15 @@ internal sealed class WalletService(
     private async Task CreditAsync(
         Deposit row,
         Guid userId,
-        CatalogToken token,
+        CatalogToken? token,
+        string assetCode,
+        int assetDecimals,
+        AssetKind assetKind,
         bool ownsScope,
         CancellationToken cancellationToken)
     {
         var registered = await ledger.RegisterAssetAsync(
-            token.LedgerAssetCode, AssetKind.Token, token.Decimals, cancellationToken);
+            assetCode, assetKind, assetDecimals, cancellationToken);
         if (registered.IsFailure)
         {
             row.DetailCode = "asset_registration_failed";
@@ -318,8 +347,8 @@ internal sealed class WalletService(
             "wallet_deposit",
             row.Id,
             [
-                new LedgerLine(LedgerAccounts.SystemClearing(Book.Real), token.LedgerAssetCode, -row.Quantity),
-                new LedgerLine(LedgerAccounts.UserAvailable(Book.Real, userId), token.LedgerAssetCode, row.Quantity),
+                new LedgerLine(LedgerAccounts.SystemClearing(Book.Real), assetCode, -row.Quantity),
+                new LedgerLine(LedgerAccounts.UserAvailable(Book.Real, userId), assetCode, row.Quantity),
             ]), cancellationToken);
         if (journal.IsFailure)
         {
@@ -330,7 +359,8 @@ internal sealed class WalletService(
 
         var now = timeProvider.GetUtcNow();
         row.UserId = userId;
-        row.TokenId = token.Id;
+        row.TokenId = token?.Id ?? Guid.Empty;
+        row.AssetCode = assetCode;
         row.State = DepositState.Credited;
         row.CreditJournalId = journal.Value.Id;
         row.CreditedAt = now;

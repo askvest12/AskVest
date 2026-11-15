@@ -69,4 +69,11 @@ public static class ErrorCodes
     public const string WalletLimitExceeded = "wallet.limit_exceeded";
     public const string WalletPreviewInvalid = "wallet.preview_invalid";
     public const string WalletUnavailable = "wallet.unavailable";
+    public const string FundingNotAvailable = "funding.not_available";
+    public const string FundingLimitExceeded = "funding.limit_exceeded";
+    public const string FundingBeneficiaryInvalid = "funding.beneficiary_invalid";
+    public const string FundingBeneficiaryCoolingOff = "funding.beneficiary_cooling_off";
+    public const string FundingQuoteInvalid = "funding.quote_invalid";
+    public const string FundingQuoteUnavailable = "funding.quote_unavailable";
+    public const string FundingUnavailable = "funding.unavailable";
 }

@@ -13,6 +13,7 @@
     <ProjectReference Include="..\..\src\Modules\AskVest.Modules.Assistant\AskVest.Modules.Assistant.csproj" />
     <ProjectReference Include="..\..\src\Modules\AskVest.Modules.Trading\AskVest.Modules.Trading.csproj" />
     <ProjectReference Include="..\..\src\Modules\AskVest.Modules.Wallets\AskVest.Modules.Wallets.csproj" />
+    <ProjectReference Include="..\..\src\Modules\AskVest.Modules.Funding\AskVest.Modules.Funding.csproj" />
     <ProjectReference Include="..\..\src\AskVest.Platform\AskVest.Platform.csproj" />
   </ItemGroup>
 

@@ -82,6 +82,12 @@ namespace AskVest.Modules.Wallets.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<string>("AssetCode")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("asset_code");
+
                     b.Property<string>("ChainId")
                         .IsRequired()
                         .HasMaxLength(64)

@@ -46,6 +46,7 @@ public class WalletsDbContext(DbContextOptions<WalletsDbContext> options) : DbCo
             entity.Property(deposit => deposit.ProviderKey).HasMaxLength(32).IsRequired();
             entity.Property(deposit => deposit.ProviderDepositId).HasMaxLength(128).IsRequired();
             entity.Property(deposit => deposit.ChainId).HasMaxLength(64).IsRequired();
+            entity.Property(deposit => deposit.AssetCode).HasMaxLength(16).IsRequired();
             entity.Property(deposit => deposit.Quantity).HasColumnType("numeric(28,18)").IsRequired();
             entity.Property(deposit => deposit.SenderAddress).HasMaxLength(128).IsRequired();
             entity.Property(deposit => deposit.SettlementReference).HasMaxLength(128);

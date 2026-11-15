@@ -77,6 +77,9 @@ public static class FundingModuleExtensions
         services.AddScoped<FundingAccountService>();
         services.AddScoped<FundingDepositService>();
         services.AddScoped<FundingWebhookService>();
+        services.AddScoped<FundingConversionService>();
+        services.AddScoped<FundingBeneficiaryService>();
+        services.AddScoped<FundingWithdrawalService>();
         services.AddHostedService<FundingDepositJob>();
 
         return services;

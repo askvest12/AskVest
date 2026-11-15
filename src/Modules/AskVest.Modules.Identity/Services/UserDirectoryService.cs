@@ -11,13 +11,14 @@ public sealed class UserDirectoryService(IdentityDbContext db) : IUserDirectory
     {
         var account = await db.Users
             .Where(u => u.Id == userId)
-            .Select(u => new { u.Status, u.EmailVerifiedAt })
+            .Select(u => new { u.Status, u.EmailVerifiedAt, u.CreatedAt })
             .FirstOrDefaultAsync(cancellationToken);
         return account is null
             ? null
             : new UserAccountSnapshot(
                 account.Status == UserStatus.Active,
                 account.EmailVerifiedAt is not null,
-                account.Status == UserStatus.Anonymized);
+                account.Status == UserStatus.Anonymized,
+                account.CreatedAt);
     }
 }

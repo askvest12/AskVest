@@ -27,6 +27,8 @@ public class FundingDbContext(DbContextOptions<FundingDbContext> options) : DbCo
 
     public DbSet<FundingEvent> Events => Set<FundingEvent>();
 
+    public DbSet<FundingPollCursor> PollCursors => Set<FundingPollCursor>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(Schema);
@@ -193,6 +195,15 @@ public class FundingDbContext(DbContextOptions<FundingDbContext> options) : DbCo
             entity.Property(pause => pause.CreatedAt).IsRequired();
             entity.Property(pause => pause.UpdatedAt).IsRequired();
             entity.HasIndex(pause => pause.Currency).IsUnique();
+        });
+
+        modelBuilder.Entity<FundingPollCursor>(entity =>
+        {
+            entity.ToTable("poll_cursors");
+            entity.HasKey(cursor => cursor.ProviderKey);
+            entity.Property(cursor => cursor.ProviderKey).HasMaxLength(32).IsRequired();
+            entity.Property(cursor => cursor.Cursor).HasMaxLength(512);
+            entity.Property(cursor => cursor.UpdatedAt).IsRequired();
         });
 
         modelBuilder.Entity<FundingEvent>(entity =>

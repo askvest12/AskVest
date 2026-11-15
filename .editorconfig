@@ -218,6 +218,14 @@ dotnet_diagnostic.CA1031.severity = none
 [src/Modules/AskVest.Modules.Wallets/Services/WithdrawalProgressJob.cs]
 dotnet_diagnostic.CA1031.severity = none
 
+# The funding deposit job must survive any provider or database failure and retry next cycle.
+[src/Modules/AskVest.Modules.Funding/Services/FundingDepositJob.cs]
+dotnet_diagnostic.CA1031.severity = none
+
+# One bad provider or deposit must not stop the rest of the polling cycle.
+[src/Modules/AskVest.Modules.Funding/Services/FundingDepositService.cs]
+dotnet_diagnostic.CA1031.severity = none
+
 # The retention job must survive any database failure and retry on the next tick.
 [src/Modules/AskVest.Modules.Assistant/Services/AssistantRetentionService.cs]
 dotnet_diagnostic.CA1031.severity = none

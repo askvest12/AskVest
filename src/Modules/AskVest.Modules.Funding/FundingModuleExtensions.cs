@@ -74,6 +74,10 @@ public static class FundingModuleExtensions
         });
 
         services.AddScoped<FundingEventWriter>();
+        services.AddScoped<FundingAccountService>();
+        services.AddScoped<FundingDepositService>();
+        services.AddScoped<FundingWebhookService>();
+        services.AddHostedService<FundingDepositJob>();
 
         return services;
     }

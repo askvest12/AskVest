@@ -1,6 +1,7 @@
 using AskVest.Modules.Assistant.Persistence;
 using AskVest.Modules.Catalog.Persistence;
 using AskVest.Modules.Compliance.Persistence;
+using AskVest.Modules.Funding.Persistence;
 using AskVest.Modules.Identity.Persistence;
 using AskVest.Modules.Learning.Persistence;
 using AskVest.Modules.Ledger.Persistence;
@@ -82,6 +83,7 @@ public sealed class PostgresFixture : IAsyncLifetime
                 connectionString => new AssistantDbContext(AssistantDbContextOptions.Create(connectionString)),
                 connectionString => new TradingDbContext(TradingDbContextOptions.Create(connectionString)),
                 connectionString => new WalletsDbContext(WalletsDbContextOptions.Create(connectionString)),
+                connectionString => new FundingDbContext(FundingDbContextOptions.Create(connectionString)),
             ]);
         if (applied.Count == 0)
         {
@@ -118,10 +120,10 @@ public sealed class PostgresFixture : IAsyncLifetime
                 new RespawnerOptions
                 {
                     DbAdapter = DbAdapter.Postgres,
-                    // audit_events, trading_events and wallet_events are append-only for the app role,
+                    // audit_events, trading_events, wallet_events and funding_events are append-only for the app role,
                     // so their schemas reset as the owner like catalog and practice.
-                    SchemasToInclude = ["catalog", "practice", "learning", "assistant", "trading", "wallets"],
-                    TablesToIgnore = ["catalog.__ef_migrations_history", "practice.__ef_migrations_history", "learning.__ef_migrations_history", "assistant.__ef_migrations_history", "trading.__ef_migrations_history", "wallets.__ef_migrations_history"],
+                    SchemasToInclude = ["catalog", "practice", "learning", "assistant", "trading", "wallets", "funding"],
+                    TablesToIgnore = ["catalog.__ef_migrations_history", "practice.__ef_migrations_history", "learning.__ef_migrations_history", "assistant.__ef_migrations_history", "trading.__ef_migrations_history", "wallets.__ef_migrations_history", "funding.__ef_migrations_history"],
                 });
         }
     }

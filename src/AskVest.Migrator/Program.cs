@@ -5,6 +5,7 @@ using AskVest.Modules.Catalog.Persistence;
 using AskVest.Modules.Compliance;
 using AskVest.Modules.Compliance.Persistence;
 using AskVest.Modules.Funding;
+using AskVest.Modules.Funding.Persistence;
 using AskVest.Modules.Identity;
 using AskVest.Modules.Identity.Persistence;
 using AskVest.Modules.Learning;
@@ -74,6 +75,7 @@ try
             connectionString => new AssistantDbContext(AssistantDbContextOptions.Create(connectionString)),
             connectionString => new TradingDbContext(TradingDbContextOptions.Create(connectionString)),
             connectionString => new WalletsDbContext(WalletsDbContextOptions.Create(connectionString)),
+            connectionString => new FundingDbContext(FundingDbContextOptions.Create(connectionString)),
         ],
         cancellation.Token);
     if (logger.IsEnabled(LogLevel.Information))

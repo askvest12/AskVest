@@ -21,6 +21,7 @@ internal sealed class FundingWebhookService(
     FundingDbContext db,
     FundingProviderRegistry providers,
     FundingDepositService deposits,
+    FundingPayoutProgressService payoutProgress,
     ITransactionScope scope,
     TimeProvider timeProvider)
 {
@@ -101,10 +102,20 @@ internal sealed class FundingWebhookService(
                     providerKey, webhookEvent.Deposit, correlationId, cancellationToken);
                 dedupe.Outcome = "processed";
             }
+            else if (webhookEvent.Kind == FundingWebhookKind.Payout
+                && webhookEvent.PayoutKey is not null
+                && webhookEvent.PayoutState is { } payoutState)
+            {
+                // Payout events apply through the same routine as polling;
+                // they join this transaction so dedupe and effect commit
+                // together.
+                await payoutProgress.ApplyReportAsync(
+                    webhookEvent.PayoutKey, payoutState, webhookEvent.PayoutDetailCode,
+                    cancellationToken);
+                dedupe.Outcome = "payout_processed";
+            }
             else
             {
-                // Payout events are recorded for the payout progress job,
-                // which also polls provider status directly.
                 dedupe.Outcome = "payout_received";
             }
 

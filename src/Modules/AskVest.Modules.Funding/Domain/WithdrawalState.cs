@@ -32,6 +32,8 @@ public static class WithdrawalTransitions
         (WithdrawalState.Submitting, WithdrawalState.Submitted),
         (WithdrawalState.Submitting, WithdrawalState.Failed),
         (WithdrawalState.Submitting, WithdrawalState.NeedsReconciliation),
+        // Recovery only: the payout job returns a stuck submission for retry.
+        (WithdrawalState.Submitting, WithdrawalState.Requested),
         (WithdrawalState.Submitted, WithdrawalState.Completed),
         (WithdrawalState.Submitted, WithdrawalState.Failed),
         (WithdrawalState.Submitted, WithdrawalState.NeedsReconciliation),

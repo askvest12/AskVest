@@ -80,6 +80,15 @@ public static class FundingModuleExtensions
         services.AddScoped<FundingConversionService>();
         services.AddScoped<FundingBeneficiaryService>();
         services.AddScoped<FundingWithdrawalService>();
+        services.AddScoped<FundingPayoutSubmitService>();
+        services.AddScoped<FundingPayoutProgressService>();
+        services.AddScoped<FundingReservesService>();
+        services.AddScoped<AskVest.Modules.Funding.Contracts.IFundingOperator, FundingOperatorService>();
+        services.AddScoped<IOutboxHandler, FundingPayoutSubmitHandler>();
+        services.AddSingleton<FundingPayoutProgressJob>();
+        services.AddHostedService(provider => provider.GetRequiredService<FundingPayoutProgressJob>());
+        services.AddSingleton<FundingCleanupJob>();
+        services.AddHostedService(provider => provider.GetRequiredService<FundingCleanupJob>());
         services.AddHostedService<FundingDepositJob>();
 
         return services;

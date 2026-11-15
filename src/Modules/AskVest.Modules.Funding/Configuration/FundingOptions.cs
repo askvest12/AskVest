@@ -179,7 +179,11 @@ public sealed class FundingOptions
             var pairs = new HashSet<string>(StringComparer.Ordinal);
             foreach (var pair in options.Pairs)
             {
-                Check(IsCurrencyCode(pair.From) && IsCurrencyCode(pair.To) && pair.From != pair.To,
+                // Endpoints are ledger asset codes: local currencies from
+                // Funding:Currencies plus seeded cash assets like USD and
+                // USDC, so they are not limited to three letters.
+                Check(IsAssetCode(pair.From) && IsAssetCode(pair.To)
+                    && !string.Equals(pair.From, pair.To, StringComparison.Ordinal),
                     $"Funding:Pairs entry '{pair.From}:{pair.To}' is invalid.");
                 Check(pair.SpreadBps is >= 0 and <= 10_000 && pair.FeeBps is >= 0 and <= 10_000,
                     $"Funding:Pairs:{pair.From}:{pair.To} spread or fee is out of range.");
@@ -219,6 +223,10 @@ public sealed class FundingOptions
 
         private static bool IsCurrencyCode(string code)
             => code.Length == 3 && code.All(c => c is >= 'A' and <= 'Z');
+
+        private static bool IsAssetCode(string code)
+            => code.Trim().Length is >= 1 and <= 16
+                && code.Trim().All(c => c is >= 'A' and <= 'Z' or >= '0' and <= '9');
     }
 }
 

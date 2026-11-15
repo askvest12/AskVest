@@ -202,6 +202,18 @@ internal sealed class LedgerService(
         return kind;
     }
 
+    public async Task<LedgerAssetInfo?> GetAssetInfoAsync(
+        string assetCode,
+        CancellationToken cancellationToken = default)
+    {
+        var normalized = assetCode.Trim().ToUpperInvariant();
+        var info = await db.Assets.AsNoTracking()
+            .Where(asset => asset.Code == normalized)
+            .Select(asset => new LedgerAssetInfo(asset.Kind, asset.Scale))
+            .FirstOrDefaultAsync(cancellationToken);
+        return info;
+    }
+
     public async Task<Result> RegisterAssetAsync(
         string code,
         AssetKind kind,

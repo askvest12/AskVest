@@ -226,6 +226,14 @@ dotnet_diagnostic.CA1031.severity = none
 [src/Modules/AskVest.Modules.Funding/Services/FundingDepositService.cs]
 dotnet_diagnostic.CA1031.severity = none
 
+# The payout progress job must survive any provider or database failure and retry next cycle.
+[src/Modules/AskVest.Modules.Funding/Services/FundingPayoutProgressJob.cs]
+dotnet_diagnostic.CA1031.severity = none
+
+# The cleanup job must survive any database failure and retry on the next tick.
+[src/Modules/AskVest.Modules.Funding/Services/FundingCleanupJob.cs]
+dotnet_diagnostic.CA1031.severity = none
+
 # The retention job must survive any database failure and retry on the next tick.
 [src/Modules/AskVest.Modules.Assistant/Services/AssistantRetentionService.cs]
 dotnet_diagnostic.CA1031.severity = none

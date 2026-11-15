@@ -39,6 +39,7 @@ internal sealed class FundingConversionService(
         string? correlationId,
         CancellationToken cancellationToken)
     {
+        pairKey = pairKey.Trim().ToUpperInvariant();
         var pair = ResolvePair(pairKey);
         if (pair is null)
         {
@@ -50,11 +51,11 @@ internal sealed class FundingConversionService(
             return Result.Failure<FundingConversion>(FundingResults.NotAvailable("pair_disabled"));
         }
 
-        var sourceCurrency = options.Value.Currencies.FirstOrDefault(
-            currency => currency.Code == pair.From);
-        var targetCurrency = options.Value.Currencies.FirstOrDefault(
-            currency => currency.Code == pair.To);
-        if (sourceCurrency is null || targetCurrency is null)
+        var source = pair.From.Trim().ToUpperInvariant();
+        var target = pair.To.Trim().ToUpperInvariant();
+        var sourceAsset = await ResolveAssetAsync(source, cancellationToken);
+        var targetAsset = await ResolveAssetAsync(target, cancellationToken);
+        if (sourceAsset is null || targetAsset is null)
         {
             return Result.Failure<FundingConversion>(FundingResults.NotAvailable("pair_unknown"));
         }
@@ -69,11 +70,11 @@ internal sealed class FundingConversionService(
                 ErrorType.Validation));
         }
 
-        if (sourceAmount != decimal.Round(sourceAmount, sourceCurrency.Scale))
+        if (sourceAmount != decimal.Round(sourceAmount, sourceAsset.Scale))
         {
             return Result.Failure<FundingConversion>(new Error(
                 ErrorCodes.ValidationFailed,
-                $"The source amount has more than {sourceCurrency.Scale} decimal places.",
+                $"The source amount has more than {sourceAsset.Scale} decimal places.",
                 ErrorType.Validation));
         }
 
@@ -105,12 +106,12 @@ internal sealed class FundingConversionService(
 
         var quote = FundingMath.ComputeQuote(
             pairKey,
-            pair.From,
-            pair.To,
+            source,
+            target,
             sourceAmount,
             rate.Value.MidRate,
-            sourceCurrency.Scale,
-            targetCurrency.Scale,
+            sourceAsset.Scale,
+            targetAsset.Scale,
             pair.SpreadBps,
             pair.FeeBps);
 
@@ -119,8 +120,8 @@ internal sealed class FundingConversionService(
             Id = Guid.CreateVersion7(),
             UserId = userId,
             Pair = pairKey,
-            SourceCurrency = pair.From,
-            TargetCurrency = pair.To,
+            SourceCurrency = source,
+            TargetCurrency = target,
             SourceAmount = sourceAmount,
             MidRate = rate.Value.MidRate,
             EffectiveRate = quote.EffectiveRate,
@@ -208,14 +209,18 @@ internal sealed class FundingConversionService(
                 return Result.Failure<FundingConversion>(limitError);
             }
 
-            var sourceCurrency = options.Value.Currencies.First(
-                currency => currency.Code == conversion.SourceCurrency);
-            var targetCurrency = options.Value.Currencies.First(
-                currency => currency.Code == conversion.TargetCurrency);
+            var sourceAsset = await ResolveAssetAsync(conversion.SourceCurrency, cancellationToken);
+            var targetAsset = await ResolveAssetAsync(conversion.TargetCurrency, cancellationToken);
+            if (sourceAsset is null || targetAsset is null)
+            {
+                await RollbackAsync(ownsScope, cancellationToken);
+                return Result.Failure<FundingConversion>(FundingResults.NotAvailable("pair_unknown"));
+            }
+
             var sourceRegistered = await ledger.RegisterAssetAsync(
-                conversion.SourceCurrency, AssetKind.Fiat, sourceCurrency.Scale, cancellationToken);
+                conversion.SourceCurrency, sourceAsset.Kind, sourceAsset.Scale, cancellationToken);
             var targetRegistered = await ledger.RegisterAssetAsync(
-                conversion.TargetCurrency, AssetKind.Fiat, targetCurrency.Scale, cancellationToken);
+                conversion.TargetCurrency, targetAsset.Kind, targetAsset.Scale, cancellationToken);
             if (sourceRegistered.IsFailure || targetRegistered.IsFailure)
             {
                 await RollbackAsync(ownsScope, cancellationToken);
@@ -417,7 +422,29 @@ internal sealed class FundingConversionService(
 
     private FundingPairOption? ResolvePair(string pairKey)
         => options.Value.Pairs.FirstOrDefault(
-            pair => string.Equals($"{pair.From}:{pair.To}", pairKey, StringComparison.Ordinal));
+            pair => string.Equals(
+                $"{pair.From.Trim().ToUpperInvariant()}:{pair.To.Trim().ToUpperInvariant()}",
+                pairKey,
+                StringComparison.Ordinal));
+
+    /// <summary>
+    /// Resolves a pair endpoint to its ledger kind and scale. Configured
+    /// local currencies come from Funding:Currencies; seeded cash assets
+    /// like USD and USDC come from the ledger registry.
+    /// </summary>
+    private async Task<LedgerAssetInfo?> ResolveAssetAsync(
+        string code,
+        CancellationToken cancellationToken)
+    {
+        var currency = options.Value.Currencies.FirstOrDefault(
+            candidate => string.Equals(candidate.Code, code, StringComparison.Ordinal));
+        if (currency is not null)
+        {
+            return new LedgerAssetInfo(AssetKind.Fiat, currency.Scale);
+        }
+
+        return await ledger.GetAssetInfoAsync(code, cancellationToken);
+    }
 
     private async Task EnlistAsync(CancellationToken cancellationToken)
     {

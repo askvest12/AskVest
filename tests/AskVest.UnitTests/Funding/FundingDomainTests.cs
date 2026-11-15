@@ -71,6 +71,7 @@ public sealed class FundingDomainTests
             (WithdrawalState.Submitting, WithdrawalState.Submitted),
             (WithdrawalState.Submitting, WithdrawalState.Failed),
             (WithdrawalState.Submitting, WithdrawalState.NeedsReconciliation),
+            (WithdrawalState.Submitting, WithdrawalState.Requested),
             (WithdrawalState.Submitted, WithdrawalState.Completed),
             (WithdrawalState.Submitted, WithdrawalState.Failed),
             (WithdrawalState.Submitted, WithdrawalState.NeedsReconciliation),

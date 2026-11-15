@@ -19,6 +19,9 @@ public interface ILedger
 
     Task<AssetKind?> GetAssetKindAsync(string assetCode, CancellationToken cancellationToken = default);
 
+    /// <summary>Returns the registered kind and scale, or null when unregistered.</summary>
+    Task<LedgerAssetInfo?> GetAssetInfoAsync(string assetCode, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Per-asset totals across user available, user held and system fees
     /// accounts in the given book. Used by the wallets reserves check to

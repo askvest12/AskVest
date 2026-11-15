@@ -34,6 +34,8 @@ internal sealed class FundingWithdrawalService(
 {
     public const string SubmitMessageType = "FundingWithdrawalSubmit";
 
+    public const string StateChangedMessageType = "FundingWithdrawalStateChanged";
+
     public async Task<Result<FundingWithdrawal>> PreviewAsync(
         Guid userId,
         string currency,
@@ -291,6 +293,11 @@ internal sealed class FundingWithdrawalService(
         {
             await EnlistAsync(cancellationToken);
             await LockUserAsync(userId, cancellationToken);
+            // Row lock serializes against the payout submission claim so a
+            // cancel and a provider call can never interleave.
+            await db.Database.ExecuteSqlAsync(
+                $"SELECT 1 FROM funding.withdrawals WHERE id = {withdrawalId} FOR UPDATE",
+                cancellationToken);
 
             var row = await db.Withdrawals
                 .FirstOrDefaultAsync(
@@ -437,7 +444,10 @@ internal sealed class FundingWithdrawalService(
         var paused = options.Value.ManualPauses.Any(
             pause => string.Equals(pause.Currency, currency, StringComparison.Ordinal))
             || await db.Pauses.AsNoTracking()
-                .AnyAsync(pause => pause.Currency == currency, cancellationToken);
+                .AnyAsync(
+                    pause => pause.Currency == currency
+                        && pause.ConsecutiveShortfalls >= options.Value.ReservesShortfallThreshold,
+                    cancellationToken);
         if (paused)
         {
             return FundingResults.NotAvailable("paused");

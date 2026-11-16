@@ -155,7 +155,14 @@ internal sealed class WalletService(
                     await ProcessDepositAsync(provider.ProviderName, deposit, cancellationToken);
                 }
 
-                cursor = page.Value.NextCursor;
+                var nextCursor = page.Value.NextCursor;
+                if (string.Equals(nextCursor, cursor, StringComparison.Ordinal))
+                {
+                    // A provider that echoes its cursor would page forever.
+                    break;
+                }
+
+                cursor = nextCursor;
             }
             while (cursor is not null && !cancellationToken.IsCancellationRequested);
         }

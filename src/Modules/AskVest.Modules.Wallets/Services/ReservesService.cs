@@ -144,16 +144,9 @@ internal sealed class ReservesService(
                 .Where(total => string.Equals(total.AssetCode, group.Key, StringComparison.Ordinal))
                 .Sum(total => total.Total);
             var matches = ReservesComparison.Matches(custodyTotal, ledgerTotal);
-            var pause = await UpsertPauseAsync(group.Key, null, matches, cancellationToken);
-            if (!matches
-                && pause is not null
-                && ReservesComparison.ShouldPause(pause.ConsecutiveMismatches, options.Value.ReservesMismatchThreshold)
-                && pause.PausedAt is null)
+            var (_, activated) = await UpsertPauseAsync(group.Key, null, matches, cancellationToken);
+            if (activated)
             {
-                pause.PausedAt = timeProvider.GetUtcNow();
-                pause.ReasonCode = "reserves_mismatch";
-                pause.UpdatedAt = timeProvider.GetUtcNow();
-                await db.SaveChangesAsync(cancellationToken);
                 logger.LogWarning(
                     "Custody pause activated for a stablecoin reserves mismatch on asset {AssetCode}.",
                     group.Key);
@@ -176,23 +169,17 @@ internal sealed class ReservesService(
         CancellationToken cancellationToken)
     {
         var token = await TokenForAsync(scopeKey, cancellationToken);
-        var threshold = options.Value.ReservesMismatchThreshold;
-        var pause = await UpsertPauseAsync(scopeKey.ChainId, token?.Id, matches: false, cancellationToken);
-        if (pause is not null
-            && ReservesComparison.ShouldPause(pause.ConsecutiveMismatches, threshold)
-            && pause.PausedAt is null)
+        var (_, activated) = await UpsertPauseAsync(
+            scopeKey.ChainId, token?.Id, matches: false, cancellationToken);
+        if (activated)
         {
-            pause.PausedAt = timeProvider.GetUtcNow();
-            pause.ReasonCode = "reserves_mismatch";
-            pause.UpdatedAt = timeProvider.GetUtcNow();
-            await db.SaveChangesAsync(cancellationToken);
             logger.LogWarning(
                 "Custody pause activated for a reserves mismatch on chain {ChainId}.",
                 scopeKey.ChainId);
         }
     }
 
-    private async Task<CustodyPause?> UpsertPauseAsync(
+    private async Task<(CustodyPause? Pause, bool Activated)> UpsertPauseAsync(
         string chainId,
         Guid? tokenId,
         bool matches,
@@ -229,16 +216,27 @@ internal sealed class ReservesService(
                 db.CustodyPauses.Add(pause);
             }
 
+            var now = timeProvider.GetUtcNow();
             pause.ConsecutiveMismatches = ReservesComparison.NextMismatchCount(
                 pause.ConsecutiveMismatches, matches);
-            pause.UpdatedAt = timeProvider.GetUtcNow();
+            var activated = !matches
+                && pause.PausedAt is null
+                && ReservesComparison.ShouldPause(
+                    pause.ConsecutiveMismatches, options.Value.ReservesMismatchThreshold);
+            if (activated)
+            {
+                pause.PausedAt = now;
+                pause.ReasonCode = "reserves_mismatch";
+            }
+
+            pause.UpdatedAt = now;
             await db.SaveChangesAsync(cancellationToken);
             if (ownsScope)
             {
                 await scope.CommitAsync(cancellationToken);
             }
 
-            return pause;
+            return (pause, activated);
         }
         catch
         {

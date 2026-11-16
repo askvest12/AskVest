@@ -25,6 +25,11 @@ internal sealed class FakeCustodyProvider(IOptions<WalletsOptions> options, Time
     private readonly ConcurrentDictionary<string, InjectedDeposit> _deposits = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, StoredWithdrawal> _withdrawals = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, byte> _issuedAddresses = new(StringComparer.Ordinal);
+
+    // Deposit ids must stay unique across restarts: persisted rows dedupe on
+    // them, so a reset sequence would silently swallow new deposits.
+    private readonly long _depositSequenceSeed =
+        timeProvider.GetUtcNow().Ticks % 1_000_000_000_000L;
     private long _depositSequence;
 
     public string ProviderName => ProviderKey;
@@ -82,7 +87,7 @@ internal sealed class FakeCustodyProvider(IOptions<WalletsOptions> options, Time
             .Select(deposit => WithEffectiveFinality(deposit.Record, now))
             .ToList();
         var nextCursor = deposits.Count == 0
-            ? cursor
+            ? null
             : deposits[^1].ProviderDepositId["fake-dep-".Length..];
         return Task.FromResult(Result.Success(new CustodyDepositPage(deposits, nextCursor)));
     }
@@ -98,7 +103,7 @@ internal sealed class FakeCustodyProvider(IOptions<WalletsOptions> options, Time
         string senderAddress,
         CustodyDepositFinality finality)
     {
-        var sequence = Interlocked.Increment(ref _depositSequence);
+        var sequence = _depositSequenceSeed + Interlocked.Increment(ref _depositSequence);
         var deposit = new CustodyDeposit(
             ProviderKey,
             $"fake-dep-{sequence}",

@@ -33,6 +33,10 @@ public sealed class AuthApiFactory(
                 ["RateLimiting:Strict:PermitLimit"] = "10000",
                 ["Identity:PasswordBreachCheckEnabled"] = "true",
                 ["Identity:LoginFailuresPerClientIp"] = "100000",
+                // The fake custody provider cannot see trading-settled token
+                // inventory, so reserves mismatches are expected noise here;
+                // pause activation stays covered by unit tests.
+                ["Wallets:ReservesMismatchThreshold"] = "1000000",
             };
             if (extraSettings is not null)
             {

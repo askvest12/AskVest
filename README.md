@@ -602,6 +602,87 @@ verifies cross-user isolation and watches the withdrawal complete with
 the hold released. A second test drills the rejected custody scenario
 and confirms the hold returns to the user.
 
+## Funding and cash withdrawals
+
+The Funding module runs local-currency deposits, internal conversions
+and cash withdrawals to bank or mobile-money beneficiaries behind
+`/api/v1/real` (the `RealEligible` policy applies to every route).
+Providers sit behind interfaces; only the deterministic fakes exist in
+this phase and both are refused in Production.
+
+Deposits:
+
+1. `POST /api/v1/real/funding/accounts` returns the caller's payment
+   instruction for a currency (bank reference, fields), creating it
+   through the provider on first use. `GET /api/v1/real/funding/methods`
+   lists what the caller's country supports.
+2. `POST /api/v1/webhooks/funding/{provider}` receives signed provider
+   events (timestamp plus HMAC signature, event-id deduplication).
+   Deposits credit only after a valid `completed` event; payer-unverified
+   or out-of-range deposits quarantine for operator review, unknown
+   account references are ignored and never credited. A polling job with
+   a persisted cursor is the fallback when webhooks are missed.
+   `GET /api/v1/real/funding/deposits` lists states `pending`,
+   `credited`, `quarantined`, `failed`, `reversed` and `ignored`.
+
+Conversions:
+
+`POST /api/v1/real/funding/conversions/quotes` prices a firm internal
+conversion from the FX mid rate plus the configured spread and
+fee. `POST /api/v1/real/funding/conversions` executes the quote inside
+its 30 second lifetime, re-checking limits, pair switches and rate
+safety, and posts one ledger journal (source to clearing, target
+clearing to user, fee to fees). Stale rates, rate jumps above the
+configured threshold, disabled pairs and provider failures all refuse
+with `funding.quote_unavailable`. No PIN: funds stay inside the user's
+own accounts.
+
+Withdrawals:
+
+1. `POST /api/v1/real/funding/beneficiaries` verifies details through the
+   provider behind a `change_withdrawal_address` step-up grant bound to
+   `currency:providerReference`. Full bank details are never stored;
+   only a masked display. Beneficiaries cool off before first use.
+2. `POST /api/v1/real/funding/withdrawals/previews` prices a withdrawal:
+   receive amount, fee, total debited, expiry and a `termsHash`.
+3. `POST /api/v1/real/funding/withdrawals` consumes an
+   `authorize_withdrawal` grant bound to that `termsHash`, holds the
+   total in the ledger and enqueues payout submission in the same
+   transaction. States are `previewed`, `requested`, `under_review`,
+   `submitting`, `submitted`, `completed`, `failed`, `cancelled` and
+   `needs_reconciliation`. Ambiguous provider outcomes keep the hold for
+   reconciliation; they never guess.
+
+Limits, fresh-deposit locks, reserve pauses and review thresholds apply
+at preview and again at placement. A reserves job compares each
+provider's settlement balance against ledger obligations; consecutive
+shortfalls pause withdrawals for that currency until an operator clears
+the pause. Deposits and conversions continue while withdrawals are
+paused.
+
+The fake funding scenarios (`normal`, `delayed`, `rejected`,
+`submit_timeout_filled`, `submit_timeout_lost`, `status_unavailable`,
+`name_mismatch`, `balance_shortfall`) and the fake FX scenarios
+(`normal`, `stale`, `jump`, `error`) are switchable through
+`POST /api/v1/diagnostics/funding` when probes are enabled. The webhook
+secret comes from `ASKVEST_FUNDING_WEBHOOK_SECRET`.
+
+### Funding smoke test
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.smoke.yml up -d --build --wait
+ASKVEST_SMOKE_BASE_URL=http://localhost:5081 dotnet test --project tests/AskVest.SmokeTests --filter "FullyQualifiedName~Funding"
+```
+
+The journey signs up a real-eligible user, creates a funding account,
+credits a deposit through the signed webhook (with replay deduplication
+and negative signature cases), converts ZAR to USD, adds a beneficiary
+behind a bound step-up grant, waits out the cooling-off, previews and
+places a withdrawal bound to the terms hash and watches it complete.
+A second test drills webhook negatives, unknown account references,
+rejected and submit-timeout payouts, FX stale rates and beneficiary
+name mismatch.
+
 ## Rotating signing keys
 
 Access tokens are signed with ES256. To rotate:

@@ -67,7 +67,7 @@ internal sealed class FundingReservesService(
             catch (FundingProviderException exception)
             {
                 logger.LogWarning(
-                    "Settlement balance unavailable for a funding currency: {ReasonCode}.",
+                    "Settlement funds unavailable for a funding currency: {ReasonCode}.",
                     exception.ReasonCode ?? exception.Kind.ToString());
                 continue;
             }

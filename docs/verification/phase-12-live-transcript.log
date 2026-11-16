@@ -1,0 +1,104 @@
+
+>>> POST /api/v1/auth/sign-up
+body: {"email":"funding-p12-2579912205@example.com","password":"<redacted>"}
+{"success":true,"message":"If this email can be verified, a verification code has been sent.","data":null,"error":null,"correlationId":"01a1e5b34aa578929265cff81a193644"}
+
+>>> POST /api/v1/auth/verify-email (code read from Mailpit)
+body: {"email":"funding-p12-2579912205@example.com","code":"249315"}
+{"success":true,"message":"Email verified.","data":null,"error":null,"correlationId":"01a1e5b34ba6702aa86d7ae9e02c8fb4"}
+
+>>> POST /api/v1/auth/login
+body: {"email":"funding-p12-2579912205@example.com","password":"<redacted>","device":{...}}
+{"success":true,"message":"Signed in.","data":{"result":"authenticated","accessToken":"eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJhc2t2ZXN0LWFwaSIsImlzcyI6ImFza3Zlc3QiLCJleHAiOjE3OTQ4NTU2OTUsImlhdCI6MTc5NDg1NTA5NSwibmJmIjoxNzk0ODU1MDk1LCJzdWIiOiIwMWExZTViMy00YWFiLTc4YjctYjg5OS02OGY3YWFmMDMzYmUiLCJzaWQiOiIwMWExZTViMy00YzZmLTc0NzItYTMxNS0zMjE4Yzk3OWYxNGMiLCJqdGkiOiIwMWExZTViMy00YzZmLTdiM2YtYmM3ZS1mMjdmOGEzMzAyNTQifQ.NaBl54nab4z4nvywee9l9MLkpszW-Bp_t8yINYGwXWlYwI9ZSK0HGhdKXnQRR-PyUoGt_3r4mG5us5_b15ltow","refreshToken":"_VxZCWiC_aJSOBs_L4XF6DX2cslsYC_1NsEIvtDvxFE","accessTokenExpiresAt":"2026-11-16T19:01:35.4071993Z","refreshIdleExpiresAt":"2026-12-16T18:51:35.4061211Z","sessionId":"01a1e5b3-4c6f-7472-a315-3218c979f14c"},"error":null,"correlationId":"01a1e5b34bcf751586820525fd1e6b67"}
+
+
+>>> GET /api/v1/compliance/documents
+{"success":true,"message":"Documents retrieved.","data":{"documents":[{"type":"terms","version":"dev-1","url":"https://askvest.example/legal/terms","sha256":"3cd4ce09a1de6487158536c2633bcdaca51c58a9a3f17dab2343de11c3d69a5a","requiredFor":"practice","accepted":false},{"type":"privacy","version":"dev-1","url":"https://askvest.example/legal/privacy","sha256":"7f391c05d905e1c1d21ae43ab91215b6762ef83266eccb81972d2ef6b9296115","requiredFor":"practice","accepted":false},{"type":"risk_disclosure","version":"dev-1","url":"https://askvest.example/legal/risk-disclosure","sha256":"1fe38db50174c30ad107c1a86ec8d19e9cf3f12d8a1b8e481d582a29dc0e39f6","requiredFor":"real","accepted":false},{"type":"token_disclosure","version":"dev-1","url":"https://askvest.example/legal/token-disclosure","sha256":"54439deda9b18fc787732ee6b2332cf92e9889ecd83b07166b036df81688a419","requiredFor":"real","accepted":false},{"type":"ai_processing","version":"dev-1","url":"https://askvest.example/legal/ai-processing","sha256":"9b1d3f5a7c2e4a6b8d0f1a3c5e7b9d2f4a6c8e0b1d3f5a7c9e2b4d6f8a0c1e3b","requiredFor":"assistant","accepted":false}]},"error":null,"correlationId":"01a1e5b34c937b9ea13de9b7e3a97a7e"}
+
+>>> POST /api/v1/compliance/consents
+body: {"documents": [{"type":"terms","version":"dev-1","sha256":"3cd4ce09a1de6487158536c2633bcdaca51c58a9a3f17dab2343de11c3d69a5a"},{"type":"privacy","version":"dev-1","sha256":"7f391c05d905e1c1d21ae43ab91215b6762ef83266eccb81972d2ef6b9296115"},{"type":"risk_disclosure","version":"dev-1","sha256":"1fe38db50174c30ad107c1a86ec8d19e9cf3f12d8a1b8e481d582a29dc0e39f6"},{"type":"token_disclosure","version":"dev-1","sha256":"54439deda9b18fc787732ee6b2332cf92e9889ecd83b07166b036df81688a419"},{"type":"ai_processing","version":"dev-1","sha256":"9b1d3f5a7c2e4a6b8d0f1a3c5e7b9d2f4a6c8e0b1d3f5a7c9e2b4d6f8a0c1e3b"}]}
+{"success":true,"message":"Consents recorded.","data":null,"error":null,"correlationId":"01a1e5b34caa78c3ae4baa70180f8caf"}
+
+>>> PUT /api/v1/compliance/country
+body: {"country":"NG"}
+{"success":true,"message":"Country recorded.","data":{"country":"NG"},"error":null,"correlationId":"01a1e5b34cc5714ba5359aac00f74acd"}
+
+>>> POST /api/v1/compliance/kyc/start
+{"success":true,"message":"Verification session ready.","data":{"providerReference":"fake-01a1e5b34cea709f92a91a68a857aaf6","sessionUrl":"https://kyc.example.test/session/fake-01a1e5b34cea709f92a91a68a857aaf6","kycStatus":"InReview"},"error":null,"correlationId":"01a1e5b34ce37419aeea9650b40ccea9"}
+
+>>> POST /api/v1/webhooks/kyc/fake  (HMAC-SHA256 over timestamp.body)
+body: {"eventId":"evt-p12-2579912205","providerReference":"fake-01a1e5b34cea709f92a91a68a857aaf6","outcome":"approved","verifiedCountry":"NG","fullName":"Funding Transcript","dateOfBirth":"1990-04-12"}
+{"success":true,"message":"Webhook received.","data":null,"error":null,"correlationId":"01a1e5b34d10705ab1ef16d67f2bf835"}
+
+>>> POST /api/v1/learning/lessons/what-you-own/quiz-attempts
+body: {"answers":[{"questionId":"q1","optionId":"b"},{"questionId":"q2","optionId":"a"},{"questionId":"q3","optionId":"a"}]}
+{"success":true,"message":"Quiz attempt graded.","data":{"score":100,"passed":true,"attemptsCount":1,"lessonComplete":true,"questions":[{"questionId":"q1","correct":true,"selectedOptionId":"b","correctOptionId":"b","explanation":"A tracking token is a claim managed by an issuer, not the share itself."},{"questionId":"q2","correct":true,"selectedOptionId":"a","correctOptionId":"a","explanation":"Disclosures state backing, rights, fees and exit options in writing."},{"questionId":"q3","correct":true,"selectedOptionId":"a","correctOptionId":"a","explanation":"Supply, demand, fees and market hours can push a token away from its reference price."}]},"error":null,"correlationId":"01a1e5b34d4c7adcbfc844176c92a6df"}
+
+>>> POST /api/v1/account/pin
+body: {"password":"CorrectHorseSmoke9","pin":"246810"}
+{"success":true,"message":"PIN set.","data":null,"error":null,"correlationId":"01a1e5b34d6978baa65003077fb482b0"}
+
+>>> GET /api/v1/account/me
+{"success":true,"message":"Profile loaded.","data":{"id":"01a1e5b3-4aab-78b7-b899-68f7aaf033be","email":"funding-p12-2579912205@example.com","emailVerified":true,"maskedPhone":null,"phoneVerified":false,"hasPin":true,"status":"Active","roles":[],"deletionScheduledFor":null},"error":null,"correlationId":"01a1e5b34e7c75049e6b28ff6119bba0"}
+
+>>> POST /api/v1/real/funding/accounts
+body: {"currency":"ZAR"}
+{"success":true,"message":"Funding account ready.","data":{"id":"01a1e5b3-4ea2-75f5-963a-5f19051f8ba1","currency":"ZAR","instruction":{"reference":"fpi-7c3f8b7f2544d7a33aac2e89","fields":{"accountName":"AskVest User","bankName":"Fake Settlement Bank","accountNumber":"fpi-7c3f8b7f2544d7a33aac2e89","currency":"ZAR"}},"createdAt":"2026-11-16T18:51:35.9700122Z"},"error":null,"correlationId":"01a1e5b34e9573dab6a9ec7269f099ff"}
+
+>>> POST /api/v1/webhooks/funding/fake  (HMAC-SHA256 over timestamp.body)
+body: {"eventId":"fevt-p12-2579912205","kind":"deposit","deposit":{"providerDepositId":"dep-p12-2579912205","accountReference":"fpi-7c3f8b7f2544d7a33aac2e89","currency":"ZAR","amount":"500","providerFee":"0","payerVerified":true,"state":"completed","observedAt":"2026-11-16T18:51:35Z"}}
+{"success":true,"message":"Webhook received.","data":null,"error":null,"correlationId":"01a1e5b34ed171aaa045940ab90483f4"}
+
+>>> POST /api/v1/webhooks/funding/fake  (same eventId replayed)
+{"success":true,"message":"Webhook received.","data":null,"error":null,"correlationId":"01a1e5b34ef47eb7958029657925c87c"}
+
+>>> GET /api/v1/real/funding/deposits
+{"success":true,"message":"Deposits loaded.","data":{"items":[{"id":"01a1e5b3-4ed4-7429-8db5-72bf76748c79","currency":"ZAR","amount":"500.00000000","providerFee":"0.00000000","state":"credited","detailCode":null,"shortfall":"0.00000000","createdAt":"2026-11-16T18:51:35.0000000Z","creditedAt":"2026-11-16T18:51:36.0219520Z","reversedAt":null}],"nextCursor":null,"hasMore":false},"error":null,"correlationId":"01a1e5b34f1d7ad29e516f50a1caa7eb"}
+
+>>> GET /api/v1/real/balances
+{"success":true,"message":"Balances loaded.","data":[{"asset":"ZAR","available":"500","held":"0"}],"error":null,"correlationId":"01a1e5b34f33706089a595084e5f83f7"}
+
+>>> POST /api/v1/real/funding/conversions/quotes
+body: {"pair":"ZAR:USD","sourceAmount":"200"}
+{"success":true,"message":"Quote created.","data":{"id":"01a1e5b3-4f7e-728b-9d72-b2462a10d984","pair":"ZAR:USD","sourceCurrency":"ZAR","targetCurrency":"USD","sourceAmount":"200","midRate":"0.05","effectiveRate":"0.04975","receiveAmount":"9.95000","feeAmount":"0.09950","netAmount":"9.85050","termsHash":"548da3ee3a9b2f600f3b6da552b2ac1ffa438d207570aa08dd82a82f746c968d","state":"quoted","expiresAt":"2026-11-16T18:52:06.1899485Z","createdAt":"2026-11-16T18:51:36.1899485Z","completedAt":null},"error":null,"correlationId":"01a1e5b34f49707db0cff7044cdab726"}
+
+>>> POST /api/v1/real/funding/conversions
+body: {"quoteId":"01a1e5b3-4f7e-728b-9d72-b2462a10d984"}
+{"success":true,"message":"Conversion completed.","data":{"id":"01a1e5b3-4f7e-728b-9d72-b2462a10d984","pair":"ZAR:USD","sourceCurrency":"ZAR","targetCurrency":"USD","sourceAmount":"200.00000000","midRate":"0.050000000000000000","effectiveRate":"0.049750000000000000","receiveAmount":"9.95000000","feeAmount":"0.09950000","netAmount":"9.85050000","termsHash":"548da3ee3a9b2f600f3b6da552b2ac1ffa438d207570aa08dd82a82f746c968d","state":"completed","expiresAt":"2026-11-16T18:52:06.1899480Z","createdAt":"2026-11-16T18:51:36.1899480Z","completedAt":"2026-11-16T18:51:36.2406965Z"},"error":null,"correlationId":"01a1e5b34f9e767f89b6152959a12a39"}
+
+>>> GET /api/v1/real/balances
+{"success":true,"message":"Balances loaded.","data":[{"asset":"USD","available":"9.8505","held":"0"},{"asset":"ZAR","available":"300","held":"0"}],"error":null,"correlationId":"01a1e5b34fe0764bb43df2fcbc29411a"}
+
+>>> POST /api/v1/auth/step-up  (purpose change_withdrawal_address, binding ZAR:fpb-b8032a5267f591669a2da79f)
+body: {"purpose":"change_withdrawal_address","pin":"246810","binding":"ZAR:fpb-b8032a5267f591669a2da79f"}
+{"success":true,"message":"Step-up grant issued.","data":{"grantToken":"lTVlxgRNRywDQW-3FT5ZMPToLUC2-9pzsvIAKaV1-Dk","expiresAt":"2026-11-16T18:53:36.4300250Z"},"error":null,"correlationId":"01a1e5b350007a25ae981412ced61fc8"}
+
+
+>>> POST /api/v1/real/funding/beneficiaries
+body: {"currency":"ZAR","details":{"accountName":"Funding Transcript","accountNumber":"9988776655","bankName":"Smoke Bank"},"stepUpToken":"<redacted>"}
+{"success":true,"message":"Beneficiary added.","data":{"id":"01a1e5b3-50a6-75bf-9894-6e5d222e3708","currency":"ZAR","maskedDisplay":"****ript ****6655 ****Bank","nameVerified":true,"state":"cooling_off","activeFrom":"2026-11-16T18:51:43.6865430Z","createdAt":"2026-11-16T18:51:36.4865430Z"},"error":null,"correlationId":"01a1e5b350967b18abe90457290b76a1"}
+
+
+>>> GET /api/v1/real/funding/beneficiaries
+{"success":true,"message":"Beneficiaries loaded.","data":[{"id":"01a1e5b3-50a6-75bf-9894-6e5d222e3708","currency":"ZAR","maskedDisplay":"****ript ****6655 ****Bank","nameVerified":true,"state":"active","activeFrom":"2026-11-16T18:51:43.6865430Z","createdAt":"2026-11-16T18:51:36.4865430Z"}],"error":null,"correlationId":"01a1e5b36ce374849b5f40e88a810d01"}
+>>> POST /api/v1/real/funding/withdrawals/previews
+body: {"currency":"ZAR","receiveAmount":"100","beneficiaryId":"01a1e5b3-50a6-75bf-9894-6e5d222e3708"}
+{"success":true,"message":"Preview created.","data":{"id":"01a1e5b3-6d1d-76db-91d9-2fe49523d4ab","currency":"ZAR","beneficiaryId":"01a1e5b3-50a6-75bf-9894-6e5d222e3708","receiveAmount":"100","feeAmount":"2","totalDebited":"102","termsHash":"8798b4b16845b4ba5cea01c7abf81c1dcc780685d0de4747d92e3720bccd2f97","state":"previewed","expiresAt":"2026-11-16T18:52:43.7664905Z","previewUsed":false,"detailCode":null,"createdAt":"2026-11-16T18:51:43.7664905Z","requestedAt":null,"submittedAt":null,"completedAt":null,"failedAt":null,"cancelledAt":null},"error":null,"correlationId":"01a1e5b36d03703cabdf1e88860fca7d"}
+
+
+>>> POST /api/v1/auth/step-up  (purpose authorize_withdrawal, binding termsHash)
+body: {"purpose":"authorize_withdrawal","pin":"246810","binding":"8798b4b16845b4ba5cea01c7abf81c1dcc780685d0de4747d92e3720bccd2f97"}
+{"success":true,"message":"Step-up grant issued.","data":{"grantToken":"IBHQXM4ugdzzIWRxz0AVYNme6eoEfTVI-EcJlDU6rAo","expiresAt":"2026-11-16T18:53:43.9871428Z"},"error":null,"correlationId":"01a1e5b36d4f781d99442dad5f53443e"}
+
+
+>>> POST /api/v1/real/funding/withdrawals
+body: {"previewId":"01a1e5b3-6d1d-76db-91d9-2fe49523d4ab","stepUpToken":"<redacted>"}
+{"success":true,"message":"Withdrawal placed.","data":{"id":"01a1e5b3-6d1d-76db-91d9-2fe49523d4ab","currency":"ZAR","beneficiaryId":"01a1e5b3-50a6-75bf-9894-6e5d222e3708","receiveAmount":"100.00000000","feeAmount":"2.00000000","totalDebited":"102.00000000","termsHash":"8798b4b16845b4ba5cea01c7abf81c1dcc780685d0de4747d92e3720bccd2f97","state":"requested","expiresAt":"2026-11-16T18:52:43.7664900Z","previewUsed":true,"detailCode":null,"createdAt":"2026-11-16T18:51:43.7664900Z","requestedAt":"2026-11-16T18:51:44.0482550Z","submittedAt":null,"completedAt":null,"failedAt":null,"cancelledAt":null},"error":null,"correlationId":"01a1e5b36e2176fda44c3078758f4e5c"}
+
+
+>>> GET /api/v1/real/funding/withdrawals/01a1e5b3-6d1d-76db-91d9-2fe49523d4ab  (final state: completed)
+{"success":true,"message":"Withdrawal loaded.","data":{"id":"01a1e5b3-6d1d-76db-91d9-2fe49523d4ab","currency":"ZAR","beneficiaryId":"01a1e5b3-50a6-75bf-9894-6e5d222e3708","receiveAmount":"100.00000000","feeAmount":"2.00000000","totalDebited":"102.00000000","termsHash":"8798b4b16845b4ba5cea01c7abf81c1dcc780685d0de4747d92e3720bccd2f97","state":"completed","expiresAt":"2026-11-16T18:52:43.7664900Z","previewUsed":true,"detailCode":null,"createdAt":"2026-11-16T18:51:43.7664900Z","requestedAt":"2026-11-16T18:51:44.0482550Z","submittedAt":"2026-11-16T18:51:44.5700950Z","completedAt":"2026-11-16T18:51:48.3319780Z","failedAt":null,"cancelledAt":null},"error":null,"correlationId":"01a1e5b382ce7bab93ad93095179aca1"}
+
+>>> GET /api/v1/real/balances
+{"success":true,"message":"Balances loaded.","data":[{"asset":"USD","available":"9.8505","held":"0"},{"asset":"ZAR","available":"198","held":"0"}],"error":null,"correlationId":"01a1e5b382e07a4b8927e15b4e4978a1"}
+DONE

@@ -299,7 +299,7 @@ internal sealed class FundingDepositService(
             if (ownsScope)
             {
                 await RollbackAsync(true, cancellationToken);
-                logger.LogWarning("Deposit {DepositId} reversal balance read failed with {ErrorCode}.", row.Id, balanceResult.Error!.Code);
+                logger.LogWarning("Deposit {DepositId} reversal ledger read failed with {ErrorCode}.", row.Id, balanceResult.Error!.Code);
                 return;
             }
 

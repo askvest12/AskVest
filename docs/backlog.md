@@ -26,4 +26,11 @@
 - Assistant: real language-model provider selection, adapter and evaluation run against the checked-in set (mandatory before launch); streaming, cross-conversation memory, web or news tools and a user hide-portfolio setting.
 - Trading: limit orders, partial fills, order cancellation after submission, gateway webhooks (polling only for now), stop-loss for real money, batch orders, quote streaming, per-tier limits, operator tools for reconciliation cases (Phase 15).
 - Wallets: withdrawal provider webhooks instead of polling, batched withdrawals, per-tier withdrawal limits, minimum account age for withdrawals, smart contract wallets, gas sponsorship, user-held keys or seed phrases (custody model is custodial by design).
+- Wallets: Privy sandbox contract tests gated on ASKVEST_PRIVY_* credentials; run before any route flips to the privy provider (ADR 0022).
+- Wallets: Privy deposit webhooks instead of history polling; the in-memory round-robin scan is the interim mechanism.
+- Wallets: decide per-user Privy wallets versus the treasury-wallet withdrawal model before production; treasury funding is the current adapter behavior.
+- Wallets: non-EVM custody adapters (Solana, Tron, Bitcoin) once Privy sandbox verification proves the EVM path.
+- Wallets: Privy GetHoldingsAsync scans wallets sequentially; batch or paginate before wallet counts make the reserves check slow.
+- Funding: Privy fiat deposits and payouts via Bridge for the USD corridor; Nigerian local-currency coverage through Bridge is unverified (ADR 0022).
+- Funding: Yara ramp adapter for NGN/GHS on-ramp once Yara Ramps launches; Yara payouts to whitelisted NGN/GHS bank recipients are the near-term off-ramp candidate.
 - Funding: cards and hosted payment pages, hedging for conversion exposure, USD treasury reserves tracking, stablecoin external withdrawals, tiered limits, statements and receipts, notifications for deposits and payouts, operator endpoints (Phase 15 builds them on the contract).

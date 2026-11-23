@@ -8,7 +8,7 @@ No provider is confirmed. Each external dependency gets one interface in a `Cont
 | `ISanctionsScreeningProvider` | sanctions/PEP checks | deterministic hit/miss lists |
 | `IMarketDataProvider` | prices, candles | fixed series, controllable staleness |
 | `IIssuerGateway` | quote, execute, redeem tokenized securities | in-memory order book |
-| `ICustodyProvider` | deposit addresses, deposit reporting, withdrawal submission and status, holdings, internal addresses | deterministic fake |
+| `ICustodyProvider` | deposit addresses, deposit reporting, withdrawal submission and status, holdings, internal addresses | deterministic fake; Privy adapter behind `Custody:Routes` (ADR 0022) |
 | `IAddressScreeningProvider` | address risk screening | deterministic fake |
 | `IFundingProvider` | deposits, conversions, withdrawals, webhooks | scripted webhook sequences |
 | `IFxRateProvider` | FX rates | fixed rate table |
@@ -176,23 +176,25 @@ Every real custody or screening adapter must satisfy:
 
 ## Custody and screening research (fill one column per provider during research)
 
-| Question | Provider A | Provider B | Provider C |
+Custody provider A is Privy, selected by ADR 0022. Cells marked "open" need answers from Privy or our own legal review before launch.
+
+| Question | Provider A (Privy) | Provider B | Provider C |
 |---|---|---|---|
-| Custody model: per-user deposit addresses or omnibus | | | |
-| Who controls the keys; MPC, HSM or KMS; multi-signature | | | |
-| Recovery and emergency release procedures | | | |
-| What happens if the provider fails or AskVest is down | | | |
-| Insurance and audit coverage | | | |
-| Supported chains and token standards | | | |
-| Deposit detection method and finality rule per chain | | | |
-| Memo and tag support | | | |
-| Fee and gas model | | | |
-| Policy engine: address allowlists, limits, approvals | | | |
-| Idempotency and status endpoints | | | |
-| Sandbox, rate limits, support commitments | | | |
-| Treatment of issuer transfer restrictions | | | |
-| Address screening coverage (chains, chains of risk) | | | |
-| Licenses and legal agreements required | | | |
+| Custody model: per-user deposit addresses or omnibus | Per-user wallets via `external_id`; one `ethereum` chain-type wallet covers all eip155 chains | | |
+| Who controls the keys; MPC, HSM or KMS; multi-signature | Privy-held key shares with a policy engine and owner key quorum option; open | | |
+| Recovery and emergency release procedures | open | | |
+| What happens if the provider fails or AskVest is down | User wallets stay at Privy; our ledger is unaffected; withdrawals stall in submitted state until status resolves | | |
+| Insurance and audit coverage | open | | |
+| Supported chains and token standards | EVM (all eip155 chains configured), Solana, Tron, Bitcoin; ERC-20 transfers implemented | | |
+| Deposit detection method and finality rule per chain | Wallet transaction history polling; final on `confirmed`/`finalized` status | | |
+| Memo and tag support | No (`SupportsMemo` false; EVM chains do not need memos) | | |
+| Fee and gas model | Gas sponsorship available; treasury wallet must be funded for withdrawals; open | | |
+| Policy engine: address allowlists, limits, approvals | Policy engine and quorum approvals documented; mirroring our withdrawal rules is a launch blocker | | |
+| Idempotency and status endpoints | `privy-idempotency-key` header on writes; `reference_id` on transactions queried by `/v1/transactions` | | |
+| Sandbox, rate limits, support commitments | Sandbox environment and public pricing confirmed; rate limits open | | |
+| Treatment of issuer transfer restrictions | open | | |
+| Address screening coverage (chains, chains of risk) | open (separate screening provider decision) | | |
+| Licenses and legal agreements required | open | | |
 
 ## Funding provider contract (Phase 12)
 

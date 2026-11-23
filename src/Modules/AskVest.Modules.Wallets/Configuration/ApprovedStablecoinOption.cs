@@ -1,3 +1,5 @@
+using System.Collections.ObjectModel;
+
 namespace AskVest.Modules.Wallets.Configuration;
 
 /// <summary>
@@ -20,4 +22,11 @@ public sealed class ApprovedStablecoinOption
     /// default dust minimum.
     /// </summary>
     public decimal? DustMinimum { get; set; }
+
+    /// <summary>
+    /// Provider asset aliases that resolve to this contract, such as "usdc"
+    /// for custody providers that report canonical asset names instead of
+    /// contract addresses.
+    /// </summary>
+    public Collection<string> Aliases { get; } = [];
 }

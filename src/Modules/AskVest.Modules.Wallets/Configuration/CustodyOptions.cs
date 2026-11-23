@@ -14,6 +14,8 @@ public sealed class CustodyOptions
 
     public FakeCustodyOptions Fake { get; set; } = new();
 
+    public PrivyOptions Privy { get; set; } = new();
+
     /// <summary>Chain id to provider name, last entry wins on duplicates.</summary>
     public IReadOnlyDictionary<string, string> RouteProviders
         => Routes

@@ -5,17 +5,28 @@ namespace AskVest.Modules.Wallets.Custody;
 
 /// <summary>
 /// Resolves the custody provider for a chain through the configured routes.
-/// Only the fake provider exists in this phase.
+/// The fake serves development and tests; Privy is the real adapter.
 /// </summary>
-internal sealed class CustodyRegistry(IOptions<WalletsOptions> options, FakeCustodyProvider fake)
+internal sealed class CustodyRegistry(
+    IOptions<WalletsOptions> options,
+    FakeCustodyProvider fake,
+    PrivyCustodyProvider privy)
 {
     public bool TryResolve(string chainId, out ICustodyProvider provider)
     {
-        if (options.Value.Custody.RouteProviders.TryGetValue(chainId, out var providerName)
-            && string.Equals(providerName, FakeCustodyProvider.ProviderKey, StringComparison.Ordinal))
+        if (options.Value.Custody.RouteProviders.TryGetValue(chainId, out var providerName))
         {
-            provider = fake;
-            return true;
+            if (string.Equals(providerName, FakeCustodyProvider.ProviderKey, StringComparison.Ordinal))
+            {
+                provider = fake;
+                return true;
+            }
+
+            if (string.Equals(providerName, PrivyCustodyProvider.ProviderKey, StringComparison.Ordinal))
+            {
+                provider = privy;
+                return true;
+            }
         }
 
         provider = null!;

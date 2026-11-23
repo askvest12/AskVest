@@ -145,10 +145,30 @@ public sealed class WalletsOptions
             {
                 Check(!string.IsNullOrWhiteSpace(route.ChainId),
                     "Wallets:Custody:Routes entries require a ChainId.");
-                Check(route.Provider is "fake",
-                    $"Wallets:Custody:Routes provider '{route.Provider}' has no adapter; only 'fake' is implemented.");
+                Check(route.Provider is "fake" or "privy",
+                    $"Wallets:Custody:Routes provider '{route.Provider}' has no adapter; only 'fake' and 'privy' are implemented.");
                 Check(seenChains.Add(route.ChainId),
                     $"Wallets:Custody:Routes has a duplicate chain id '{route.ChainId}'.");
+            }
+
+            if (options.Custody.Routes.Any(route =>
+                    string.Equals(route.Provider, "privy", StringComparison.Ordinal)))
+            {
+                var privy = options.Custody.Privy;
+                Check(!string.IsNullOrWhiteSpace(privy.AppId),
+                    "Wallets:Custody:Privy:AppId is required when a route uses the privy provider.");
+                Check(!string.IsNullOrWhiteSpace(privy.AppSecret),
+                    "Wallets:Custody:Privy:AppSecret is required when a route uses the privy provider.");
+                Check(!string.IsNullOrWhiteSpace(privy.TreasuryWalletId),
+                    "Wallets:Custody:Privy:TreasuryWalletId is required when a route uses the privy provider.");
+                Check(privy.TimeoutSeconds is >= 1 and <= 120,
+                    "Wallets:Custody:Privy:TimeoutSeconds must be between 1 and 120.");
+                Check(privy.WalletScanBatchSize is >= 1 and <= 100,
+                    "Wallets:Custody:Privy:WalletScanBatchSize must be between 1 and 100.");
+                Check(privy.WalletListMaxPages is >= 1 and <= 100,
+                    "Wallets:Custody:Privy:WalletListMaxPages must be between 1 and 100.");
+                Check(privy.WalletListRefreshSeconds is >= 5 and <= 3600,
+                    "Wallets:Custody:Privy:WalletListRefreshSeconds must be between 5 and 3600.");
             }
 
             Check(options.Screening.Provider is "fake",

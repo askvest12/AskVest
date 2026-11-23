@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace AskVest.Modules.Wallets;
@@ -43,6 +44,23 @@ public static class WalletsModuleExtensions
         services.TryAddSingleton(TimeProvider.System);
 
         services.AddSingleton<FakeCustodyProvider>();
+        services.AddHttpClient(PrivyCustodyProvider.HttpClientName, (provider, client) =>
+        {
+            var privy = provider.GetRequiredService<IOptions<WalletsOptions>>().Value.Custody.Privy;
+            client.BaseAddress = privy.BaseUrl;
+            client.Timeout = TimeSpan.FromSeconds(privy.TimeoutSeconds);
+            var credentials = Convert.ToBase64String(
+                System.Text.Encoding.UTF8.GetBytes($"{privy.AppId}:{privy.AppSecret}"));
+            client.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", credentials);
+            client.DefaultRequestHeaders.TryAddWithoutValidation("privy-app-id", privy.AppId);
+        });
+        services.AddSingleton<PrivyCustodyProvider>(provider => new PrivyCustodyProvider(
+            provider.GetRequiredService<IHttpClientFactory>().CreateClient(PrivyCustodyProvider.HttpClientName),
+            provider.GetRequiredService<IOptions<WalletsOptions>>(),
+            provider.GetRequiredService<ApprovedStablecoins>(),
+            provider.GetRequiredService<TimeProvider>(),
+            provider.GetRequiredService<ILogger<PrivyCustodyProvider>>()));
         services.AddSingleton<CustodyRegistry>();
         services.AddSingleton<FakeAddressScreeningProvider>();
         services.AddSingleton<IAddressScreeningProvider>(provider =>

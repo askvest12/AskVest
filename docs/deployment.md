@@ -29,73 +29,72 @@ docker compose up -d --build --wait
 - Smoke probes and Mailpit are only in `docker-compose.smoke.yml`; do not use
   that override outside local testing.
 
-## 3. Production architecture (recommended)
+## 3. Production on Render (recommended)
 
-Vercel is a good fit for the **frontend**. The backend has two requirements
-that do not fit Vercel's request-driven container model cleanly:
+Render fits this stack well: Docker web services stay running continuously,
+managed Postgres is available, and the same platform can host the frontend as
+a static site or web service. A `render.yaml` blueprint at the repo root
+provisions the database and API service.
 
-1. **Background work.** The API process hosts pollers that detect deposits,
-   progress withdrawals, dispatch the outbox, poll market data and run
-   reconciliation. These stop when the process is not running.
-2. **PostgreSQL.** Vercel Functions have no persistent filesystem and no
-   managed Postgres; the database must live elsewhere.
+### Plan requirements (important)
 
-Recommended split:
+- **API web service: paid instance required.** Render's free web service spins
+  down after ~15 minutes without inbound traffic. While asleep, no deposits
+  are detected, no withdrawals progress, no outbox messages dispatch and no
+  market data is polled. Use at least the `starter` instance type for the API.
+- **PostgreSQL: paid plan required.** Render's free Postgres expires after 30
+  days. Use `basic-256mb` or larger.
+- Run **one API instance** initially. The background pollers are designed to
+  be safe under concurrency (leases and idempotency keys), but a single
+  instance keeps operational reasoning simple.
 
-- **Frontend** on Vercel (Next.js or any static/SSR app).
-- **PostgreSQL** on a managed provider (Neon, Supabase, RDS, Cloud SQL, or a
-  VPS). Require TLS and a private connection where possible.
-- **API** on a container host that keeps the process warm: Fly.io, Railway,
-  Render, Google Cloud Run (min instances >= 1), or a VPS running the image
-  from `docker/api/Dockerfile` behind a reverse proxy.
-- **Migrator** run as a one-off job from CI or an operator machine against the
-  production database before each API rollout that contains new migrations.
+### Services
 
-If the API must run on Vercel anyway (see section 5), plan for the
-scale-to-zero consequences explicitly.
+1. **PostgreSQL** - provisioned by `render.yaml` as `askvest-db`. After
+   creation, connect once (Render Shell or `psql` with the external
+   connection string) and create the least-privilege application role:
 
-## 4. API deployment on a container host
+   ```sql
+   CREATE ROLE askvest_app LOGIN PASSWORD '<generated-secret>';
+   GRANT CONNECT ON DATABASE askvest TO askvest_app;
+   GRANT USAGE ON SCHEMA public TO askvest_app;
+   GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO askvest_app;
+   GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO askvest_app;
+   ```
 
-### Image
+   Adjust schema grants if the migrations create dedicated schemas; the app
+   role must never be able to run DDL.
 
-Build from the repo root:
+2. **API** - `type: web`, `runtime: docker`, built from
+   `docker/api/Dockerfile`. Health check path `/health/ready`. Attach a custom
+   domain for TLS.
 
-```bash
-docker build -f docker/api/Dockerfile -t askvest-api .
-```
+3. **Migrator** - run out-of-band before each API release that adds
+   migrations. Either use a Render Job/one-off task or run the image from CI
+   or an operator machine:
 
-The image listens on the port in `ASPNETCORE_URLS` (compose uses
-`http://+:8080`). Expose that port and point your platform's health check at
-`/health/ready`.
+   ```bash
+   docker build -f docker/migrator/Dockerfile -t askvest-migrator .
+   docker run --rm \
+     -e ConnectionStrings__Platform="Host=<external-db-host>;Port=5432;Database=askvest;Username=askvest_owner;Password=<secret>;SSL Mode=Require" \
+     -e Compliance__RealMoneyEnabled=false \
+     askvest-migrator
+   ```
 
-### Database roles
-
-The migrator connects as the owner role (`askvest_owner`) and runs DDL. The
-API connects as `askvest_app`, a least-privilege role that cannot run DDL.
-Create both roles and the database on the managed Postgres instance, then set:
-
-```
-ConnectionStrings__Platform=Host=<db-host>;Port=5432;Database=askvest;Username=askvest_app;Password=<secret>;SSL Mode=Require
-```
-
-Run the migrator image once with the owner connection string before starting
-the API:
-
-```bash
-docker build -f docker/migrator/Dockerfile -t askvest-migrator .
-docker run --rm -e ConnectionStrings__Platform="Host=<db-host>;...;Username=askvest_owner;Password=<secret>" askvest-migrator
-```
+   The migrator exits non-zero on failure; only start/keep the API on the new
+   version after it succeeds.
 
 ### Required environment variables
 
-Secrets come from the platform's secret manager, never from files in the repo.
-The full list is in `docker-compose.yml`; the production-relevant set:
+Set secrets in the Render dashboard (the blueprint marks them `sync: false`
+so no secret lands in the repo). Full list is in `docker-compose.yml`; the
+production-relevant set:
 
 | Variable | Purpose |
 |---|---|
 | `ASPNETCORE_ENVIRONMENT` | `Production` |
-| `ASPNETCORE_URLS` | e.g. `http://+:8080` |
-| `ConnectionStrings__Platform` | API database connection (app role) |
+| `ASPNETCORE_URLS` | `http://+:8080` (Render routes to the exposed port) |
+| `ConnectionStrings__Platform` | API database connection as `askvest_app`, `SSL Mode=Require` |
 | `Identity__Secrets__AccessTokenSigningKey` | JWT signing key |
 | `Identity__Secrets__AccessTokenSigningKeyPrevious` | optional rotation overlap |
 | `Identity__Secrets__PasswordPepper` | password hashing pepper |
@@ -109,44 +108,19 @@ The full list is in `docker-compose.yml`; the production-relevant set:
 | provider config (`Compliance__*`, `Wallets__Custody__*`, `Funding__*`, `MarketData__*`, `Trading__Gateway__*`) | real provider settings replace the `fake` adapters |
 
 Generate every secret with a CSPRNG (e.g. `openssl rand -base64 48`) and store
-it only in the secret manager.
+it only in Render's environment configuration.
 
-## 5. Deploying the API image on Vercel
+## 4. Frontend on Render (or anywhere)
 
-Vercel can run OCI images as request-driven Functions (Container runtime,
-beta). This works for the HTTP surface but has hard limits for AskVest:
+The frontend can be a Render Static Site (or web service) in the same
+Render account, or stay on Vercel/Netlify. Either way:
 
-- **Port.** Vercel routes to port `80` by default. Either set
-  `ASPNETCORE_URLS=http://+:80`, or set the `PORT` project env var to `8080`
-  and keep `ASPNETCORE_URLS=http://+:8080`.
-- **Scale to zero.** Instances with no traffic for ~5 minutes shut down
-  (`SIGTERM`, 30 s grace). While shut down, no deposits are detected, no
-  withdrawals progress, no outbox messages dispatch and no market data is
-  polled. A scheduled ping to `/health/ready` can keep an instance warm, but
-  that defeats scale-to-zero pricing and is a workaround, not a design.
-- **Statelessness.** No persistent disk; the database must be external.
-- **Function limits.** Request duration and concurrency limits apply; long
-  operations must not be assumed.
+- Set the API base URL env var (e.g. `NEXT_PUBLIC_API_BASE_URL` or your
+  framework's equivalent) to `https://<api-domain>`.
+- Add the exact frontend origin(s) to `Cors__AllowedOrigins__*` on the API
+  service and redeploy.
 
-If you proceed:
-
-1. Put `docker/api/Dockerfile` (or a thin `Dockerfile.vercel` that `FROM`s the
-   published image) at the root of a dedicated Vercel project.
-2. Set `"framework": "container"` in `vercel.json` if framework detection
-   picks something else.
-3. Configure all environment variables from section 4 in the Vercel project.
-4. Deploy the frontend separately and add its production origin to
-   `Cors__AllowedOrigins__*`.
-5. Run the migrator out-of-band (section 4) before each release.
-6. Treat deposit/withdrawal latency as best-effort while scaled to zero, or
-   add a keep-warm cron and accept the cost.
-
-Honest assessment: Vercel for the API is viable for demos and early
-integration, but a money-moving product needs the background pollers running
-continuously. Prefer a warm container host for the API and keep Vercel for the
-frontend.
-
-## 6. Frontend integration quick start
+## 5. Frontend integration quick start
 
 Base URL: the deployed API origin, e.g. `https://api.askvest.example.com`.
 
@@ -174,9 +148,18 @@ Base URL: the deployed API origin, e.g. `https://api.askvest.example.com`.
 
 The API only allows origins listed in `Cors:AllowedOrigins`. Add the exact
 frontend origins (including preview deployments if needed) as
-`Cors__AllowedOrigins__0`, `__1`, etc. Requests with credentials are not used;
-the API is bearer-token only, so `Access-Control-Allow-Origin` reflects the
-configured list.
+`Cors__AllowedOrigins__0`, `__1`, etc. The API is bearer-token only; there are
+no cookies, so no credentialed-CORS complications.
+
+## 6. Alternatives considered
+
+- **Vercel for the API**: possible via Container Functions (beta), but
+  instances scale to zero after ~5 idle minutes, which stops all background
+  pollers (deposits, withdrawals, outbox). Not recommended for a
+  money-moving product; acceptable only for demos with a keep-warm cron.
+- **Splitting workers from the API**: the pollers currently run in-process.
+  A dedicated worker deployment would need a code change (host flag or
+  separate entrypoint); not required on Render since web services stay warm.
 
 ## 7. Verification checklist before handoff
 
@@ -187,4 +170,4 @@ configured list.
 - [ ] One practice order and one catalog read exercised end to end.
 - [ ] `Docs__Enabled=false` in production unless public docs are intended.
 - [ ] No `fake` providers remain in routes that move real money.
-- [ ] Secrets exist only in the platform secret manager.
+- [ ] Secrets exist only in the platform environment configuration.

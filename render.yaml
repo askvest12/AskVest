@@ -1,0 +1,65 @@
+# Render blueprint for the AskVest backend.
+# Create the stack via Render Dashboard > New > Blueprint, or `render blueprint apply`.
+# Secrets are marked sync: false so values are entered in the dashboard only.
+
+databases:
+  - name: askvest-db
+    plan: basic-256mb
+    databaseName: askvest
+    user: askvest_owner
+    region: frankfurt
+    # Open to all IPs so the one-shot migrator can run from CI or an operator
+    # machine. Tighten this list once the migrator runs inside Render.
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: temporary, tighten after setup
+
+services:
+  - type: web
+    name: askvest-api
+    runtime: docker
+    dockerfilePath: ./docker/api/Dockerfile
+    dockerContext: .
+    plan: starter
+    region: frankfurt
+    healthCheckPath: /health/ready
+    numInstances: 1
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ASPNETCORE_URLS
+        value: http://+:8080
+      - key: Docs__Enabled
+        value: "false"
+      - key: Compliance__RealMoneyEnabled
+        value: "false"
+      - key: ConnectionStrings__Platform
+        sync: false
+      - key: Identity__Secrets__AccessTokenSigningKey
+        sync: false
+      - key: Identity__Secrets__AccessTokenSigningKeyPrevious
+        sync: false
+      - key: Identity__Secrets__PasswordPepper
+        sync: false
+      - key: Identity__Secrets__OneTimeCodeHashSecret
+        sync: false
+      - key: Messaging__Smtp__Host
+        sync: false
+      - key: Messaging__Smtp__Port
+        value: "587"
+      - key: Messaging__Smtp__FromAddress
+        sync: false
+      - key: Messaging__Smtp__FromName
+        value: AskVest
+      - key: Messaging__Smtp__UserName
+        sync: false
+      - key: Messaging__Smtp__Password
+        sync: false
+      - key: Messaging__Smtp__EnableStartTls
+        value: "true"
+      - key: Compliance__Kyc__WebhookSecret
+        sync: false
+      - key: Funding__Providers__0__WebhookSecret
+        sync: false
+      - key: Cors__AllowedOrigins__0
+        sync: false

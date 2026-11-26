@@ -95,7 +95,7 @@ public static class AuthEndpoints
         CancellationToken cancellationToken)
     {
         var result = await signUpService.SignUpAsync(
-            request.Email, request.Password,
+            request.Email, request.Password, request.FullName,
             httpContext.Connection.RemoteIpAddress?.ToString(),
             httpContext.Request.Headers.UserAgent.ToString(),
             httpContext.TraceIdentifier,

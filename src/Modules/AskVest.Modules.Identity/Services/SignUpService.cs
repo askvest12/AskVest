@@ -29,15 +29,17 @@ public sealed class SignUpService(
     public Task<Result> SignUpAsync(
         string? rawEmail,
         string? password,
+        string? fullName,
         string? ip,
         string? userAgent,
         string? correlationId,
         CancellationToken cancellationToken)
-        => SignUpAsync(rawEmail, password, ip, userAgent, correlationId, retried: false, cancellationToken);
+        => SignUpAsync(rawEmail, password, fullName, ip, userAgent, correlationId, retried: false, cancellationToken);
 
     private async Task<Result> SignUpAsync(
         string? rawEmail,
         string? password,
+        string? fullName,
         string? ip,
         string? userAgent,
         string? correlationId,
@@ -70,6 +72,7 @@ public sealed class SignUpService(
             {
                 Id = Guid.CreateVersion7(),
                 NormalizedEmail = normalized,
+                FullName = NormalizeFullName(fullName),
                 PasswordHash = await passwordHasher.HashAsync(password!, secrets.Value.PasswordPepper!, cancellationToken),
                 PasswordPepperVersion = secrets.Value.PasswordPepperVersion,
                 Status = UserStatus.PendingVerification,
@@ -92,13 +95,13 @@ public sealed class SignUpService(
                 {
                     return retried
                         ? Result.Success()
-                        : await SignUpAsync(rawEmail, password, ip, userAgent, correlationId, retried: true, cancellationToken);
+                        : await SignUpAsync(rawEmail, password, fullName, ip, userAgent, correlationId, retried: true, cancellationToken);
                 }
 
                 if (winner.Status == UserStatus.PendingVerification)
                 {
                     securityEvents.Record(SecurityEventType.SignUp, winner.Id, ip, userAgent, correlationId);
-                    await TryRefreshPendingAsync(winner, normalized, password!, cancellationToken);
+                    await TryRefreshPendingAsync(winner, normalized, password!, fullName, cancellationToken);
                 }
                 else
                 {
@@ -113,7 +116,7 @@ public sealed class SignUpService(
         else if (user.Status == UserStatus.PendingVerification)
         {
             securityEvents.Record(SecurityEventType.SignUp, user.Id, ip, userAgent, correlationId);
-            await TryRefreshPendingAsync(user, normalized, password!, cancellationToken);
+            await TryRefreshPendingAsync(user, normalized, password!, fullName, cancellationToken);
         }
         else
         {
@@ -139,12 +142,14 @@ public sealed class SignUpService(
         UserAccount user,
         string normalizedEmail,
         string password,
+        string? fullName,
         CancellationToken cancellationToken)
     {
         try
         {
             user.PasswordHash = await passwordHasher.HashAsync(password, secrets.Value.PasswordPepper!, cancellationToken);
             user.PasswordPepperVersion = secrets.Value.PasswordPepperVersion;
+            user.FullName = NormalizeFullName(fullName) ?? user.FullName;
             user.UpdatedAt = timeProvider.GetUtcNow();
             await IssueVerificationCodeAsync(user, normalizedEmail, cancellationToken);
         }
@@ -153,6 +158,17 @@ public sealed class SignUpService(
             // A concurrent sign-up for the same email refreshed the account first;
             // the uniform response is still correct.
         }
+    }
+
+    private static string? NormalizeFullName(string? fullName)
+    {
+        if (string.IsNullOrWhiteSpace(fullName))
+        {
+            return null;
+        }
+
+        var trimmed = fullName.Trim();
+        return trimmed.Length <= 120 ? trimmed : null;
     }
 
     private async Task IssueVerificationCodeAsync(

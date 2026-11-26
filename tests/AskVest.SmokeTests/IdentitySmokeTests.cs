@@ -17,6 +17,8 @@ public sealed class IdentitySmokeTests
     private const string Password = "CorrectHorseSmoke9";
     private const string Pin = "482913";
 
+    private static readonly string[] SmokeGoals = ["learn_investing", "practice_first"];
+
     private static HttpClient Client()
     {
         if (BaseUrl is null)
@@ -396,5 +398,55 @@ public sealed class IdentitySmokeTests
             new { email = NewEmail(), password = Password }));
         other.GetProperty("message").GetString().ShouldBe(first.GetProperty("message").GetString());
 
+    }
+
+    [Fact]
+    public async Task Signup_With_Name_And_Onboarding_Round_Trips()
+    {
+        using var client = Client();
+        using var mailpit = Mailpit();
+        var email = NewEmail();
+
+        var signUp = await SendJsonAsync(client, Post("/api/v1/auth/sign-up", new
+        {
+            email,
+            password = Password,
+            fullName = "Smoke Tester",
+        }));
+        signUp.GetProperty("success").GetBoolean().ShouldBeTrue();
+
+        var verifyCode = await WaitForCodeAsync(mailpit, email, "Verify");
+        var verify = await SendJsonAsync(client, Post("/api/v1/auth/verify-email", new { email, code = verifyCode }));
+        verify.GetProperty("success").GetBoolean().ShouldBeTrue();
+
+        var (token, _, _) = await LoginAsync(client, email, "smoke-onboarding");
+
+        var before = await SendJsonAsync(client, Get("/api/v1/account/me", token));
+        before.GetProperty("data").GetProperty("fullName").GetString().ShouldBe("Smoke Tester");
+        before.GetProperty("data").GetProperty("onboarding").ValueKind.ShouldBe(JsonValueKind.Null);
+
+        var put = new HttpRequestMessage(HttpMethod.Put, new Uri("/api/v1/account/onboarding", UriKind.Relative))
+        {
+            Content = JsonContent.Create(new
+            {
+                familiarity = "newcomer",
+                goals = SmokeGoals,
+                preferredCurrency = "ngn",
+            }),
+        };
+        put.Headers.Add("Idempotency-Key", $"k-{Guid.CreateVersion7():N}");
+        put.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var saved = await SendJsonAsync(client, put);
+        saved.GetProperty("success").GetBoolean().ShouldBeTrue();
+        var savedData = saved.GetProperty("data");
+        savedData.GetProperty("familiarity").GetString().ShouldBe("newcomer");
+        savedData.GetProperty("preferredCurrency").GetString().ShouldBe("NGN");
+        savedData.GetProperty("completedAt").ValueKind.ShouldBe(JsonValueKind.String);
+
+        var after = await SendJsonAsync(client, Get("/api/v1/account/me", token));
+        var onboarding = after.GetProperty("data").GetProperty("onboarding");
+        onboarding.GetProperty("familiarity").GetString().ShouldBe("newcomer");
+        onboarding.GetProperty("goals").GetArrayLength().ShouldBe(2);
+        onboarding.GetProperty("completedAt").ValueKind.ShouldBe(JsonValueKind.String);
     }
 }

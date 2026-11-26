@@ -138,6 +138,8 @@ public sealed class MaintenanceApiTests(PostgresFixture fixture) : IAsyncLifetim
     [Fact]
     public async Task Maintenance_Removes_Only_Expired_Rows_And_Keeps_Live_And_Rotated_Tokens()
     {
+        await RunMaintenanceAsync();
+
         var client = Client();
         var email = NewEmail();
         var userId = await CreateVerifiedUserAsync(client, email);

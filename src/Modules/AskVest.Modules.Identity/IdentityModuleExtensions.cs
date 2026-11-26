@@ -93,6 +93,7 @@ public static class IdentityModuleExtensions
         services.AddScoped<StepUpService>();
         services.AddScoped<PhoneService>();
         services.AddScoped<AccountService>();
+        services.AddScoped<OnboardingService>();
         services.AddScoped<DeletionService>();
         services.AddScoped<AccountAnonymizationService>();
         services.AddScoped<MaintenanceService>();

@@ -11,7 +11,7 @@ sequenceDiagram
   participant C as Client
   participant A as API
   participant M as Mail
-  C->>A: POST /auth/sign-up {email, password}
+  C->>A: POST /auth/sign-up {email, password, fullName?}
   A->>A: normalize email, validate password policy
   A->>A: branch on account state (pending, active, missing)
   A->>M: queue verification code email (pending only)
@@ -77,7 +77,7 @@ sequenceDiagram
 
 ## Data model
 
-Tables in schema `identity`: `users`, `user_roles`, `devices`, `sessions`, `refresh_tokens`, `one_time_codes`, `throttle_buckets`, `step_up_grants`, `security_events`. Conventions per `02-data-standards.md`: UUIDv7 ids, UTC timestamps, snake_case, optimistic concurrency on mutable tables, no cross-module foreign keys. `security_events` is append only: the application role loses update and delete rights in the same migration.
+Tables in schema `identity`: `users`, `user_roles`, `devices`, `sessions`, `refresh_tokens`, `one_time_codes`, `throttle_buckets`, `step_up_grants`, `security_events`, `onboarding_profiles`. `users.full_name` is a display name collected at signup or onboarding; legal name for KYC is collected by the compliance flow. `onboarding_profiles` stores one row per user with investing familiarity, goal flags, preferred currency and completion timestamp, written by `PUT /account/onboarding` and read back through `GET /account/me`. Conventions per `02-data-standards.md`: UUIDv7 ids, UTC timestamps, snake_case, optimistic concurrency on mutable tables, no cross-module foreign keys. `security_events` is append only: the application role loses update and delete rights in the same migration.
 
 ## State machines
 

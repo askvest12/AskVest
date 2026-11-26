@@ -9,13 +9,15 @@ namespace AskVest.Modules.Identity.Services;
 public sealed record AccountProfile(
     Guid Id,
     string Email,
+    string? FullName,
     bool EmailVerified,
     string? MaskedPhone,
     bool PhoneVerified,
     bool HasPin,
     string Status,
     IReadOnlyList<string> Roles,
-    DateTimeOffset? DeletionScheduledFor);
+    DateTimeOffset? DeletionScheduledFor,
+    OnboardingProfileInfo? Onboarding);
 
 public sealed record SessionListItem(
     Guid Id,
@@ -74,16 +76,20 @@ public sealed class AccountService(
             .Select(r => r.RoleName)
             .ToListAsync(cancellationToken);
 
+        var onboardingProfile = await db.OnboardingProfiles.FindAsync([userId], cancellationToken);
+
         return Result<AccountProfile>.Success(new AccountProfile(
             user.Id,
             user.NormalizedEmail,
+            user.FullName,
             user.EmailVerifiedAt is not null,
             PrivacyMasking.MaskPhone(user.PhoneE164),
             user.PhoneVerifiedAt is not null,
             user.PinHash is not null,
             user.Status.ToString(),
             roles,
-            user.DeletionScheduledFor));
+            user.DeletionScheduledFor,
+            OnboardingService.ToInfo(onboardingProfile)));
     }
 
     public async Task<IReadOnlyList<SessionListItem>> ListSessionsAsync(

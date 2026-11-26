@@ -6,6 +6,7 @@ public sealed class UserAccount
 {
     public Guid Id { get; set; }
     public string NormalizedEmail { get; set; } = string.Empty;
+    public string? FullName { get; set; }
     public DateTimeOffset? EmailVerifiedAt { get; set; }
     public string PasswordHash { get; set; } = string.Empty;
     public int PasswordPepperVersion { get; set; }

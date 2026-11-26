@@ -9,6 +9,28 @@ public sealed class SignUpRequestValidator : AbstractValidator<SignUpRequest>
     {
         RuleFor(x => x.Email).NotEmpty().MaximumLength(254);
         RuleFor(x => x.Password).NotEmpty().MaximumLength(128);
+        RuleFor(x => x.FullName).MaximumLength(120);
+    }
+}
+
+public sealed class OnboardingRequestValidator : AbstractValidator<OnboardingRequest>
+{
+    private static readonly string[] _familiarityValues = ["newcomer", "some", "experienced"];
+    private static readonly string[] _goalValues =
+    [
+        "learn_investing", "build_wealth", "discover_opportunities",
+        "research_companies", "diversify", "practice_first",
+    ];
+
+    public OnboardingRequestValidator()
+    {
+        RuleFor(x => x.FullName).MaximumLength(120);
+        RuleFor(x => x.Familiarity).Must(value => value is null || _familiarityValues.Contains(value))
+            .WithMessage("Familiarity must be one of: newcomer, some, experienced.");
+        RuleFor(x => x.Goals).Must(goals => goals is null || goals.All(_goalValues.Contains))
+            .WithMessage("Goals must be drawn from the known onboarding goal set.");
+        RuleFor(x => x.PreferredCurrency).Matches("^[A-Za-z]{3}$")
+            .When(x => x.PreferredCurrency is not null);
     }
 }
 

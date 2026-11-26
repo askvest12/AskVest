@@ -15,7 +15,7 @@ public sealed class IdentitySchemaTests(PostgresFixture fixture)
     [
         "users", "user_roles", "devices", "sessions", "refresh_tokens",
         "one_time_codes", "throttle_buckets", "step_up_grants", "security_events",
-        "__ef_migrations_history",
+        "onboarding_profiles", "__ef_migrations_history",
     ];
 
     private static readonly string[] ExpectedUniqueIndexes =

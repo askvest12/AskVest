@@ -92,6 +92,53 @@ namespace AskVest.Modules.Identity.Migrations
                     b.ToTable("devices", "identity");
                 });
 
+            modelBuilder.Entity("AskVest.Modules.Identity.Persistence.Entities.OnboardingProfile", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("completed_at");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<long>("GoalFlags")
+                        .HasColumnType("bigint")
+                        .HasColumnName("goal_flags");
+
+                    b.Property<string>("InvestingFamiliarity")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("investing_familiarity");
+
+                    b.Property<string>("PreferredCurrency")
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)")
+                        .HasColumnName("preferred_currency");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<uint>("Xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("UserId")
+                        .HasName("pk_onboarding_profiles");
+
+                    b.ToTable("onboarding_profiles", "identity", t =>
+                        {
+                            t.HasCheckConstraint("ck_onboarding_profiles_familiarity", "investing_familiarity IS NULL OR investing_familiarity IN ('Newcomer', 'Some', 'Experienced')");
+                        });
+                });
+
             modelBuilder.Entity("AskVest.Modules.Identity.Persistence.Entities.OneTimeCode", b =>
                 {
                     b.Property<Guid>("Id")
@@ -438,6 +485,11 @@ namespace AskVest.Modules.Identity.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("email_verified_at");
 
+                    b.Property<string>("FullName")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("full_name");
+
                     b.Property<DateTimeOffset?>("LastLoginAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("last_login_at");
@@ -612,6 +664,16 @@ namespace AskVest.Modules.Identity.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_devices_users_user_id");
+                });
+
+            modelBuilder.Entity("AskVest.Modules.Identity.Persistence.Entities.OnboardingProfile", b =>
+                {
+                    b.HasOne("AskVest.Modules.Identity.Persistence.Entities.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_onboarding_profiles_users_user_id");
                 });
 
             modelBuilder.Entity("AskVest.Modules.Identity.Persistence.Entities.OneTimeCode", b =>

@@ -17,6 +17,7 @@ public sealed class IdentityDbContext(DbContextOptions<IdentityDbContext> option
     public DbSet<ThrottleBucket> ThrottleBuckets => Set<ThrottleBucket>();
     public DbSet<StepUpGrant> StepUpGrants => Set<StepUpGrant>();
     public DbSet<SecurityEvent> SecurityEvents => Set<SecurityEvent>();
+    public DbSet<OnboardingProfile> OnboardingProfiles => Set<OnboardingProfile>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

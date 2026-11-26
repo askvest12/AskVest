@@ -124,12 +124,16 @@ Render account, or stay on Vercel/Netlify. Either way:
 
 Base URL: the deployed API origin, e.g. `https://api.askvest.example.com`.
 
-- **Auth.** `POST /api/v1/auth/sign-up`, verify email via the code sent by
-  email, then `POST /api/v1/auth/login`. Responses return `accessToken`,
-  `refreshToken` and `accessTokenExpiresAt`. Send
-  `Authorization: Bearer <accessToken>` on every protected call; refresh via
-  `POST /api/v1/auth/refresh` before expiry. `GET /api/v1/account/me` confirms
-  the session.
+- **Auth.** `POST /api/v1/auth/sign-up` accepts `{email, password, fullName?}`;
+  verify email via the code sent by email, then `POST /api/v1/auth/login`.
+  Responses return `accessToken`, `refreshToken` and `accessTokenExpiresAt`.
+  Send `Authorization: Bearer <accessToken>` on every protected call; refresh
+  via `POST /api/v1/auth/refresh` before expiry. `GET /api/v1/account/me`
+  confirms the session and returns `fullName` plus the `onboarding` profile
+  (`familiarity`, `goals`, `preferredCurrency`, `completedAt`; `null` until
+  saved). Save onboarding answers with `PUT /api/v1/account/onboarding`
+  (idempotent, all fields optional). Country of residence is set separately
+  via `PUT /api/v1/compliance/country`.
 - **Envelope.** Every response, including errors, is
   `{ success, message, data, error, correlationId }`. Branch on
   `error.code` (e.g. `auth.unauthorized`, `wallet.unavailable`,

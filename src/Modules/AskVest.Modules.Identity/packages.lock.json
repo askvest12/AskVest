@@ -38,9 +38,9 @@
       },
       "libphonenumber-csharp": {
         "type": "Direct",
-        "requested": "[9.0.42, )",
-        "resolved": "9.0.42",
-        "contentHash": "QDwM5FoB/MIJt64ZkVjm2gN3ftCKAwJW1xPvwScctiPmZFARWu4OYYQyW77EXbqt17PjkTFV4twQ8zegGCvyBg=="
+        "requested": "[9.0.44, )",
+        "resolved": "9.0.44",
+        "contentHash": "6qVWMfflr7qVRMydlxaJuTXzjPWtKBYQo/FOhIIbeKz7HZ0h12YBuBE1S2vdFq8WTOj2H8s1m7VSPjnqhQuRbw=="
       },
       "MailKit": {
         "type": "Direct",

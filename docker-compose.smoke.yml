@@ -83,6 +83,7 @@ services:
       Wallets__SubmittedTimeoutSeconds: "60"
       Wallets__ProviderTimeoutSeconds: "5"
       Wallets__ReservesIntervalMinutes: "1"
+      Wallets__ReservesMismatchThreshold: "1000000"
       Wallets__Custody__Fake__CompletionDelaySeconds: "2"
       Wallets__Custody__Fake__PendingFinalitySeconds: "1"
       Wallets__Custody__Routes__0__ChainId: "eip155:11155111"

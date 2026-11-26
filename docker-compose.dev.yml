@@ -4,6 +4,12 @@ name: askvest-dev
 # Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 
 services:
+  migrator:
+    environment:
+      # The migrator is a generic host, not the web API; Test matches the smoke
+      # runner and avoids Development build validation plus Production provider guards.
+      DOTNET_ENVIRONMENT: Test
+
   api:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
